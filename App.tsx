@@ -48,17 +48,8 @@ const App: React.FC = () => {
     setIsGenerating(true);
 
     try {
-      // Read from .env.local
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      console.log("API Key retrieved:", apiKey ? "Yes (hidden)" : "No");
-
-      if (!apiKey) {
-        alert("API Key not found. Please check .env.local");
-        return;
-      }
-
       console.log("Calling fetchCouncilAnalysis...");
-      const data = await fetchCouncilAnalysis(apiKey, dilemma, selectedMBTI);
+      const data = await fetchCouncilAnalysis(dilemma, selectedMBTI);
       console.log("fetchCouncilAnalysis success:", data);
 
       setCouncilData(data);
@@ -69,7 +60,8 @@ const App: React.FC = () => {
 
     } catch (error) {
       console.error("Error generating council:", error);
-      alert("Failed to summon the council. Please try again.");
+      const message = error instanceof Error ? error.message : "Failed to summon the council. Please try again.";
+      alert(message);
     } finally {
       console.log("Finally block - resetting isGenerating");
       setIsGenerating(false);

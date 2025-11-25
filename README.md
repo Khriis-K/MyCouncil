@@ -13,10 +13,11 @@
 ## 🛠️ Tech Stack
 
 -   **Frontend**: [React 19](https://react.dev/)
+-   **Backend**: Node.js, Express
 -   **Build Tool**: [Vite](https://vitejs.dev/)
 -   **Language**: [TypeScript](https://www.typescriptlang.org/)
 -   **AI Integration**: [Google Gemini API](https://ai.google.dev/) (@google/genai)
--   **Styling**: Tailwind CSS (inferred) & Custom CSS
+-   **Styling**: Tailwind CSS & Custom CSS
 
 ## 🚀 Getting Started
 
@@ -40,17 +41,27 @@ Follow these instructions to get a copy of the project up and running on your lo
     -   Create a file named `.env.local` in the root directory.
     -   Add your Gemini API key to the file:
         ```env
-        VITE_GEMINI_API_KEY=your_actual_api_key_here
+        GEMINI_API_KEY=your_actual_api_key_here
         ```
-    > **Note**: The application uses `import.meta.env.VITE_GEMINI_API_KEY` to access this key. Ensure the variable name matches exactly.
+    > **Note**: The backend server uses this key to authenticate with Google's Gemini API.
 
-4.  **Run the Development Server**:
+4.  **Run the Application**:
+    You will need to run both the backend server and the frontend client.
+
+    **Terminal 1 (Backend):**
+    ```bash
+    npm run server
+    ```
+    *Server runs at http://localhost:3000*
+
+    **Terminal 2 (Frontend):**
     ```bash
     npm run dev
     ```
+    *Client runs at http://localhost:5173*
 
 5.  **Open the App**:
-    -   Visit the URL shown in your terminal (usually `http://localhost:5173`).
+    -   Visit the URL shown in your frontend terminal (usually `http://localhost:5173`).
 
 ## 📖 Usage
 
