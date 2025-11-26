@@ -9,6 +9,14 @@ interface CounselorOverlayProps {
 
 const CounselorOverlay: React.FC<CounselorOverlayProps> = ({ counselor, dynamicData, onClose }) => {
   const [view, setView] = useState<'TEXT' | 'CHAT'>('TEXT');
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 400); // Match animation duration
+  };
 
   const colorStyles: Record<string, string> = {
     blue: 'text-blue-400 border-blue-500/30 shadow-blue-500/10',
@@ -25,12 +33,15 @@ const CounselorOverlay: React.FC<CounselorOverlayProps> = ({ counselor, dynamicD
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-full max-w-xl animate-slide-in-right">
-      {/* Backdrop (click to close) */}
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm -z-10" onClick={onClose}></div>
+    <>
+      {/* Full-screen backdrop with blur/opacity - click to close */}
+      <div 
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40"
+        onClick={handleClose}
+      ></div>
 
       {/* Side Panel */}
-      <div className={`h-full bg-slate-900 border-l border-slate-700 shadow-2xl flex flex-col ${colorStyles[counselor.color].split(' ')[2]}`}>
+      <div className={`fixed inset-y-0 right-0 z-50 w-full max-w-xl h-full bg-slate-900 border-l border-slate-700 shadow-2xl flex flex-col ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'} ${colorStyles[counselor.color].split(' ')[2]}`}>
 
         {/* Header */}
         <header className={`flex items-center p-6 border-b ${colorStyles[counselor.color].split(' ')[1]} bg-slate-900/50`}>
@@ -44,7 +55,7 @@ const CounselorOverlay: React.FC<CounselorOverlayProps> = ({ counselor, dynamicD
               <span>Tone: {counselor.role}</span>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+          <button onClick={handleClose} className="text-slate-400 hover:text-white transition-colors">
             <span className="material-symbols-outlined">close</span>
           </button>
         </header>
@@ -140,7 +151,7 @@ const CounselorOverlay: React.FC<CounselorOverlayProps> = ({ counselor, dynamicD
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

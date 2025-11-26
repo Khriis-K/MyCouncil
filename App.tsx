@@ -24,10 +24,12 @@ const App: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false); // Loading state
   
   // Refinement context tracking
-  const [additionalContext, setAdditionalContext] = useState<string>('');
+  const [additionalContext, setAdditionalContext] = useState<string>(''); 
   const [contextSummary, setContextSummary] = useState<string>(''); // AI-generated summary of previous refinements
   const [isRefining, setIsRefining] = useState(false);
   const [originalSummary, setOriginalSummary] = useState<string>(''); // Store initial summary, never changes
+  const [isInitialRender, setIsInitialRender] = useState(false); // For initial counselor animation
+  const [loadingMessage, setLoadingMessage] = useState<string>(''); // For center bubble during refinement
 
   // Overlay Management
   const [activeOverlay, setActiveOverlay] = useState<OverlayType>('NONE');
@@ -65,6 +67,12 @@ const App: React.FC = () => {
       setCouncilData(data);
       setOriginalSummary(data.summary); // Store the original summary
       setViewState('SPHERE');
+      setIsInitialRender(true); // Trigger initial animation
+      
+      // Reset animation flag after animation completes
+      setTimeout(() => {
+        setIsInitialRender(false);
+      }, 800); // After staggered animations complete
 
       // On mobile/tablet you might close sidebar here, keeping open for desktop
       if (window.innerWidth < 1024) setSidebarOpen(false);
@@ -127,6 +135,7 @@ const App: React.FC = () => {
     
     console.log("handleRefine called with context:", additionalContext);
     setIsRefining(true);
+    setLoadingMessage('Council reevaluating...');
     
     try {
       // Call API with refinement data
@@ -145,8 +154,17 @@ const App: React.FC = () => {
         setContextSummary(data.context_summary);
       }
       
+      // Clear loading message
+      setLoadingMessage('');
+      
       // Update council data (triggers fade transition)
       setCouncilData(data);
+      
+      // Trigger slide-in animation
+      setIsInitialRender(true);
+      setTimeout(() => {
+        setIsInitialRender(false);
+      }, 800);
       
       // Clear additional context input
       setAdditionalContext('');
@@ -158,6 +176,7 @@ const App: React.FC = () => {
       console.error("Error refining perspective:", error);
       const message = error instanceof Error ? error.message : "Failed to refine perspective. Please try again.";
       alert(message);
+      setLoadingMessage(''); // Clear loading message on error
     } finally {
       setIsRefining(false);
     }
@@ -223,13 +242,15 @@ const App: React.FC = () => {
             <ReflectionSphere
               dilemma={dilemma}
               dilemmaSummary={originalSummary || councilData?.summary || ''}
-              contextSummary={contextSummary}
+              contextSummary={loadingMessage || contextSummary}
               counselors={buildCounselorsFromResponse(selectedMBTI, councilSize, councilData)}
               councilData={councilData}
               isDebateMode={isDebateMode}
               tensionPairs={buildTensionPairs(councilData)}
               onCounselorClick={handleCounselorClick}
               onTensionClick={handleTensionClick}
+              isInitialRender={isInitialRender}
+              isRefining={isRefining}
             />
           )}
         </div>

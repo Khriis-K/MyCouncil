@@ -12,6 +12,8 @@ interface ReflectionSphereProps {
   tensionPairs: TensionPair[];
   onCounselorClick: (counselor: Counselor) => void;
   onTensionClick: (pair: TensionPair) => void;
+  isInitialRender?: boolean; // For initial counselor animation
+  isRefining?: boolean; // For refinement loading state
 }
 
 const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
@@ -23,7 +25,9 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   isDebateMode,
   tensionPairs,
   onCounselorClick,
-  onTensionClick
+  onTensionClick,
+  isInitialRender = false,
+  isRefining = false
 }) => {
   // Use dynamic tensions if available, otherwise fall back to static
   const activeTensions = councilData?.tensions.map(t => ({
@@ -46,7 +50,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
       const top = centerY + radius * Math.sin(angle);
       positions.push({
         top: `${top}%`,
-        left: `${left}%`
+        left: `${left}%`,
+        angle: angle // Store angle for animation direction
       });
     }
     return positions;
@@ -58,6 +63,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   const getCoords = (posIndex: number) => {
     if (posIndex >= positions.length) return { x: 500, y: 500 };
     const pos = positions[posIndex];
+    // Position percentages are for the center of the counselor sphere
     const x = parseFloat(pos.left) * 10; // Convert % to 1000 viewBox scale
     const y = parseFloat(pos.top) * 10;
     return { x, y };
@@ -68,7 +74,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
 
       {/* Debate Tension Lines Layer */}
       {isDebateMode && (
-        <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 1000 1000">
+        <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 1000 1000" preserveAspectRatio="none">
           {activeTensions.map((pair, idx) => {
             // Hardcoding mapping for prototype since IDs are fixed
             const idx1 = counselors.findIndex(c => c.id === pair.counselor1);
@@ -128,12 +134,62 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
       {/* Counselors */}
       {counselors.map((counselor, idx) => {
         const pos = positions[idx];
-        const colorMap: Record<string, string> = {
-          blue: 'border-blue-500 text-blue-400 [--glow-color:rgba(59,130,246,0.4)] animate-pulse-glow',
-          green: 'border-green-500 text-green-400 [--glow-color:rgba(16,185,129,0.4)] animate-pulse-glow',
-          yellow: 'border-yellow-500 text-yellow-400 [--glow-color:rgba(234,179,8,0.4)] animate-pulse-glow',
-          purple: 'border-purple-500 text-purple-400 [--glow-color:rgba(168,85,247,0.4)] animate-pulse-glow',
+        const colorMap: Record<string, { border: string, text: string, glow: string }> = {
+          blue: { border: 'border-blue-500', text: 'text-blue-400', glow: 'rgba(59,130,246,0.4)' },
+          green: { border: 'border-green-500', text: 'text-green-400', glow: 'rgba(16,185,129,0.4)' },
+          yellow: { border: 'border-yellow-500', text: 'text-yellow-400', glow: 'rgba(234,179,8,0.4)' },
+          purple: { border: 'border-purple-500', text: 'text-purple-400', glow: 'rgba(168,85,247,0.4)' },
         };
+
+        const colors = colorMap[counselor.color];
+
+        // Calculate direction vector from center (50%, 50%) to counselor position
+        const centerX = 50;
+        const centerY = 50;
+        const targetX = parseFloat(pos.left);
+        const targetY = parseFloat(pos.top);
+        const deltaX = targetX - centerX;
+        const deltaY = targetY - centerY;
+        
+        // For transform, we need the opposite direction (toward center = negative of current offset)
+        const translateXPercent = -deltaX;
+        const translateYPercent = -deltaY;
+
+        // Determine animation and styling based on state
+        let baseClass = `absolute w-32 h-32 rounded-full bg-slate-800/80 backdrop-blur-md border flex flex-col items-center justify-center p-2 transition-all duration-300 hover:scale-110 z-[100] ${colors.border} ${colors.text}`;
+        let animationStyle: React.CSSProperties = { 
+          ['--glow-color' as string]: colors.glow,
+        };
+
+        if (isRefining) {
+          // STATE 1: REFINING
+          // Remove the glow so we can control the transform.
+          // Fade out, scale down, and ignore pointer events.
+          baseClass += ' pointer-events-none opacity-0 scale-50'; 
+          
+          // Move to center
+          animationStyle.top = 'calc(50% - 4rem)';
+          animationStyle.left = 'calc(50% - 4rem)';
+          
+        } else if (isInitialRender) {
+          // STATE 2: ENTERING
+          // Use your entry animation
+          baseClass += ' animate-slide-from-center';
+          
+          // Set target position
+          animationStyle.top = `calc(${pos.top} - 4rem)`;
+          animationStyle.left = `calc(${pos.left} - 4rem)`;
+          
+        } else {
+          // STATE 3: STABLE
+          // NOW we add the glow animation and hover effects
+          baseClass += ' animate-pulse-glow hover:scale-110';
+          
+          // Keep at target position
+          animationStyle.top = `calc(${pos.top} - 4rem)`;
+          animationStyle.left = `calc(${pos.left} - 4rem)`;
+        }
+        // Note: No else block - counselors should just have the base glow animation when idle
 
         return (
           <button
@@ -143,8 +199,9 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
               e.stopPropagation();
               onCounselorClick(counselor);
             }}
-            className={`absolute w-32 h-32 rounded-full bg-slate-800/80 backdrop-blur-md border flex flex-col items-center justify-center p-2 transition-all duration-300 hover:scale-110 z-[100] animate-fade-out-in ${colorMap[counselor.color]}`}
-            style={{ top: `calc(${pos.top} - 4rem)`, left: `calc(${pos.left} - 4rem)` }} // Centering based on size
+            className={baseClass}
+            style={animationStyle}
+            disabled={isRefining}
           >
             <span className="material-symbols-outlined text-3xl mb-2">{counselor.icon}</span>
             <span className="text-xs font-medium text-slate-200">{counselor.name}</span>
