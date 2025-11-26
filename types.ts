@@ -24,7 +24,7 @@ export interface MBTIType {
   color: string;
 }
 
-export type OverlayType = 'NONE' | 'MBTI_SELECTION' | 'MBTI_VALIDATION' | 'COUNSELOR_INSIGHT_BAR' | 'COUNSELOR_PANEL' | 'DEBATE_DIALOGUE' | 'ARGUMENT_MAP';
+export type OverlayType = 'NONE' | 'MBTI_SELECTION' | 'MBTI_VALIDATION' | 'COUNSELOR_INSIGHT_BAR' | 'COUNSELOR_PANEL' | 'DEBATE_DIALOGUE' | 'ARGUMENT_MAP' | 'DILEMMA_HISTORY';
 
 export interface TensionPair {
   counselor1: string; // ID

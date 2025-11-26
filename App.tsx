@@ -7,6 +7,7 @@ import MBTIOverlay from './components/overlays/MBTIOverlay';
 import InsightBar from './components/overlays/InsightBar';
 import CounselorOverlay from './components/overlays/CounselorOverlay';
 import DebateOverlay from './components/overlays/DebateOverlay';
+import DilemmaHistoryOverlay from './components/overlays/DilemmaHistoryOverlay';
 import { Counselor, TensionPair, OverlayType, CouncilResponse } from './types';
 import { COUNSELORS, TENSION_PAIRS } from './constants';
 import { fetchCouncilAnalysis } from './services/CouncilService';
@@ -30,6 +31,11 @@ const App: React.FC = () => {
   const [originalSummary, setOriginalSummary] = useState<string>(''); // Store initial summary, never changes
   const [isInitialRender, setIsInitialRender] = useState(false); // For initial counselor animation
   const [loadingMessage, setLoadingMessage] = useState<string>(''); // For center bubble during refinement
+  const [refinementHistory, setRefinementHistory] = useState<string[]>([]); // Track all refinement contexts
+  
+  // Highlight states
+  const [isBottomBarHighlighted, setIsBottomBarHighlighted] = useState(false);
+  const [isSidebarHighlighted, setIsSidebarHighlighted] = useState(false);
 
   // Overlay Management
   const [activeOverlay, setActiveOverlay] = useState<OverlayType>('NONE');
@@ -137,6 +143,9 @@ const App: React.FC = () => {
     setIsRefining(true);
     setLoadingMessage('Council reevaluating...');
     
+    // Store refinement in history
+    setRefinementHistory(prev => [...prev, additionalContext]);
+    
     try {
       // Call API with refinement data
       const data = await fetchCouncilAnalysis(
@@ -191,6 +200,46 @@ const App: React.FC = () => {
     setActiveOverlay('DEBATE_DIALOGUE');
   };
 
+  const handleCenterClick = () => {
+    setActiveOverlay('DILEMMA_HISTORY');
+  };
+
+  const handleAddMoreContext = () => {
+    setActiveOverlay('NONE');
+    // Highlight bottom bar after panel closes (400ms animation)
+    setTimeout(() => {
+      setIsBottomBarHighlighted(true);
+      setTimeout(() => {
+        setIsBottomBarHighlighted(false);
+      }, 2000); // Highlight for 2 seconds
+    }, 400);
+  };
+
+  const handleRestartScenario = () => {
+    // Reset all state
+    setDilemma('');
+    setCouncilData(null);
+    setViewState('INITIAL');
+    setOriginalSummary('');
+    setContextSummary('');
+    setRefinementHistory([]);
+    setAdditionalContext('');
+    setActiveOverlay('NONE');
+    setSelectedCounselor(null);
+    setPreviousCounselor(null);
+    setSelectedTensionPair(null);
+    setIsDebateMode(false);
+    
+    // Open sidebar and highlight textarea
+    setSidebarOpen(true);
+    setTimeout(() => {
+      setIsSidebarHighlighted(true);
+      setTimeout(() => {
+        setIsSidebarHighlighted(false);
+      }, 2000); // Highlight for 2 seconds
+    }, 400); // After panel slides out
+  };
+
   const closeOverlay = () => {
     setActiveOverlay('NONE');
     setSelectedCounselor(null);
@@ -218,6 +267,7 @@ const App: React.FC = () => {
         onSummon={handleSummonCouncil}
         isGenerating={isGenerating}
         isMBTIOverlayOpen={activeOverlay === 'MBTI_SELECTION'}
+        isHighlighted={isSidebarHighlighted}
       />
 
       {/* 2. Main Content Area */}
@@ -249,6 +299,7 @@ const App: React.FC = () => {
               tensionPairs={buildTensionPairs(councilData)}
               onCounselorClick={handleCounselorClick}
               onTensionClick={handleTensionClick}
+              onCenterClick={handleCenterClick}
               isInitialRender={isInitialRender}
               isRefining={isRefining}
             />
@@ -272,6 +323,7 @@ const App: React.FC = () => {
           additionalContext={additionalContext}
           setAdditionalContext={setAdditionalContext}
           isRefining={isRefining}
+          isHighlighted={isBottomBarHighlighted}
         />
 
       </main>
@@ -319,6 +371,18 @@ const App: React.FC = () => {
             (t.counselor_ids[0] === selectedTensionPair.counselor2 && t.counselor_ids[1] === selectedTensionPair.counselor1)
           )}
           onClose={closeOverlay}
+        />
+      )}
+
+      {/* Dilemma History Overlay */}
+      {activeOverlay === 'DILEMMA_HISTORY' && (
+        <DilemmaHistoryOverlay
+          dilemma={dilemma}
+          originalSummary={originalSummary}
+          refinementHistory={refinementHistory}
+          onClose={closeOverlay}
+          onAddMoreContext={handleAddMoreContext}
+          onRestartScenario={handleRestartScenario}
         />
       )}
 

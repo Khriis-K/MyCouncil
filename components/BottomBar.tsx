@@ -8,6 +8,7 @@ interface BottomBarProps {
   additionalContext: string;
   setAdditionalContext: (value: string) => void;
   isRefining: boolean;
+  isHighlighted?: boolean;
 }
 
 const BottomBar: React.FC<BottomBarProps> = ({ 
@@ -17,7 +18,8 @@ const BottomBar: React.FC<BottomBarProps> = ({
   onRefine, 
   additionalContext, 
   setAdditionalContext,
-  isRefining 
+  isRefining,
+  isHighlighted = false
 }) => {
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && additionalContext.trim() && !isDisabled && !isRefining) {
@@ -26,7 +28,7 @@ const BottomBar: React.FC<BottomBarProps> = ({
   };
 
   return (
-    <footer className={`absolute bottom-0 left-0 right-0 bg-slate-900/80 backdrop-blur-md border-t border-slate-800 p-4 z-40 transition-opacity duration-300 ${isDisabled ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+    <footer className={`absolute bottom-0 left-0 right-0 bg-slate-900/80 backdrop-blur-md border-t border-slate-800 p-4 z-40 transition-all duration-300 ${isDisabled ? 'opacity-50 pointer-events-none' : 'opacity-100'} ${isHighlighted ? 'ring-4 ring-primary ring-opacity-50 shadow-[0_0_30px_rgba(79,70,229,0.6)]' : ''}`}>
       <div className="max-w-screen-2xl mx-auto flex items-center space-x-4">
         
         {/* Context Input */}

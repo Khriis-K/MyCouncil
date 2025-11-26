@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MBTI_TYPES } from '../constants';
 
 interface SidebarProps {
@@ -15,6 +15,7 @@ interface SidebarProps {
   onSummon: () => void;
   isGenerating?: boolean;
   isMBTIOverlayOpen?: boolean;
+  isHighlighted?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -29,8 +30,16 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSelectMBTI,
   onSummon,
   isGenerating = false,
-  isMBTIOverlayOpen = false
+  isMBTIOverlayOpen = false,
+  isHighlighted = false
 }) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (isHighlighted && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isHighlighted]);
 
   const getMBTIDisplay = () => {
     if (!selectedMBTI || selectedMBTI === 'BALANCED') return 'Balanced (Default)';
@@ -54,8 +63,13 @@ const Sidebar: React.FC<SidebarProps> = ({
           }`}
       >
         <div className="p-6 space-y-8 flex-grow overflow-y-auto scrollbar-hide">
-          <header>
-            <h1 className="text-2xl font-bold text-white tracking-tight">MyCouncil</h1>
+          <header className="flex items-center justify-center mb-4">
+            <img 
+              src="/imgs/logo_transparent.png" 
+              alt="MyCouncil" 
+              style={{ width: '75%', height: 'auto' }}
+              className="animate-float-glow"
+            />
           </header>
 
           <div className="space-y-6">
@@ -65,9 +79,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                 What's on your mind? <span className="text-slate-500">(Your Dilemma)</span>
               </label>
               <textarea
+                ref={textareaRef}
                 id="dilemma"
                 rows={5}
-                className="w-full rounded-lg bg-slate-800 border-slate-700 text-slate-200 placeholder-slate-500 focus:ring-primary focus:border-primary resize-none p-3 text-sm"
+                className={`w-full rounded-lg bg-slate-800 border-slate-700 text-slate-200 placeholder-slate-500 focus:ring-primary focus:border-primary resize-none p-3 text-sm transition-all ${isHighlighted ? 'ring-4 ring-primary ring-opacity-50 shadow-[0_0_30px_rgba(79,70,229,0.6)]' : ''}`}
                 placeholder="I've been offered a new job in a different city. It's a great career opportunity but..."
                 value={dilemma}
                 onChange={(e) => setDilemma(e.target.value)}

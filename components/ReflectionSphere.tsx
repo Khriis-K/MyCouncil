@@ -12,6 +12,7 @@ interface ReflectionSphereProps {
   tensionPairs: TensionPair[];
   onCounselorClick: (counselor: Counselor) => void;
   onTensionClick: (pair: TensionPair) => void;
+  onCenterClick?: () => void;
   isInitialRender?: boolean; // For initial counselor animation
   isRefining?: boolean; // For refinement loading state
 }
@@ -26,6 +27,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   tensionPairs,
   onCounselorClick,
   onTensionClick,
+  onCenterClick,
   isInitialRender = false,
   isRefining = false
 }) => {
@@ -118,7 +120,10 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
 
       {/* Center Dilemma Node */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-        <div className="w-64 h-64 rounded-full bg-slate-800/40 backdrop-blur-sm border border-slate-700 flex flex-col items-center justify-center text-center p-5 shadow-[0_0_40px_rgba(79,70,229,0.2)] group hover:bg-slate-800/60 transition-all">
+        <button
+          onClick={onCenterClick}
+          className="w-64 h-64 rounded-full bg-slate-800/40 backdrop-blur-sm border border-slate-700 flex flex-col items-center justify-center text-center p-5 shadow-[0_0_40px_rgba(79,70,229,0.2)] group hover:bg-slate-800/60 transition-all cursor-pointer"
+        >
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 group-hover:text-primary transition-colors">Your Dilemma</span>
           <p className="text-lg font-bold text-white leading-tight break-words w-full line-clamp-3 px-2">
             {dilemmaSummary || "Waiting for input..."}
@@ -128,7 +133,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
               {contextSummary}
             </span>
           )}
-        </div>
+        </button>
       </div>
 
       {/* Counselors */}
