@@ -28,9 +28,10 @@
             },
             animation: {
               'fade-in': 'fadeIn 0.3s ease-out',
+              'fade-out-in': 'fadeOutIn 0.6s ease-in-out',
               'slide-in-right': 'slideInRight 0.4s ease-out',
               'slide-in-from-right': 'slideInFromRight 0.3s ease-out',
-              'slide-out-left': 'slideOutLeft 0.3s ease-out',
+              'slide-out-left': 'slideOutLeft 0.3s ease-out forwards',
               'slide-down': 'slideDown 0.4s ease-out',
               'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
               'pulse-glow': 'pulseGlow 2.5s ease-in-out infinite',
@@ -39,6 +40,11 @@
               fadeIn: {
                 '0%': { opacity: '0' },
                 '100%': { opacity: '1' },
+              },
+              fadeOutIn: {
+                '0%': { opacity: '1', transform: 'scale(1)' },
+                '50%': { opacity: '0', transform: 'scale(0.95)' },
+                '100%': { opacity: '1', transform: 'scale(1)' },
               },
               slideInRight: {
                 '0%': { transform: 'translateX(100%)' },

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import ReflectionSphere from './components/ReflectionSphere';
 import BottomBar from './components/BottomBar';
@@ -22,6 +22,12 @@ const App: React.FC = () => {
   const [viewState, setViewState] = useState<'INITIAL' | 'SPHERE'>('INITIAL');
   const [isDebateMode, setIsDebateMode] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false); // Loading state
+  
+  // Refinement context tracking
+  const [additionalContext, setAdditionalContext] = useState<string>('');
+  const [contextSummary, setContextSummary] = useState<string>(''); // AI-generated summary of previous refinements
+  const [isRefining, setIsRefining] = useState(false);
+  const [originalSummary, setOriginalSummary] = useState<string>(''); // Store initial summary, never changes
 
   // Overlay Management
   const [activeOverlay, setActiveOverlay] = useState<OverlayType>('NONE');
@@ -57,6 +63,7 @@ const App: React.FC = () => {
       console.log("fetchCouncilAnalysis success:", data);
 
       setCouncilData(data);
+      setOriginalSummary(data.summary); // Store the original summary
       setViewState('SPHERE');
 
       // On mobile/tablet you might close sidebar here, keeping open for desktop
@@ -78,14 +85,81 @@ const App: React.FC = () => {
     if (selectedCounselor) {
       // Trigger slide-out, then slide-in new one
       setPreviousCounselor(selectedCounselor);
+      setSelectedCounselor(null); // Clear immediately to prevent duplicate rendering
+      // CHANGE: Increased from 300 to 350 to prevents animation "snap-back"
       setTimeout(() => {
         setSelectedCounselor(counselor);
         setPreviousCounselor(null);
         setActiveOverlay('COUNSELOR_INSIGHT_BAR');
-      }, 300); // Match slide-out animation duration
+      }, 350); // Match slide-out animation duration
     } else {
       setSelectedCounselor(counselor);
       setActiveOverlay('COUNSELOR_INSIGHT_BAR');
+    }
+  };
+
+  // Handle clicks outside InsightBar to close it
+  useEffect(() => {
+    if (activeOverlay !== 'COUNSELOR_INSIGHT_BAR') return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // Check if click is on InsightBar or counselor spheres
+      if (target.closest('[data-insight-bar]') || target.closest('[data-counselor-sphere]')) {
+        return;
+      }
+      // Close the insight bar
+      setPreviousCounselor(selectedCounselor);
+      setSelectedCounselor(null); // Clear immediately
+      setTimeout(() => {
+        setPreviousCounselor(null);
+        setActiveOverlay('NONE');
+      }, 300);
+    };
+
+    // Use capture phase to ensure this runs before button onClick handlers
+    document.addEventListener('click', handleClickOutside, true);
+    return () => document.removeEventListener('click', handleClickOutside, true);
+  }, [activeOverlay, selectedCounselor]);
+
+  const handleRefine = async () => {
+    if (!additionalContext.trim() || !councilData) return;
+    
+    console.log("handleRefine called with context:", additionalContext);
+    setIsRefining(true);
+    
+    try {
+      // Call API with refinement data
+      const data = await fetchCouncilAnalysis(
+        dilemma,
+        selectedMBTI,
+        councilSize,
+        contextSummary, // Previous summary (empty on first refinement)
+        additionalContext // New context
+      );
+      
+      console.log("Refinement success:", data);
+      
+      // Extract new context summary from response if available
+      if (data.context_summary) {
+        setContextSummary(data.context_summary);
+      }
+      
+      // Update council data (triggers fade transition)
+      setCouncilData(data);
+      
+      // Clear additional context input
+      setAdditionalContext('');
+      
+      // Close any open overlays
+      closeOverlay();
+      
+    } catch (error) {
+      console.error("Error refining perspective:", error);
+      const message = error instanceof Error ? error.message : "Failed to refine perspective. Please try again.";
+      alert(message);
+    } finally {
+      setIsRefining(false);
     }
   };
 
@@ -148,7 +222,8 @@ const App: React.FC = () => {
           ) : (
             <ReflectionSphere
               dilemma={dilemma}
-              dilemmaSummary={councilData?.summary || ''}
+              dilemmaSummary={originalSummary || councilData?.summary || ''}
+              contextSummary={contextSummary}
               counselors={buildCounselorsFromResponse(selectedMBTI, councilSize, councilData)}
               councilData={councilData}
               isDebateMode={isDebateMode}
@@ -171,8 +246,11 @@ const App: React.FC = () => {
         <BottomBar
           isDebateMode={isDebateMode}
           toggleDebateMode={() => setIsDebateMode(!isDebateMode)}
-          isDisabled={activeOverlay !== 'NONE'}
-          onRefine={() => { }}
+          isDisabled={viewState === 'INITIAL' || activeOverlay !== 'NONE'}
+          onRefine={handleRefine}
+          additionalContext={additionalContext}
+          setAdditionalContext={setAdditionalContext}
+          isRefining={isRefining}
         />
 
       </main>
@@ -182,6 +260,7 @@ const App: React.FC = () => {
       {/* Counselor Insight Bar (Step 1) - Show exiting bar if transitioning */}
       {previousCounselor && councilData && (
         <InsightBar
+          key={`exiting-${previousCounselor.id}`}
           counselor={previousCounselor}
           dynamicData={councilData.counselors.find(c => c.id === previousCounselor.id)}
           onViewFull={handleViewFullPanel}
@@ -192,6 +271,7 @@ const App: React.FC = () => {
       
       {activeOverlay === 'COUNSELOR_INSIGHT_BAR' && selectedCounselor && councilData && !previousCounselor && (
         <InsightBar
+          key={`active-${selectedCounselor.id}`}
           counselor={selectedCounselor}
           dynamicData={councilData.counselors.find(c => c.id === selectedCounselor.id)}
           onViewFull={handleViewFullPanel}

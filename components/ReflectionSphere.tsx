@@ -5,6 +5,7 @@ import { Counselor, TensionPair, CouncilResponse } from '../types';
 interface ReflectionSphereProps {
   dilemma: string;
   dilemmaSummary: string;
+  contextSummary?: string; // AI-generated summary of refinements
   counselors: Counselor[];
   councilData: CouncilResponse | null; // New prop
   isDebateMode: boolean;
@@ -16,6 +17,7 @@ interface ReflectionSphereProps {
 const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   dilemma,
   dilemmaSummary,
+  contextSummary,
   counselors,
   councilData,
   isDebateMode,
@@ -110,11 +112,16 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
 
       {/* Center Dilemma Node */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-        <div className="w-64 h-64 rounded-full bg-slate-800/40 backdrop-blur-sm border border-slate-700 flex flex-col items-center justify-center text-center p-6 shadow-[0_0_40px_rgba(79,70,229,0.2)] group hover:bg-slate-800/60 transition-all">
+        <div className="w-64 h-64 rounded-full bg-slate-800/40 backdrop-blur-sm border border-slate-700 flex flex-col items-center justify-center text-center p-5 shadow-[0_0_40px_rgba(79,70,229,0.2)] group hover:bg-slate-800/60 transition-all">
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 group-hover:text-primary transition-colors">Your Dilemma</span>
-          <p className="text-xl font-bold text-white leading-tight break-words w-full line-clamp-4">
+          <p className="text-lg font-bold text-white leading-tight break-words w-full line-clamp-3 px-2">
             {dilemmaSummary || "Waiting for input..."}
           </p>
+          {contextSummary && (
+            <span className="text-[10px] text-slate-400 mt-2 italic leading-tight px-3 break-words">
+              {contextSummary}
+            </span>
+          )}
         </div>
       </div>
 
@@ -131,8 +138,12 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
         return (
           <button
             key={counselor.id}
-            onClick={() => onCounselorClick(counselor)}
-            className={`absolute w-32 h-32 rounded-full bg-slate-800/80 backdrop-blur-md border flex flex-col items-center justify-center p-2 transition-all duration-300 hover:scale-110 z-20 ${colorMap[counselor.color]}`}
+            data-counselor-sphere
+            onClick={(e) => {
+              e.stopPropagation();
+              onCounselorClick(counselor);
+            }}
+            className={`absolute w-32 h-32 rounded-full bg-slate-800/80 backdrop-blur-md border flex flex-col items-center justify-center p-2 transition-all duration-300 hover:scale-110 z-[100] animate-fade-out-in ${colorMap[counselor.color]}`}
             style={{ top: `calc(${pos.top} - 4rem)`, left: `calc(${pos.left} - 4rem)` }} // Centering based on size
           >
             <span className="material-symbols-outlined text-3xl mb-2">{counselor.icon}</span>

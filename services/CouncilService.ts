@@ -5,10 +5,18 @@ const API_URL = 'http://localhost:3000/api/summon';
 export const fetchCouncilAnalysis = async (
   dilemma: string,
   mbti: string | null,
-  councilSize: number = 4
+  councilSize: number = 4,
+  previousSummary?: string,  // Optional: AI-generated summary of previous refinements
+  additionalContext?: string  // Optional: New context for refinement
 ): Promise<CouncilResponse> => {
   try {
-    const requestBody = { dilemma, mbti, councilSize };
+    const requestBody = { 
+      dilemma, 
+      mbti, 
+      councilSize,
+      ...(previousSummary && { previousSummary }),
+      ...(additionalContext && { additionalContext })
+    };
     console.log('🚀 Sending request to backend:', requestBody);
 
     const response = await fetch(API_URL, {

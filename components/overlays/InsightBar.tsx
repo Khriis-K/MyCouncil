@@ -36,9 +36,11 @@ const InsightBar: React.FC<InsightBarProps> = ({ counselor, dynamicData, onViewF
 
   return (
     <div 
+      data-insight-bar
       className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-40 w-full max-w-5xl px-8 transition-all duration-300 ${
         isExiting ? 'animate-slide-out-left' : 'animate-slide-in-from-right'
       }`}
+      onClick={(e) => e.stopPropagation()}
     >
       <div className={`flex items-center gap-4 px-6 py-4 rounded-full border backdrop-blur-md shadow-2xl ${colorAccents[counselor.color]}`}>
         {/* Icon */}

@@ -34,6 +34,7 @@ export interface TensionPair {
 
 export interface CouncilResponse {
   summary: string;
+  context_summary?: string; // AI-generated display label for latest refinement (max 50 chars)
   counselors: {
     id: string; // Dynamic counselor role (mirror, twinflame, playmate, advisor, teammate, consigliere, alterego)
     impression: string; // Brief 1-sentence first impression for the insight bar

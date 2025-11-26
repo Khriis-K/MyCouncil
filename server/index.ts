@@ -22,6 +22,10 @@ const summonSchema = z.object({
     .max(1000, "Dilemma cannot exceed 1000 characters"),
   mbti: z.string().nullable().optional(),
   councilSize: z.number().min(3).max(7).optional().default(4),
+  previousSummary: z.string().optional(),
+  additionalContext: z.string()
+    .max(300, "Additional context cannot exceed 300 characters")
+    .optional(),
 });
 
 // Rate Limiter
@@ -41,12 +45,37 @@ console.log(`Rate limiting enabled: ${process.env.NODE_ENV === 'production' ? 'S
 /**
  * Builds dynamic SYSTEM_PROMPT based on user MBTI and council size
  */
-function buildSystemPrompt(selectedCounselors: ReturnType<typeof selectCouncilors>): string {
+function buildSystemPrompt(selectedCounselors: ReturnType<typeof selectCouncilors>, isRefinement: boolean = false): string {
   const counselorDescriptions = selectedCounselors.map(c => 
     `${c.role.charAt(0).toUpperCase() + c.role.slice(1)} - ${c.title} (${c.mbtiCode}): ${c.description}`
   ).join('\n');
 
   const counselorIds = selectedCounselors.map(c => `"${c.role}"`).join(' | ');
+
+  const refinementGuidance = isRefinement ? `
+IMPORTANT - REFINEMENT MODE:
+This is a follow-up request. The user has provided additional context to refine their original dilemma.
+You will receive:
+1. Original dilemma (user's core question)
+2. Previous context summary (optional) - a brief label from the last refinement
+3. New additional context (what the user just added - max 300 characters)
+
+You should reassess the situation with ALL the context provided. Generate updated counselor responses based on the full picture.
+
+Also generate a "context_summary" field - a brief display label (max 50 chars) summarizing the latest refinement:
+{
+  "summary": "..." (CRITICAL: Keep this EXACTLY the same as the initial response - do NOT change this field during refinements),
+  "context_summary": "Brief label for latest refinement (max 50 chars)",
+  "counselors": [...],
+  "tensions": [...]
+}
+
+Example:
+- User adds: "My partner is supportive but my parents disapprove"
+- context_summary: "Partner supportive, parents disapprove"
+
+The context_summary is just a UI label. Keep it under 50 characters.
+` : '';
 
   return `
 You are "The Council", a collection of ${selectedCounselors.length} distinct counselor personas designed to help users reflect on complex dilemmas.
@@ -60,6 +89,8 @@ Each counselor represents a different thinking style and worldview. They should:
 - Offer genuinely different reasoning based on their personality type's natural tendencies
 - Be direct, compassionate, and thought-provoking
 - Focus on practical wisdom, not theoretical psychology
+
+${refinementGuidance}
 
 You must output a JSON object with the following structure:
 {
@@ -155,7 +186,7 @@ app.post('/api/summon', async (req, res) => {
       });
     }
 
-    const { dilemma, mbti, councilSize } = validationResult.data;
+    const { dilemma, mbti, councilSize, previousSummary, additionalContext } = validationResult.data;
     // Try both VITE_ prefixed (legacy) and standard keys
     const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
@@ -168,23 +199,30 @@ app.post('/api/summon', async (req, res) => {
 
     // Select counselors dynamically based on user MBTI and council size
     const selectedCounselors = selectCouncilors(mbti, councilSize);
-    const systemPrompt = buildSystemPrompt(selectedCounselors);
+    
+    // Determine if this is a refinement request
+    const isRefinement = !!(previousSummary || additionalContext);
+    const systemPrompt = buildSystemPrompt(selectedCounselors, isRefinement);
 
-    const userPrompt = `
-      User MBTI: ${mbti || "BALANCED"}
-      Dilemma: ${dilemma}
-      
-      Generate The Council's analysis.
-    `;
+    // Build user prompt with optional context fields
+    let userPrompt = `User MBTI: ${mbti || "BALANCED"}\nDilemma: ${dilemma}`;
+    
+    if (previousSummary) {
+      userPrompt += `\n\nPrevious Context Summary: ${previousSummary}`;
+    }
+    
+    if (additionalContext) {
+      userPrompt += `\n\nAdditional Context: ${additionalContext}`;
+    }
+    
+    userPrompt += '\n\nGenerate The Council\'s analysis.';
 
     console.log('Selected counselors:', selectedCounselors.map(c => c.role));
+    console.log('Refinement mode:', isRefinement);
     console.log('Calling Gemini API...');
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      config: {
-        responseMimeType: 'application/json',
-      },
       contents: [
         { role: 'user', parts: [{ text: systemPrompt }] },
         { role: 'user', parts: [{ text: userPrompt }] }
