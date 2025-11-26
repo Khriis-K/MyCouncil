@@ -30,16 +30,27 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
     type: t.type
   })) || tensionPairs;
   
-  // Define positions for up to 7 counselors in a circular arrangement
-  const positions = [
-    { top: '15%', left: '50%' },  // 1. Top
-    { top: '30%', left: '80%' },  // 2. Top-Right
-    { top: '65%', left: '85%' },  // 3. Bottom-Right
-    { top: '85%', left: '50%' },  // 4. Bottom
-    { top: '65%', left: '15%' },  // 5. Bottom-Left
-    { top: '30%', left: '20%' },  // 6. Top-Left
-    { top: '50%', left: '90%' },  // 7. Right
-  ];
+  // Calculate evenly-spaced circular positions based on number of counselors
+  const calculatePositions = (count: number) => {
+    const positions = [];
+    const radius = 40; // Distance from center (percentage)
+    const centerX = 50;
+    const centerY = 50;
+    const startAngle = -90; // Start at top (12 o'clock)
+    
+    for (let i = 0; i < count; i++) {
+      const angle = (startAngle + (360 / count) * i) * (Math.PI / 180);
+      const left = centerX + radius * Math.cos(angle);
+      const top = centerY + radius * Math.sin(angle);
+      positions.push({
+        top: `${top}%`,
+        left: `${left}%`
+      });
+    }
+    return positions;
+  };
+
+  const positions = calculatePositions(counselors.length);
 
   // Helper to get coordinates for SVG lines based on position percentages
   const getCoords = (posIndex: number) => {
