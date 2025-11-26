@@ -26,6 +26,16 @@ export interface MBTIType {
 
 export type OverlayType = 'NONE' | 'MBTI_SELECTION' | 'MBTI_VALIDATION' | 'COUNSELOR_INSIGHT_BAR' | 'COUNSELOR_PANEL' | 'DEBATE_DIALOGUE' | 'ARGUMENT_MAP' | 'DILEMMA_HISTORY';
 
+export type ReflectionFocus = 'Decision-Making' | 'Emotional Processing' | 'Creative Problem Solving';
+
+export interface ReflectionFocusOption {
+  value: ReflectionFocus;
+  label: string;
+  description: string;
+  color: string;
+  badgeColor: string;
+}
+
 export interface TensionPair {
   counselor1: string; // ID
   counselor2: string; // ID

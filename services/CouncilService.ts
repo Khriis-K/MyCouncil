@@ -1,4 +1,4 @@
-import { CouncilResponse } from "../types";
+import { CouncilResponse, ReflectionFocus } from "../types";
 
 const API_URL = 'http://localhost:3000/api/summon';
 
@@ -7,7 +7,8 @@ export const fetchCouncilAnalysis = async (
   mbti: string | null,
   councilSize: number = 4,
   previousSummary?: string,  // Optional: AI-generated summary of previous refinements
-  additionalContext?: string  // Optional: New context for refinement
+  additionalContext?: string,  // Optional: New context for refinement
+  reflectionFocus?: ReflectionFocus  // Optional: Reflection focus lens
 ): Promise<CouncilResponse> => {
   try {
     const requestBody = { 
@@ -15,7 +16,8 @@ export const fetchCouncilAnalysis = async (
       mbti, 
       councilSize,
       ...(previousSummary && { previousSummary }),
-      ...(additionalContext && { additionalContext })
+      ...(additionalContext && { additionalContext }),
+      ...(reflectionFocus && { reflectionFocus })
     };
     console.log('🚀 Sending request to backend:', requestBody);
 

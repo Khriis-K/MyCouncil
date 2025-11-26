@@ -8,7 +8,7 @@ import InsightBar from './components/overlays/InsightBar';
 import CounselorOverlay from './components/overlays/CounselorOverlay';
 import DebateOverlay from './components/overlays/DebateOverlay';
 import DilemmaHistoryOverlay from './components/overlays/DilemmaHistoryOverlay';
-import { Counselor, TensionPair, OverlayType, CouncilResponse } from './types';
+import { Counselor, TensionPair, OverlayType, CouncilResponse, ReflectionFocus } from './types';
 import { COUNSELORS, TENSION_PAIRS } from './constants';
 import { fetchCouncilAnalysis } from './services/CouncilService';
 import { buildCounselorsFromResponse, buildTensionPairs } from './utils/counselorMapper';
@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [councilData, setCouncilData] = useState<CouncilResponse | null>(null);
   const [selectedMBTI, setSelectedMBTI] = useState<string | null>('BALANCED');
   const [councilSize, setCouncilSize] = useState<number>(4);
+  const [reflectionFocus, setReflectionFocus] = useState<ReflectionFocus>('Decision-Making');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [viewState, setViewState] = useState<'INITIAL' | 'SPHERE'>('INITIAL');
   const [isDebateMode, setIsDebateMode] = useState(false);
@@ -67,7 +68,7 @@ const App: React.FC = () => {
 
     try {
       console.log("Calling fetchCouncilAnalysis...");
-      const data = await fetchCouncilAnalysis(dilemma, selectedMBTI, councilSize);
+      const data = await fetchCouncilAnalysis(dilemma, selectedMBTI, councilSize, undefined, undefined, reflectionFocus);
       console.log("fetchCouncilAnalysis success:", data);
 
       setCouncilData(data);
@@ -153,7 +154,8 @@ const App: React.FC = () => {
         selectedMBTI,
         councilSize,
         contextSummary, // Previous summary (empty on first refinement)
-        additionalContext // New context
+        additionalContext, // New context
+        reflectionFocus
       );
       
       console.log("Refinement success:", data);
@@ -229,6 +231,7 @@ const App: React.FC = () => {
     setPreviousCounselor(null);
     setSelectedTensionPair(null);
     setIsDebateMode(false);
+    setReflectionFocus('Decision-Making');
     
     // Open sidebar and highlight textarea
     setSidebarOpen(true);
@@ -259,15 +262,19 @@ const App: React.FC = () => {
         selectedMBTI={selectedMBTI}
         councilSize={councilSize}
         setCouncilSize={setCouncilSize}
+        reflectionFocus={reflectionFocus}
+        setReflectionFocus={setReflectionFocus}
         onOpenMBTI={handleOpenMBTI}
         onSelectMBTI={(val) => {
           setSelectedMBTI(val);
           if (val === 'BALANCED') setActiveOverlay('NONE');
         }}
         onSummon={handleSummonCouncil}
+        onRestart={handleRestartScenario}
         isGenerating={isGenerating}
         isMBTIOverlayOpen={activeOverlay === 'MBTI_SELECTION'}
         isHighlighted={isSidebarHighlighted}
+        hasCouncil={viewState === 'SPHERE'}
       />
 
       {/* 2. Main Content Area */}
@@ -302,6 +309,7 @@ const App: React.FC = () => {
               onCenterClick={handleCenterClick}
               isInitialRender={isInitialRender}
               isRefining={isRefining}
+              reflectionFocus={reflectionFocus}
             />
           )}
         </div>

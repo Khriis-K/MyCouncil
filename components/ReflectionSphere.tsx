@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Counselor, TensionPair, CouncilResponse } from '../types';
+import { Counselor, TensionPair, CouncilResponse, ReflectionFocus } from '../types';
+import { REFLECTION_FOCUS_OPTIONS } from '../constants';
 
 interface ReflectionSphereProps {
   dilemma: string;
@@ -15,6 +16,7 @@ interface ReflectionSphereProps {
   onCenterClick?: () => void;
   isInitialRender?: boolean; // For initial counselor animation
   isRefining?: boolean; // For refinement loading state
+  reflectionFocus?: ReflectionFocus;
 }
 
 const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
@@ -29,7 +31,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   onTensionClick,
   onCenterClick,
   isInitialRender = false,
-  isRefining = false
+  isRefining = false,
+  reflectionFocus
 }) => {
   // Use dynamic tensions if available, otherwise fall back to static
   const activeTensions = councilData?.tensions.map(t => ({
@@ -37,6 +40,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
     counselor2: t.counselor_ids[1],
     type: t.type
   })) || tensionPairs;
+  
+  const currentFocusOption = reflectionFocus ? REFLECTION_FOCUS_OPTIONS.find(opt => opt.value === reflectionFocus) : null;
   
   // Calculate evenly-spaced circular positions based on number of counselors
   const calculatePositions = (count: number) => {
@@ -73,6 +78,25 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
 
   return (
     <div className="relative w-full h-full max-w-5xl max-h-[80vh] aspect-square flex items-center justify-center">
+
+      {/* Reflection Focus Indicator */}
+      {currentFocusOption && (
+        <div className="absolute top-8 right-8 z-20">
+          <div className={`px-4 py-2 rounded-lg border ${currentFocusOption.badgeColor} backdrop-blur-sm flex items-center gap-2 shadow-lg`}>
+            <span className="material-symbols-outlined text-sm">visibility</span>
+            <span className="text-sm font-medium">{currentFocusOption.label} Lens</span>
+          </div>
+        </div>
+      )}
+
+      {/* Analyzing Heading */}
+      {currentFocusOption && (
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-10">
+          <p className={`text-sm font-medium ${currentFocusOption.color} opacity-70`}>
+            Analyzing through {currentFocusOption.label.toLowerCase()} perspective
+          </p>
+        </div>
+      )}
 
       {/* Debate Tension Lines Layer */}
       {isDebateMode && (

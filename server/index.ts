@@ -26,6 +26,7 @@ const summonSchema = z.object({
   additionalContext: z.string()
     .max(300, "Additional context cannot exceed 300 characters")
     .optional(),
+  reflectionFocus: z.enum(['Decision-Making', 'Emotional Processing', 'Creative Problem Solving']).optional(),
 });
 
 // Rate Limiter
@@ -45,10 +46,21 @@ console.log(`Rate limiting enabled: ${process.env.NODE_ENV === 'production' ? 'S
 /**
  * Builds dynamic SYSTEM_PROMPT based on user MBTI and council size
  */
-function buildSystemPrompt(selectedCounselors: ReturnType<typeof selectCouncilors>, isRefinement: boolean = false): string {
+function buildSystemPrompt(selectedCounselors: ReturnType<typeof selectCouncilors>, isRefinement: boolean = false, reflectionFocus?: string): string {
   const counselorDescriptions = selectedCounselors.map(c => 
     `${c.role.charAt(0).toUpperCase() + c.role.slice(1)} - ${c.title} (${c.mbtiCode}): ${c.description}`
   ).join('\n');
+
+  // Define focus-specific guidance
+  const focusGuidance: Record<string, string> = {
+    'Decision-Making': 'Emphasize practical choices, tradeoffs, actionable outcomes, and logical decision-making frameworks. Focus on weighing options, analyzing consequences, and providing clear recommendations.',
+    'Emotional Processing': 'Focus on feelings, values, internal emotional conflicts, and emotional well-being. Prioritize understanding the user\'s emotional state, validating their feelings, and exploring how emotions influence their situation.',
+    'Creative Problem Solving': 'Prioritize novel perspectives, unconventional alternatives, innovative thinking, and creative solutions. Encourage brainstorming, thinking outside the box, and exploring unique approaches that may not be immediately obvious.'
+  };
+
+  const focusInstruction = reflectionFocus && focusGuidance[reflectionFocus]
+    ? `\n\nREFLECTION FOCUS: ${reflectionFocus}\n${focusGuidance[reflectionFocus]}\nEnsure all counselor assessments, action plans, and reflections align with this analytical lens.`
+    : '';
 
   const counselorIds = selectedCounselors.map(c => `"${c.role}"`).join(' | ');
 
@@ -171,7 +183,7 @@ You must output a JSON object with the following structure:
 Important:
 - Tailor the tone based on the user's MBTI type if provided.
 - Ensure the "tensions" represent genuine philosophical or practical disagreements relevant to the dilemma.
-- The output MUST be valid JSON. Do not include markdown formatting like \`\`\`json.
+- The output MUST be valid JSON. Do not include markdown formatting like \`\`\`json.${focusInstruction}
 `;
 
 app.post('/api/summon', async (req, res) => {
@@ -186,7 +198,7 @@ app.post('/api/summon', async (req, res) => {
       });
     }
 
-    const { dilemma, mbti, councilSize, previousSummary, additionalContext } = validationResult.data;
+    const { dilemma, mbti, councilSize, previousSummary, additionalContext, reflectionFocus } = validationResult.data;
     // Try both VITE_ prefixed (legacy) and standard keys
     const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
@@ -202,7 +214,7 @@ app.post('/api/summon', async (req, res) => {
     
     // Determine if this is a refinement request
     const isRefinement = !!(previousSummary || additionalContext);
-    const systemPrompt = buildSystemPrompt(selectedCounselors, isRefinement);
+    const systemPrompt = buildSystemPrompt(selectedCounselors, isRefinement, reflectionFocus);
 
     // Build user prompt with optional context fields
     let userPrompt = `User MBTI: ${mbti || "BALANCED"}\nDilemma: ${dilemma}`;

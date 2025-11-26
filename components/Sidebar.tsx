@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MBTI_TYPES } from '../constants';
+import { MBTI_TYPES, REFLECTION_FOCUS_OPTIONS } from '../constants';
+import { ReflectionFocus } from '../types';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -10,12 +11,16 @@ interface SidebarProps {
   selectedMBTI: string | null;
   councilSize: number;
   setCouncilSize: (val: number) => void;
+  reflectionFocus: ReflectionFocus;
+  setReflectionFocus: (val: ReflectionFocus) => void;
   onOpenMBTI: () => void;
   onSelectMBTI: (val: string) => void;
   onSummon: () => void;
+  onRestart: () => void;
   isGenerating?: boolean;
   isMBTIOverlayOpen?: boolean;
   isHighlighted?: boolean;
+  hasCouncil?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -26,14 +31,19 @@ const Sidebar: React.FC<SidebarProps> = ({
   selectedMBTI,
   councilSize,
   setCouncilSize,
+  reflectionFocus,
+  setReflectionFocus,
   onOpenMBTI,
   onSelectMBTI,
   onSummon,
+  onRestart,
   isGenerating = false,
   isMBTIOverlayOpen = false,
-  isHighlighted = false
+  isHighlighted = false,
+  hasCouncil = false
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showFocusDescription, setShowFocusDescription] = useState(false);
 
   useEffect(() => {
     if (isHighlighted && textareaRef.current) {
@@ -55,6 +65,15 @@ const Sidebar: React.FC<SidebarProps> = ({
       onSelectMBTI(val);
     }
   };
+
+  const handleReflectionFocusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newFocus = e.target.value as ReflectionFocus;
+    setReflectionFocus(newFocus);
+    setShowFocusDescription(true);
+    setTimeout(() => setShowFocusDescription(false), 3000);
+  };
+
+  const currentFocusOption = REFLECTION_FOCUS_OPTIONS.find(opt => opt.value === reflectionFocus);
 
   return (
     <>
@@ -82,11 +101,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                 ref={textareaRef}
                 id="dilemma"
                 rows={5}
-                className={`w-full rounded-lg bg-slate-800 border-slate-700 text-slate-200 placeholder-slate-500 focus:ring-primary focus:border-primary resize-none p-3 text-sm transition-all ${isHighlighted ? 'ring-4 ring-primary ring-opacity-50 shadow-[0_0_30px_rgba(79,70,229,0.6)]' : ''}`}
+                className={`w-full rounded-lg bg-slate-800 border-slate-700 text-slate-200 placeholder-slate-500 focus:ring-primary focus:border-primary resize-none p-3 text-sm transition-all ${isHighlighted ? 'ring-4 ring-primary ring-opacity-50 shadow-[0_0_30px_rgba(79,70,229,0.6)]' : ''} ${hasCouncil ? 'opacity-50 cursor-not-allowed' : ''}`}
                 placeholder="I've been offered a new job in a different city. It's a great career opportunity but..."
                 value={dilemma}
                 onChange={(e) => setDilemma(e.target.value)}
-                disabled={isGenerating}
+                disabled={isGenerating || hasCouncil}
               />
             </div>
 
@@ -94,15 +113,25 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">Reflection Focus</label>
               <div className="relative">
-                <select className="w-full rounded-lg bg-slate-800 border-slate-700 text-slate-200 focus:ring-primary focus:border-primary appearance-none p-3 text-sm">
-                  <option>Decision-Making</option>
-                  <option>Emotional Processing</option>
-                  <option>Creative Problem Solving</option>
+                <select 
+                  value={reflectionFocus}
+                  onChange={handleReflectionFocusChange}
+                  disabled={hasCouncil}
+                  className={`w-full rounded-lg bg-slate-800 border-slate-700 text-slate-200 focus:ring-primary focus:border-primary appearance-none p-3 text-sm ${hasCouncil ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {REFLECTION_FOCUS_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
                 <span className="material-symbols-outlined absolute right-3 top-3 text-slate-500 pointer-events-none text-sm">
                   expand_more
                 </span>
               </div>
+              {showFocusDescription && currentFocusOption && (
+                <p className="text-xs text-slate-400 mt-2 animate-fade-in">
+                  {currentFocusOption.description}
+                </p>
+              )}
             </div>
 
             {/* Cognitive Style Dropdown */}
@@ -112,7 +141,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <select
                   value={isMBTIOverlayOpen ? 'TRIGGER' : (selectedMBTI === 'BALANCED' ? 'BALANCED' : (selectedMBTI || 'BALANCED'))}
                   onChange={handleCognitiveStyleChange}
-                  className={`w-full appearance-none rounded-lg bg-slate-800 border-slate-700 text-slate-200 focus:ring-primary focus:border-primary p-3 text-sm transition-colors ${selectedMBTI && selectedMBTI !== 'BALANCED' ? 'border-diplomat' : ''}`}
+                  disabled={hasCouncil}
+                  className={`w-full appearance-none rounded-lg bg-slate-800 border-slate-700 text-slate-200 focus:ring-primary focus:border-primary p-3 text-sm transition-colors ${selectedMBTI && selectedMBTI !== 'BALANCED' ? 'border-diplomat' : ''} ${hasCouncil ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <option value="BALANCED">Balanced (Default)</option>
                   {selectedMBTI && selectedMBTI !== 'BALANCED' && (
@@ -150,9 +180,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                   {[3, 4, 5, 6, 7].map((size) => (
                     <button
                       key={size}
-                      onClick={() => setCouncilSize(size)}
+                      onClick={() => !hasCouncil && setCouncilSize(size)}
+                      disabled={hasCouncil}
                       className={`
                         w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 border-2 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-slate-900
+                        ${hasCouncil ? 'opacity-50 cursor-not-allowed' : ''}
                         ${size === councilSize
                           ? 'bg-primary border-primary text-white scale-110 shadow-[0_0_10px_rgba(79,70,229,0.5)]'
                           : size < councilSize
@@ -174,25 +206,35 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Summon Button */}
+        {/* Summon/Restart Button */}
         <div className="p-6 border-t border-slate-800">
-          <button
-            onClick={onSummon}
-            disabled={isGenerating}
-            className={`w-full font-semibold py-3 px-4 rounded-lg shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-all duration-300 ease-in-out flex items-center justify-center ${isGenerating
-                ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
-                : 'bg-primary hover:bg-indigo-500 text-white'
-              }`}
-          >
-            {isGenerating ? (
-              <>
-                <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mr-2"></span>
-                Consulting...
-              </>
-            ) : (
-              'Summon the Council'
-            )}
-          </button>
+          {!hasCouncil ? (
+            <button
+              onClick={onSummon}
+              disabled={isGenerating}
+              className={`w-full font-semibold py-3 px-4 rounded-lg shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-all duration-300 ease-in-out flex items-center justify-center ${isGenerating
+                  ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                  : 'bg-primary hover:bg-indigo-500 text-white'
+                }`}
+            >
+              {isGenerating ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mr-2"></span>
+                  Consulting...
+                </>
+              ) : (
+                'Summon the Council'
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={onRestart}
+              className="w-full font-semibold py-3 px-4 rounded-lg bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 hover:border-slate-500 transition-all duration-300 ease-in-out flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined text-lg">refresh</span>
+              Restart Scenario
+            </button>
+          )}
         </div>
       </aside>
 
