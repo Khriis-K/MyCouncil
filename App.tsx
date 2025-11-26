@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import ReflectionSphere from './components/ReflectionSphere';
 import BottomBar from './components/BottomBar';
 import MBTIOverlay from './components/overlays/MBTIOverlay';
+import InsightBar from './components/overlays/InsightBar';
 import CounselorOverlay from './components/overlays/CounselorOverlay';
 import DebateOverlay from './components/overlays/DebateOverlay';
 import { Counselor, TensionPair, OverlayType, CouncilResponse } from './types';
@@ -25,6 +26,7 @@ const App: React.FC = () => {
   // Overlay Management
   const [activeOverlay, setActiveOverlay] = useState<OverlayType>('NONE');
   const [selectedCounselor, setSelectedCounselor] = useState<Counselor | null>(null);
+  const [previousCounselor, setPreviousCounselor] = useState<Counselor | null>(null);
   const [selectedTensionPair, setSelectedTensionPair] = useState<TensionPair | null>(null);
 
   // --- Handlers ---
@@ -71,8 +73,24 @@ const App: React.FC = () => {
   };
 
   const handleCounselorClick = (counselor: Counselor) => {
-    setSelectedCounselor(counselor);
-    setActiveOverlay('COUNSELOR_CARD');
+    if (selectedCounselor?.id === counselor.id) return; // Don't re-trigger same counselor
+    
+    if (selectedCounselor) {
+      // Trigger slide-out, then slide-in new one
+      setPreviousCounselor(selectedCounselor);
+      setTimeout(() => {
+        setSelectedCounselor(counselor);
+        setPreviousCounselor(null);
+        setActiveOverlay('COUNSELOR_INSIGHT_BAR');
+      }, 300); // Match slide-out animation duration
+    } else {
+      setSelectedCounselor(counselor);
+      setActiveOverlay('COUNSELOR_INSIGHT_BAR');
+    }
+  };
+
+  const handleViewFullPanel = () => {
+    setActiveOverlay('COUNSELOR_PANEL');
   };
 
   const handleTensionClick = (pair: TensionPair) => {
@@ -83,6 +101,7 @@ const App: React.FC = () => {
   const closeOverlay = () => {
     setActiveOverlay('NONE');
     setSelectedCounselor(null);
+    setPreviousCounselor(null);
     setSelectedTensionPair(null);
   };
 
@@ -160,8 +179,28 @@ const App: React.FC = () => {
 
       {/* 3. Global Overlays Layer (Full Screen) */}
 
-      {/* Counselor Details */}
-      {activeOverlay === 'COUNSELOR_CARD' && selectedCounselor && councilData && (
+      {/* Counselor Insight Bar (Step 1) - Show exiting bar if transitioning */}
+      {previousCounselor && councilData && (
+        <InsightBar
+          counselor={previousCounselor}
+          dynamicData={councilData.counselors.find(c => c.id === previousCounselor.id)}
+          onViewFull={handleViewFullPanel}
+          onClose={closeOverlay}
+          isExiting={true}
+        />
+      )}
+      
+      {activeOverlay === 'COUNSELOR_INSIGHT_BAR' && selectedCounselor && councilData && !previousCounselor && (
+        <InsightBar
+          counselor={selectedCounselor}
+          dynamicData={councilData.counselors.find(c => c.id === selectedCounselor.id)}
+          onViewFull={handleViewFullPanel}
+          onClose={closeOverlay}
+        />
+      )}
+
+      {/* Counselor Side Panel (Step 2) */}
+      {activeOverlay === 'COUNSELOR_PANEL' && selectedCounselor && councilData && (
         <CounselorOverlay
           counselor={selectedCounselor}
           dynamicData={councilData.counselors.find(c => c.id === selectedCounselor.id)}

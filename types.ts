@@ -24,7 +24,7 @@ export interface MBTIType {
   color: string;
 }
 
-export type OverlayType = 'NONE' | 'MBTI_SELECTION' | 'MBTI_VALIDATION' | 'COUNSELOR_CARD' | 'DEBATE_DIALOGUE' | 'ARGUMENT_MAP';
+export type OverlayType = 'NONE' | 'MBTI_SELECTION' | 'MBTI_VALIDATION' | 'COUNSELOR_INSIGHT_BAR' | 'COUNSELOR_PANEL' | 'DEBATE_DIALOGUE' | 'ARGUMENT_MAP';
 
 export interface TensionPair {
   counselor1: string; // ID
@@ -36,6 +36,7 @@ export interface CouncilResponse {
   summary: string;
   counselors: {
     id: string; // Dynamic counselor role (mirror, twinflame, playmate, advisor, teammate, consigliere, alterego)
+    impression: string; // Brief 1-sentence first impression for the insight bar
     assessment: string;
     action_plan: string[];
     reflection_q: string;

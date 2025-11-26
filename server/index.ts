@@ -67,6 +67,7 @@ You must output a JSON object with the following structure:
   "counselors": [
     {
       "id": ${counselorIds},
+      "impression": "A punchy, one-sentence first take on the dilemma that captures this counselor's immediate reaction and perspective (max 150 characters)",
       "assessment": "2-3 conversational sentences analyzing the dilemma from this counselor's unique perspective. Use plain language that shows their thinking style without referencing personality theory.",
       "action_plan": ["Actionable step 1", "Actionable step 2", "Actionable step 3"],
       "reflection_q": "A deep, personally relevant question that only this counselor would ask"

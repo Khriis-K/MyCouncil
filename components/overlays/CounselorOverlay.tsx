@@ -25,13 +25,15 @@ const CounselorOverlay: React.FC<CounselorOverlayProps> = ({ counselor, dynamicD
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}></div>
+    <div className="fixed inset-y-0 right-0 z-50 w-full max-w-xl animate-slide-in-right">
+      {/* Backdrop (click to close) */}
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm -z-10" onClick={onClose}></div>
 
-      <div className={`relative w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in ${colorStyles[counselor.color].split(' ')[2]}`}>
+      {/* Side Panel */}
+      <div className={`h-full bg-slate-900 border-l border-slate-700 shadow-2xl flex flex-col ${colorStyles[counselor.color].split(' ')[2]}`}>
 
         {/* Header */}
-        <header className="flex items-center p-6 border-b border-slate-800 bg-slate-900/50">
+        <header className={`flex items-center p-6 border-b ${colorStyles[counselor.color].split(' ')[1]} bg-slate-900/50`}>
           <span className={`material-symbols-outlined text-3xl mr-4 ${colorStyles[counselor.color].split(' ')[0]}`}>
             {counselor.icon}
           </span>
@@ -42,13 +44,13 @@ const CounselorOverlay: React.FC<CounselorOverlayProps> = ({ counselor, dynamicD
               <span>Tone: {counselor.role}</span>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
             <span className="material-symbols-outlined">close</span>
           </button>
         </header>
 
         {/* Content Area */}
-        <div className="p-8 min-h-[400px] max-h-[60vh] overflow-y-auto">
+        <div className="flex-grow overflow-y-auto p-8 scrollbar-hide">
           {view === 'TEXT' ? (
             <div className="space-y-6">
               <h4 className="text-xl font-semibold text-white">
@@ -121,7 +123,7 @@ const CounselorOverlay: React.FC<CounselorOverlayProps> = ({ counselor, dynamicD
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 border-t border-slate-800 bg-slate-900/50">
+        <div className={`p-6 border-t ${colorStyles[counselor.color].split(' ')[1]} bg-slate-900/50`}>
           {view === 'TEXT' ? (
             <button
               onClick={() => setView('CHAT')}
