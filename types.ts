@@ -8,6 +8,15 @@ export interface Counselor {
   highlight: string; // Short summary for debate mode
 }
 
+export interface CounselorRole {
+  role: 'mirror' | 'twinflame' | 'playmate' | 'advisor' | 'teammate' | 'consigliere' | 'alterego';
+  mbtiCode: string;
+  title: string; // e.g., "The Advocate"
+  description: string; // Role-specific guidance for AI prompt
+  priority: number; // 1-7 for selection order
+  color: string; // For UI consistency
+}
+
 export interface MBTIType {
   code: string;
   name: string;
@@ -26,7 +35,7 @@ export interface TensionPair {
 export interface CouncilResponse {
   summary: string;
   counselors: {
-    id: "strategist" | "nurturer" | "skeptic" | "visionary";
+    id: string; // Dynamic counselor role (mirror, twinflame, playmate, advisor, teammate, consigliere, alterego)
     assessment: string;
     action_plan: string[];
     reflection_q: string;

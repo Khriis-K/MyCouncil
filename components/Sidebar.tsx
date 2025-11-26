@@ -8,6 +8,8 @@ interface SidebarProps {
   dilemma: string;
   setDilemma: (val: string) => void;
   selectedMBTI: string | null;
+  councilSize: number;
+  setCouncilSize: (val: number) => void;
   onOpenMBTI: () => void;
   onSelectMBTI: (val: string) => void;
   onSummon: () => void;
@@ -21,13 +23,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   dilemma,
   setDilemma,
   selectedMBTI,
+  councilSize,
+  setCouncilSize,
   onOpenMBTI,
   onSelectMBTI,
   onSummon,
   isGenerating = false,
   isMBTIOverlayOpen = false
 }) => {
-  const [councilSize, setCouncilSize] = useState<number>(4);
 
   const getMBTIDisplay = () => {
     if (!selectedMBTI || selectedMBTI === 'BALANCED') return 'Balanced (Default)';
@@ -129,7 +132,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                 {/* Steps */}
                 <div className="relative w-full flex justify-between z-10 px-[2px]">
-                  {[3, 4, 5, 6, 7, 8].map((size) => (
+                  {[3, 4, 5, 6, 7].map((size) => (
                     <button
                       key={size}
                       onClick={() => setCouncilSize(size)}

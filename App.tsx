@@ -9,12 +9,14 @@ import DebateOverlay from './components/overlays/DebateOverlay';
 import { Counselor, TensionPair, OverlayType, CouncilResponse } from './types';
 import { COUNSELORS, TENSION_PAIRS } from './constants';
 import { fetchCouncilAnalysis } from './services/CouncilService';
+import { buildCounselorsFromResponse, buildTensionPairs } from './utils/counselorMapper';
 
 const App: React.FC = () => {
   // --- State ---
   const [dilemma, setDilemma] = useState<string>('');
   const [councilData, setCouncilData] = useState<CouncilResponse | null>(null);
   const [selectedMBTI, setSelectedMBTI] = useState<string | null>('BALANCED');
+  const [councilSize, setCouncilSize] = useState<number>(4);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [viewState, setViewState] = useState<'INITIAL' | 'SPHERE'>('INITIAL');
   const [isDebateMode, setIsDebateMode] = useState(false);
@@ -49,7 +51,7 @@ const App: React.FC = () => {
 
     try {
       console.log("Calling fetchCouncilAnalysis...");
-      const data = await fetchCouncilAnalysis(dilemma, selectedMBTI);
+      const data = await fetchCouncilAnalysis(dilemma, selectedMBTI, councilSize);
       console.log("fetchCouncilAnalysis success:", data);
 
       setCouncilData(data);
@@ -94,6 +96,8 @@ const App: React.FC = () => {
         dilemma={dilemma}
         setDilemma={setDilemma}
         selectedMBTI={selectedMBTI}
+        councilSize={councilSize}
+        setCouncilSize={setCouncilSize}
         onOpenMBTI={handleOpenMBTI}
         onSelectMBTI={(val) => {
           setSelectedMBTI(val);
@@ -126,10 +130,10 @@ const App: React.FC = () => {
             <ReflectionSphere
               dilemma={dilemma}
               dilemmaSummary={councilData?.summary || ''}
-              counselors={COUNSELORS} // We still pass static config for colors/icons, but we'll need to merge with dynamic data in the component or here
+              counselors={buildCounselorsFromResponse(selectedMBTI, councilSize, councilData)}
               councilData={councilData}
               isDebateMode={isDebateMode}
-              tensionPairs={TENSION_PAIRS} // Same here, might need to merge
+              tensionPairs={buildTensionPairs(councilData)}
               onCounselorClick={handleCounselorClick}
               onTensionClick={handleTensionClick}
             />
@@ -157,20 +161,20 @@ const App: React.FC = () => {
       {/* 3. Global Overlays Layer (Full Screen) */}
 
       {/* Counselor Details */}
-      {activeOverlay === 'COUNSELOR_CARD' && selectedCounselor && (
+      {activeOverlay === 'COUNSELOR_CARD' && selectedCounselor && councilData && (
         <CounselorOverlay
           counselor={selectedCounselor}
-          dynamicData={councilData?.counselors.find(c => c.id === selectedCounselor.id)}
+          dynamicData={councilData.counselors.find(c => c.id === selectedCounselor.id)}
           onClose={closeOverlay}
         />
       )}
 
       {/* Debate/Tension Details */}
-      {activeOverlay === 'DEBATE_DIALOGUE' && selectedTensionPair && (
+      {activeOverlay === 'DEBATE_DIALOGUE' && selectedTensionPair && councilData && (
         <DebateOverlay
           pair={selectedTensionPair}
-          counselors={COUNSELORS}
-          dynamicData={councilData?.tensions.find(t =>
+          counselors={buildCounselorsFromResponse(selectedMBTI, councilSize, councilData)}
+          dynamicData={councilData.tensions.find(t =>
             (t.counselor_ids[0] === selectedTensionPair.counselor1 && t.counselor_ids[1] === selectedTensionPair.counselor2) ||
             (t.counselor_ids[0] === selectedTensionPair.counselor2 && t.counselor_ids[1] === selectedTensionPair.counselor1)
           )}

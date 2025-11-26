@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { MBTIType } from '../../types';
 import { MBTI_TYPES } from '../../constants';
-import { TYPE_DETAILS, AVATAR_URLS } from '../../data/mbtiData';
+import { TYPE_DETAILS, AVATAR_URLS, TRAIT_DEFINITIONS, BEHAVIOR_DEFINITIONS, WEAKNESS_DEFINITIONS } from '../../data/mbtiData';
 
 interface MBTIOverlayProps {
   onClose: () => void;
@@ -17,6 +17,9 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
   const [confidence, setConfidence] = useState(50);
   const [sliderVal, setSliderVal] = useState(3); // Default to Neutral (3)
   const [isQuestionVisible, setIsQuestionVisible] = useState(true);
+  
+  // Click info state
+  const [clickedSection, setClickedSection] = useState<'traits' | 'dichotomies' | 'behaviors' | 'weaknesses' | null>(null);
 
   const details = selectedType ? (TYPE_DETAILS[selectedType.code] || TYPE_DETAILS.DEFAULT) : TYPE_DETAILS.DEFAULT;
   const allQuestions = details.validationQuestions || ["Confirm details"];
@@ -141,6 +144,18 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
     }, 300);
   };
 
+  // Simple definitions for the tooltips
+  const DICHOTOMY_DEFINITIONS: Record<string, string> = {
+    "Introversion (I)": "Gains energy from solitary reflection and internal ideas.",
+    "Extraversion (E)": "Gains energy from social interaction and the external world.",
+    "Sensing (S)": "Focuses on facts, details, and present reality.",
+    "Intuition (N)": "Focuses on patterns, possibilities, and the future.",
+    "Thinking (T)": "Makes decisions based on logic and objective analysis.",
+    "Feeling (F)": "Makes decisions based on values and impact on people.",
+    "Judging (J)": "Prefers structure, plans, and closure.",
+    "Perceiving (P)": "Prefers flexibility, spontaneity, and keeping options open."
+  };
+
   const renderDichotomy = (labelLeft: string, labelRight: string, value: number) => {
     // Value is 0 (Left) to 100 (Right)
     const isLeft = value < 50;
@@ -149,11 +164,17 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
     const barLeft = isLeft ? `${value}%` : '50%';
     const barWidth = `${distanceFromCenter}%`;
 
+    const LabelDisplay = ({ text, isActive, align }: { text: string, isActive: boolean, align: 'left' | 'right' }) => (
+      <div 
+        className={`w-20 truncate ${align === 'right' ? 'text-right' : 'text-left'} font-medium leading-none ${isActive && activeStyles ? activeStyles.text : 'text-slate-500'}`}
+      >
+        {text}
+      </div>
+    );
+
     return (
       <div className="flex items-center justify-between text-xs py-1 w-full">
-        <span className={`w-20 text-right font-medium leading-none truncate ${isLeft && activeStyles ? activeStyles.text : 'text-slate-500'}`}>
-          {labelLeft}
-        </span>
+        <LabelDisplay text={labelLeft} isActive={isLeft} align="right" />
 
         <div className="mx-3 flex-grow h-2 bg-slate-800 rounded-full relative overflow-hidden">
           {/* Center marker */}
@@ -165,9 +186,7 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
           ></div>
         </div>
 
-        <span className={`w-20 text-left font-medium leading-none truncate ${!isLeft && activeStyles ? activeStyles.text : 'text-slate-500'}`}>
-          {labelRight}
-        </span>
+        <LabelDisplay text={labelRight} isActive={!isLeft} align="left" />
       </div>
     );
   };
@@ -239,17 +258,94 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
               </div>
             </div>
 
+            {/* Fixed Info Panel Area - Shows category information */}
+            {clickedSection && (
+              <div className="shrink-0 mb-4 animate-fade-in">
+                <div className="p-3 bg-slate-800/80 border border-slate-600 rounded-lg shadow-lg relative max-h-[200px] overflow-y-auto scrollbar-hide">
+                  <div className="flex items-start gap-2 mb-2">
+                    <span className="material-symbols-outlined text-lg text-cyan-400 shrink-0">
+                      {clickedSection === 'traits' ? 'psychology' : clickedSection === 'dichotomies' ? 'info' : clickedSection === 'behaviors' ? 'psychology_alt' : 'warning'}
+                    </span>
+                    <h4 className="text-sm font-bold text-white flex-1">
+                      {clickedSection === 'traits' && 'Key Traits Definitions'}
+                      {clickedSection === 'dichotomies' && 'MBTI Dichotomies Explained'}
+                      {clickedSection === 'behaviors' && 'Common Behaviors Explained'}
+                      {clickedSection === 'weaknesses' && 'Weaknesses Explained'}
+                    </h4>
+                    <button
+                      onClick={() => setClickedSection(null)}
+                      className="shrink-0 text-slate-400 hover:text-white transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-sm">close</span>
+                    </button>
+                  </div>
+                  <div className="space-y-2 text-xs">
+                    {clickedSection === 'traits' && details.traits.map(trait => (
+                      <div key={trait} className="border-l-2 border-cyan-400 pl-2">
+                        <p className="font-semibold text-white">{trait}</p>
+                        <p className="text-slate-300 leading-relaxed">{TRAIT_DEFINITIONS[trait] || trait}</p>
+                      </div>
+                    ))}
+                    {clickedSection === 'dichotomies' && (
+                      <>
+                        <div className="border-l-2 border-cyan-400 pl-2">
+                          <p className="font-semibold text-white">Introversion (I) vs Extraversion (E)</p>
+                          <p className="text-slate-300 leading-relaxed mb-1">{DICHOTOMY_DEFINITIONS["Introversion (I)"]}</p>
+                          <p className="text-slate-300 leading-relaxed">{DICHOTOMY_DEFINITIONS["Extraversion (E)"]}</p>
+                        </div>
+                        <div className="border-l-2 border-cyan-400 pl-2">
+                          <p className="font-semibold text-white">Sensing (S) vs Intuition (N)</p>
+                          <p className="text-slate-300 leading-relaxed mb-1">{DICHOTOMY_DEFINITIONS["Sensing (S)"]}</p>
+                          <p className="text-slate-300 leading-relaxed">{DICHOTOMY_DEFINITIONS["Intuition (N)"]}</p>
+                        </div>
+                        <div className="border-l-2 border-cyan-400 pl-2">
+                          <p className="font-semibold text-white">Thinking (T) vs Feeling (F)</p>
+                          <p className="text-slate-300 leading-relaxed mb-1">{DICHOTOMY_DEFINITIONS["Thinking (T)"]}</p>
+                          <p className="text-slate-300 leading-relaxed">{DICHOTOMY_DEFINITIONS["Feeling (F)"]}</p>
+                        </div>
+                        <div className="border-l-2 border-cyan-400 pl-2">
+                          <p className="font-semibold text-white">Judging (J) vs Perceiving (P)</p>
+                          <p className="text-slate-300 leading-relaxed mb-1">{DICHOTOMY_DEFINITIONS["Judging (J)"]}</p>
+                          <p className="text-slate-300 leading-relaxed">{DICHOTOMY_DEFINITIONS["Perceiving (P)"]}</p>
+                        </div>
+                      </>
+                    )}
+                    {clickedSection === 'behaviors' && details.commonBehaviors.map(behavior => (
+                      <div key={behavior} className="border-l-2 border-blue-400 pl-2">
+                        <p className="font-semibold text-white">{behavior}</p>
+                        <p className="text-slate-300 leading-relaxed">{BEHAVIOR_DEFINITIONS[behavior] || behavior}</p>
+                      </div>
+                    ))}
+                    {clickedSection === 'weaknesses' && details.weaknesses.map(weakness => (
+                      <div key={weakness} className="border-l-2 border-red-400 pl-2">
+                        <p className="font-semibold text-white">{weakness}</p>
+                        <p className="text-slate-300 leading-relaxed">{WEAKNESS_DEFINITIONS[weakness] || weakness}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Content Grid - 2 Columns */}
             <div className="flex-grow grid grid-cols-2 gap-x-6 gap-y-4 overflow-y-auto scrollbar-hide content-start">
 
               {/* Traits */}
               <div className="col-span-1 flex flex-col gap-2">
-                <h3 className="text-[10px] font-bold text-slate-500 tracking-widest uppercase border-b border-slate-800 pb-1">Key Traits</h3>
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+                  <h3 className={`text-[10px] font-bold tracking-widest uppercase ${activeStyles.text}`}>Key Traits</h3>
+                  <button
+                    onClick={() => setClickedSection(clickedSection === 'traits' ? null : 'traits')}
+                    className={`text-slate-500 hover:text-cyan-400 transition-colors ${clickedSection === 'traits' ? 'text-cyan-400' : ''}`}
+                  >
+                    <span className="material-symbols-outlined text-sm">help</span>
+                  </button>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {details.traits.map(trait => (
                     <span
                       key={trait}
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border ${activeStyles.border} ${activeStyles.text} ${activeStyles.lightBg} transition-colors cursor-default whitespace-nowrap`}
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border ${activeStyles.border} ${activeStyles.text} ${activeStyles.lightBg} whitespace-nowrap`}
                     >
                       {trait}
                     </span>
@@ -259,7 +355,15 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
 
               {/* Dichotomies */}
               <div className="col-span-1 flex flex-col gap-2">
-                <h3 className="text-[10px] font-bold text-slate-500 tracking-widest uppercase text-right border-b border-slate-800 pb-1">Dichotomies</h3>
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+                  <h3 className={`text-[10px] font-bold tracking-widest uppercase ${activeStyles.text}`}>Dichotomies</h3>
+                  <button
+                    onClick={() => setClickedSection(clickedSection === 'dichotomies' ? null : 'dichotomies')}
+                    className={`text-slate-500 hover:text-cyan-400 transition-colors ${clickedSection === 'dichotomies' ? 'text-cyan-400' : ''}`}
+                  >
+                    <span className="material-symbols-outlined text-sm">help</span>
+                  </button>
+                </div>
                 <div className="flex flex-col gap-2">
                   {renderDichotomy("Introversion (I)", "Extraversion (E)", details.dichotomyValues.ie)}
                   {renderDichotomy("Sensing (S)", "Intuition (N)", details.dichotomyValues.sn)}
@@ -268,14 +372,25 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
                 </div>
               </div>
 
-              {/* Strengths */}
+              {/* Common Behaviors */}
               <div className="col-span-1 flex flex-col gap-2 mt-2">
-                <h3 className="text-[10px] font-bold text-emerald-500/70 tracking-widest uppercase border-b border-slate-800 pb-1">Strengths</h3>
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+                  <h3 className="text-[10px] font-bold text-blue-500/70 tracking-widest uppercase">Common Behaviors</h3>
+                  <button
+                    onClick={() => setClickedSection(clickedSection === 'behaviors' ? null : 'behaviors')}
+                    className={`text-slate-500 hover:text-cyan-400 transition-colors ${clickedSection === 'behaviors' ? 'text-cyan-400' : ''}`}
+                  >
+                    <span className="material-symbols-outlined text-sm">help</span>
+                  </button>
+                </div>
                 <ul className="space-y-1">
-                  {details.strengths.map(s => (
-                    <li key={s} className="text-xs text-slate-300 flex items-start gap-2">
-                      <span className="material-symbols-outlined text-[14px] text-emerald-500">check_circle</span>
-                      {s}
+                  {details.commonBehaviors.map(b => (
+                    <li 
+                      key={b} 
+                      className="text-xs text-slate-300 flex items-start gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[14px] text-blue-400">psychology_alt</span>
+                      {b}
                     </li>
                   ))}
                 </ul>
@@ -283,12 +398,23 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
 
               {/* Weaknesses */}
               <div className="col-span-1 flex flex-col gap-2 mt-2">
-                <h3 className="text-[10px] font-bold text-red-500/70 tracking-widest uppercase text-right border-b border-slate-800 pb-1">Weaknesses</h3>
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+                  <h3 className="text-[10px] font-bold text-red-500/70 tracking-widest uppercase">Weaknesses</h3>
+                  <button
+                    onClick={() => setClickedSection(clickedSection === 'weaknesses' ? null : 'weaknesses')}
+                    className={`text-slate-500 hover:text-cyan-400 transition-colors ${clickedSection === 'weaknesses' ? 'text-cyan-400' : ''}`}
+                  >
+                    <span className="material-symbols-outlined text-sm">help</span>
+                  </button>
+                </div>
                 <ul className="space-y-1">
                   {details.weaknesses.map(w => (
-                    <li key={w} className="text-xs text-slate-300 flex items-start justify-end gap-2 text-right">
-                      {w}
+                    <li 
+                      key={w} 
+                      className="text-xs text-slate-300 flex items-start gap-2"
+                    >
                       <span className="material-symbols-outlined text-[14px] text-red-500">cancel</span>
+                      {w}
                     </li>
                   ))}
                 </ul>

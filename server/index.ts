@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { GoogleGenAI } from "@google/genai";
 import { z } from 'zod';
 import rateLimit from 'express-rate-limit';
+import { selectCouncilors } from '../data/counselorMatrix';
 
 // Load environment variables from .env.local
 dotenv.config({ path: '.env.local' });
@@ -20,6 +21,7 @@ const summonSchema = z.object({
     .min(10, "Dilemma must be at least 10 characters long")
     .max(1000, "Dilemma cannot exceed 1000 characters"),
   mbti: z.string().nullable().optional(),
+  councilSize: z.number().min(3).max(7).optional().default(4),
 });
 
 // Rate Limiter
@@ -36,7 +38,67 @@ app.use('/api/summon', apiLimiter);
 
 console.log(`Rate limiting enabled: ${process.env.NODE_ENV === 'production' ? 'Strict (5 req/15m)' : 'Dev (100 req/15m)'}`);
 
-const SYSTEM_PROMPT = `
+/**
+ * Builds dynamic SYSTEM_PROMPT based on user MBTI and council size
+ */
+function buildSystemPrompt(selectedCounselors: ReturnType<typeof selectCouncilors>): string {
+  const counselorDescriptions = selectedCounselors.map(c => 
+    `${c.role.charAt(0).toUpperCase() + c.role.slice(1)} - ${c.title} (${c.mbtiCode}): ${c.description}`
+  ).join('\n');
+
+  const counselorIds = selectedCounselors.map(c => `"${c.role}"`).join(' | ');
+
+  return `
+You are "The Council", a collection of ${selectedCounselors.length} distinct counselor personas designed to help users reflect on complex dilemmas.
+Your goal is to analyze the user's dilemma from ${selectedCounselors.length} genuinely different perspectives and identify meaningful tensions between them.
+
+The ${selectedCounselors.length} Counselors:
+${counselorDescriptions}
+
+Each counselor represents a different thinking style and worldview. They should:
+- Speak in natural, conversational language (avoid MBTI jargon like "Ni-Fe" or "Ti-Ne")
+- Offer genuinely different reasoning based on their personality type's natural tendencies
+- Be direct, compassionate, and thought-provoking
+- Focus on practical wisdom, not theoretical psychology
+
+You must output a JSON object with the following structure:
+{
+  "summary": "A very concise, punchy title (3-6 words) capturing the core conflict",
+  "counselors": [
+    {
+      "id": ${counselorIds},
+      "assessment": "2-3 conversational sentences analyzing the dilemma from this counselor's unique perspective. Use plain language that shows their thinking style without referencing personality theory.",
+      "action_plan": ["Actionable step 1", "Actionable step 2", "Actionable step 3"],
+      "reflection_q": "A deep, personally relevant question that only this counselor would ask"
+    }
+    // ... for all ${selectedCounselors.length} counselors
+  ],
+  "tensions": [
+    {
+      "pair_id": "string (e.g., mirror-alterego)",
+      "counselor_ids": ["id1", "id2"],
+      "type": "conflict" | "synthesis",
+      "core_issue": "The fundamental disagreement in plain language (1 sentence)",
+      "dialogue": [
+        { "speaker": "id1", "text": "Natural, conversational argument..." },
+        { "speaker": "id2", "text": "Counter-argument in character..." },
+        // ... 4-6 turns of authentic dialogue
+      ]
+    },
+    // ... generate 2 distinct tension pairs (prioritize Mirror vs Alter Ego, and Consigliere vs another counselor)
+  ]
+}
+
+Critical Guidelines:
+- Write assessments as if speaking directly to the user, not analyzing them from outside
+- Show different perspectives through reasoning style and priorities, not personality labels
+- Avoid phrases like "your cognitive functions" or "as an INFJ" - just embody the perspective
+- Make tensions feel like real philosophical disagreements, not personality theory debates
+- The output MUST be valid JSON. Do not include markdown formatting like \`\`\`json.
+`;
+}
+
+const LEGACY_SYSTEM_PROMPT = `
 You are "The Council", a collection of 4 archetypal AI personas (Strategist, Nurturer, Skeptic, Visionary) designed to help users reflect on dilemmas.
 Your goal is to analyze the user's dilemma from these 4 distinct perspectives and identify tensions between them.
 
@@ -92,7 +154,7 @@ app.post('/api/summon', async (req, res) => {
       });
     }
 
-    const { dilemma, mbti } = validationResult.data;
+    const { dilemma, mbti, councilSize } = validationResult.data;
     // Try both VITE_ prefixed (legacy) and standard keys
     const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
@@ -103,12 +165,19 @@ app.post('/api/summon', async (req, res) => {
 
     const ai = new GoogleGenAI({ apiKey });
 
+    // Select counselors dynamically based on user MBTI and council size
+    const selectedCounselors = selectCouncilors(mbti, councilSize);
+    const systemPrompt = buildSystemPrompt(selectedCounselors);
+
     const userPrompt = `
-      User MBTI: ${mbti || "Unknown"}
+      User MBTI: ${mbti || "BALANCED"}
       Dilemma: ${dilemma}
       
       Generate The Council's analysis.
     `;
+
+    console.log('Selected counselors:', selectedCounselors.map(c => c.role));
+    console.log('Calling Gemini API...');
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -116,14 +185,22 @@ app.post('/api/summon', async (req, res) => {
         responseMimeType: 'application/json',
       },
       contents: [
-        { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
+        { role: 'user', parts: [{ text: systemPrompt }] },
         { role: 'user', parts: [{ text: userPrompt }] }
       ],
     });
 
-    const text = response.text;
-    if (!text) throw new Error("No response from AI");
+    console.log('Gemini response received:', response);
 
+    // The response structure is: response.candidates[0].content.parts[0].text
+    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || response.text;
+    
+    if (!text) {
+      console.error('No text in response:', JSON.stringify(response, null, 2));
+      throw new Error("No response from AI");
+    }
+
+    console.log('AI response text:', text.substring(0, 200));
     const data = JSON.parse(text);
     res.json(data);
   } catch (error) {

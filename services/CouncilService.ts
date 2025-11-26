@@ -4,19 +4,36 @@ const API_URL = 'http://localhost:3000/api/summon';
 
 export const fetchCouncilAnalysis = async (
   dilemma: string,
-  mbti: string | null
+  mbti: string | null,
+  councilSize: number = 4
 ): Promise<CouncilResponse> => {
   try {
+    const requestBody = { dilemma, mbti, councilSize };
+    console.log('🚀 Sending request to backend:', requestBody);
+
     const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ dilemma, mbti }),
+      body: JSON.stringify(requestBody),
     });
 
+    console.log('📡 Response status:', response.status, response.statusText);
+    console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+
+    // Read the raw response text first
+    const rawText = await response.text();
+    console.log('📄 Raw response text (first 500 chars):', rawText.substring(0, 500));
+
     if (!response.ok) {
-      const errorData = await response.json();
+      let errorData;
+      try {
+        errorData = JSON.parse(rawText);
+      } catch (e) {
+        console.error('❌ Failed to parse error response as JSON:', rawText);
+        throw new Error(`Server error (${response.status}): ${rawText}`);
+      }
       
       // Handle Zod Validation Errors
       if (errorData.details?.fieldErrors) {
@@ -30,9 +47,18 @@ export const fetchCouncilAnalysis = async (
       throw new Error(errorData.error || 'Failed to fetch council analysis');
     }
 
-    return await response.json();
+    // Parse successful response
+    let data;
+    try {
+      data = JSON.parse(rawText);
+      console.log('✅ Successfully parsed response:', Object.keys(data));
+      return data;
+    } catch (e) {
+      console.error('❌ Failed to parse success response as JSON:', rawText);
+      throw new Error('Invalid JSON response from server');
+    }
   } catch (error) {
-    console.error("Error fetching council analysis:", error);
+    console.error('💥 Error fetching council analysis:', error);
     throw error;
   }
 };

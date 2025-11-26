@@ -29,18 +29,24 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
     counselor2: t.counselor_ids[1],
     type: t.type
   })) || tensionPairs;
-  // Define positions for 4 counselors (Top-Left, Top-Right, Bottom-Left, Bottom-Right)
+  
+  // Define positions for up to 7 counselors in a circular arrangement
   const positions = [
-    { top: '25%', left: '25%' },
-    { top: '25%', left: '75%' },
-    { top: '75%', left: '25%' },
-    { top: '75%', left: '75%' },
+    { top: '15%', left: '50%' },  // 1. Top
+    { top: '30%', left: '80%' },  // 2. Top-Right
+    { top: '65%', left: '85%' },  // 3. Bottom-Right
+    { top: '85%', left: '50%' },  // 4. Bottom
+    { top: '65%', left: '15%' },  // 5. Bottom-Left
+    { top: '30%', left: '20%' },  // 6. Top-Left
+    { top: '50%', left: '90%' },  // 7. Right
   ];
 
-  // Helper to get coordinates for SVG lines based on percentages
+  // Helper to get coordinates for SVG lines based on position percentages
   const getCoords = (posIndex: number) => {
-    const x = posIndex % 2 === 0 ? 250 : 750; // 25% or 75% mapped to 1000 width
-    const y = posIndex < 2 ? 250 : 750;       // 25% or 75% mapped to 1000 height
+    if (posIndex >= positions.length) return { x: 500, y: 500 };
+    const pos = positions[posIndex];
+    const x = parseFloat(pos.left) * 10; // Convert % to 1000 viewBox scale
+    const y = parseFloat(pos.top) * 10;
     return { x, y };
   };
 
@@ -105,10 +111,10 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
       {counselors.map((counselor, idx) => {
         const pos = positions[idx];
         const colorMap: Record<string, string> = {
-          blue: 'border-blue-500 text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.3)]',
-          green: 'border-green-500 text-green-400 shadow-[0_0_20px_rgba(16,185,129,0.3)]',
-          yellow: 'border-yellow-500 text-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.3)]',
-          purple: 'border-purple-500 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.3)]',
+          blue: 'border-blue-500 text-blue-400 [--glow-color:rgba(59,130,246,0.4)] animate-pulse-glow',
+          green: 'border-green-500 text-green-400 [--glow-color:rgba(16,185,129,0.4)] animate-pulse-glow',
+          yellow: 'border-yellow-500 text-yellow-400 [--glow-color:rgba(234,179,8,0.4)] animate-pulse-glow',
+          purple: 'border-purple-500 text-purple-400 [--glow-color:rgba(168,85,247,0.4)] animate-pulse-glow',
         };
 
         return (
