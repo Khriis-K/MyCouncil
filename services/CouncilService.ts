@@ -1,6 +1,6 @@
 import { CouncilResponse, ReflectionFocus } from "../types";
 
-const API_URL = 'http://localhost:3000/api/summon';
+const API_URL = '/api/summon';
 
 export const fetchCouncilAnalysis = async (
   dilemma: string,

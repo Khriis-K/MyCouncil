@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Counselor, TensionPair, CouncilResponse, ReflectionFocus } from '../types';
 import { REFLECTION_FOCUS_OPTIONS } from '../constants';
@@ -34,6 +33,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   isRefining = false,
   reflectionFocus
 }) => {
+  const [hoveredCounselorId, setHoveredCounselorId] = React.useState<string | null>(null);
+
   // Use dynamic tensions if available, otherwise fall back to static
   const activeTensions = councilData?.tensions.map(t => ({
     counselor1: t.counselor_ids[0],
@@ -76,25 +77,87 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
     return { x, y };
   };
 
+  // Ambient atmosphere colors for each lens
+  const atmosphereColors: Record<string, { gradient: string, glow: string, borderColor: string }> = {
+    'Decision-Making': {
+      gradient: 'radial-gradient(ellipse at center, rgba(249, 115, 22, 0.08) 0%, transparent 60%)',
+      glow: 'rgba(249, 115, 22, 0.3)',
+      borderColor: 'rgba(249, 115, 22, 0.4)'
+    },
+    'Emotional Processing': {
+      gradient: 'radial-gradient(ellipse at center, rgba(236, 72, 153, 0.08) 0%, transparent 60%)',
+      glow: 'rgba(236, 72, 153, 0.3)',
+      borderColor: 'rgba(236, 72, 153, 0.4)'
+    },
+    'Creative Problem Solving': {
+      gradient: 'radial-gradient(ellipse at center, rgba(6, 182, 212, 0.08) 0%, transparent 60%)',
+      glow: 'rgba(6, 182, 212, 0.3)',
+      borderColor: 'rgba(6, 182, 212, 0.4)'
+    }
+  };
+
+  const currentAtmosphere = reflectionFocus ? atmosphereColors[reflectionFocus] : null;
+
   return (
     <div className="relative w-full h-full max-w-5xl max-h-[80vh] aspect-square flex items-center justify-center">
 
-      {/* Reflection Focus Indicator */}
-      {currentFocusOption && (
-        <div className="absolute top-8 right-8 z-20">
-          <div className={`px-4 py-2 rounded-lg border ${currentFocusOption.badgeColor} backdrop-blur-sm flex items-center gap-2 shadow-lg`}>
-            <span className="material-symbols-outlined text-sm">visibility</span>
-            <span className="text-sm font-medium">{currentFocusOption.label} Lens</span>
-          </div>
+      {/* Ambient Atmosphere Layer */}
+      {currentAtmosphere && (
+        <div 
+          className="absolute inset-0 pointer-events-none animate-atmosphere-breathe"
+          style={{ background: currentAtmosphere.gradient }}
+        >
+          {/* Secondary atmospheric glow spots */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: `
+                radial-gradient(circle at 30% 30%, ${currentAtmosphere.glow.replace('0.3', '0.04')} 0%, transparent 40%),
+                radial-gradient(circle at 70% 70%, ${currentAtmosphere.glow.replace('0.3', '0.03')} 0%, transparent 30%)
+              `
+            }}
+          />
         </div>
       )}
 
-      {/* Analyzing Heading */}
+      {/* Vignette Overlay (New) */}
       {currentFocusOption && (
-        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-10">
-          <p className={`text-sm font-medium ${currentFocusOption.color} opacity-70`}>
-            Analyzing through {currentFocusOption.label.toLowerCase()} perspective
-          </p>
+        <div className="fixed inset-0 pointer-events-none z-0">
+           {/* Vignette Gradient */}
+           <div 
+             className="absolute inset-0"
+             style={{
+               background: `radial-gradient(ellipse at center, transparent 40%, ${currentAtmosphere?.glow.replace('0.3', '0.08') || 'rgba(168, 85, 247, 0.08)'} 100%)`
+             }}
+           />
+           {/* Shimmer Border Effect (Simulated with inset shadow for simplicity in React) */}
+           <div className="absolute inset-0 border-[3px] border-transparent rounded-none opacity-30"
+                style={{
+                  boxShadow: `inset 0 0 40px ${currentAtmosphere?.glow.replace('0.3', '0.1') || 'rgba(168, 85, 247, 0.1)'}`
+                }}
+           />
+        </div>
+      )}
+
+      {/* Floating Orb Focus Indicator (New) */}
+      {currentFocusOption && (
+        <div className="absolute top-6 right-6 z-20 flex items-center gap-4 px-5 py-3 rounded-full backdrop-blur-md border border-white/10 shadow-2xl animate-float"
+             style={{
+               background: currentAtmosphere?.glow.replace('0.3', '0.2') || 'rgba(168, 85, 247, 0.2)',
+               borderColor: currentAtmosphere?.borderColor || 'rgba(168, 85, 247, 0.4)'
+             }}
+        >
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-inner ${currentFocusOption.color.replace('text-', 'bg-').replace('400', '500').replace('500', '600')}`}>
+            <span className="material-symbols-outlined text-white text-xl">visibility</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-white uppercase tracking-wider">
+              {currentFocusOption.label.split(' ')[0]} Lens
+            </span>
+            <span className={`text-xs font-medium opacity-90 leading-none mt-0.5 ${currentFocusOption.color}`}>
+              {currentFocusOption.label.split(' ').slice(1).join(' ') || 'Perspective'}
+            </span>
+          </div>
         </div>
       )}
 
@@ -146,7 +209,11 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
         <button
           onClick={onCenterClick}
-          className="w-64 h-64 rounded-full bg-slate-800/40 backdrop-blur-sm border border-slate-700 flex flex-col items-center justify-center text-center p-5 shadow-[0_0_40px_rgba(79,70,229,0.2)] group hover:bg-slate-800/60 transition-all cursor-pointer"
+          className="w-64 h-64 rounded-full bg-slate-800/40 backdrop-blur-sm border flex flex-col items-center justify-center text-center p-5 group hover:bg-slate-800/60 transition-all duration-500 cursor-pointer"
+          style={{
+            borderColor: currentAtmosphere?.borderColor || 'rgb(51, 65, 85)',
+            boxShadow: currentAtmosphere ? `0 0 60px ${currentAtmosphere.glow}` : '0 0 40px rgba(79,70,229,0.2)'
+          }}
         >
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 group-hover:text-primary transition-colors">Your Dilemma</span>
           <p className="text-lg font-bold text-white leading-tight break-words w-full line-clamp-3 px-2">
@@ -168,73 +235,60 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
           green: { border: 'border-green-500', text: 'text-green-400', glow: 'rgba(16,185,129,0.4)' },
           yellow: { border: 'border-yellow-500', text: 'text-yellow-400', glow: 'rgba(234,179,8,0.4)' },
           purple: { border: 'border-purple-500', text: 'text-purple-400', glow: 'rgba(168,85,247,0.4)' },
+          red: { border: 'border-red-500', text: 'text-red-400', glow: 'rgba(239,68,68,0.4)' },
         };
 
-        const colors = colorMap[counselor.color];
+        const colors = colorMap[counselor.color] || colorMap['purple'];
 
-        // Calculate direction vector from center (50%, 50%) to counselor position
-        const centerX = 50;
-        const centerY = 50;
-        const targetX = parseFloat(pos.left);
-        const targetY = parseFloat(pos.top);
-        const deltaX = targetX - centerX;
-        const deltaY = targetY - centerY;
-        
-        // For transform, we need the opposite direction (toward center = negative of current offset)
-        const translateXPercent = -deltaX;
-        const translateYPercent = -deltaY;
+        // Wrapper styles for positioning
+        let wrapperClass = "absolute w-32 h-32 z-[100] transition-all duration-300 flex items-center justify-center";
+        let wrapperStyle: React.CSSProperties = {};
 
-        // Determine animation and styling based on state
-        let baseClass = `absolute w-32 h-32 rounded-full bg-slate-800/80 backdrop-blur-md border flex flex-col items-center justify-center p-2 transition-all duration-300 hover:scale-110 z-[100] ${colors.border} ${colors.text}`;
-        let animationStyle: React.CSSProperties = { 
+        // Button styles for appearance
+        let buttonClass = `w-full h-full rounded-full bg-slate-800/80 backdrop-blur-md border flex flex-col items-center justify-center p-2 transition-transform duration-300 ${colors.border} ${colors.text}`;
+        let buttonStyle: React.CSSProperties = { 
           ['--glow-color' as string]: colors.glow,
         };
 
         if (isRefining) {
           // STATE 1: REFINING
-          // Remove the glow so we can control the transform.
-          // Fade out, scale down, and ignore pointer events.
-          baseClass += ' pointer-events-none opacity-0 scale-50'; 
-          
-          // Move to center
-          animationStyle.top = 'calc(50% - 4rem)';
-          animationStyle.left = 'calc(50% - 4rem)';
-          
+          wrapperClass += ' pointer-events-none opacity-0 scale-50'; 
+          wrapperStyle.top = 'calc(50% - 4rem)';
+          wrapperStyle.left = 'calc(50% - 4rem)';
         } else if (isInitialRender) {
           // STATE 2: ENTERING
-          // Use your entry animation
-          baseClass += ' animate-slide-from-center';
-          
-          // Set target position
-          animationStyle.top = `calc(${pos.top} - 4rem)`;
-          animationStyle.left = `calc(${pos.left} - 4rem)`;
-          
+          wrapperClass += ' animate-slide-from-center';
+          wrapperStyle.top = `calc(${pos.top} - 4rem)`;
+          wrapperStyle.left = `calc(${pos.left} - 4rem)`;
         } else {
           // STATE 3: STABLE
-          // NOW we add the glow animation and hover effects
-          baseClass += ' animate-pulse-glow hover:scale-110';
-          
-          // Keep at target position
-          animationStyle.top = `calc(${pos.top} - 4rem)`;
-          animationStyle.left = `calc(${pos.left} - 4rem)`;
+          buttonClass += ' animate-pulse-glow hover:scale-110';
+          wrapperStyle.top = `calc(${pos.top} - 4rem)`;
+          wrapperStyle.left = `calc(${pos.left} - 4rem)`;
         }
-        // Note: No else block - counselors should just have the base glow animation when idle
 
         return (
-          <button
+          <div
             key={counselor.id}
-            data-counselor-sphere
-            onClick={(e) => {
-              e.stopPropagation();
-              onCounselorClick(counselor);
-            }}
-            className={baseClass}
-            style={animationStyle}
-            disabled={isRefining}
+            className={wrapperClass}
+            style={wrapperStyle}
+            onMouseEnter={() => setHoveredCounselorId(counselor.id)}
+            onMouseLeave={() => setHoveredCounselorId(null)}
           >
-            <span className="material-symbols-outlined text-3xl mb-2">{counselor.icon}</span>
-            <span className="text-xs font-medium text-slate-200">{counselor.name}</span>
-          </button>
+            <button
+              data-counselor-sphere
+              onClick={(e) => {
+                e.stopPropagation();
+                onCounselorClick(counselor);
+              }}
+              className={buttonClass}
+              style={buttonStyle}
+              disabled={isRefining}
+            >
+              <span className="material-symbols-outlined text-3xl mb-2">{counselor.icon}</span>
+              <span className="text-xs font-medium text-slate-200">{counselor.name}</span>
+            </button>
+          </div>
         );
       })}
 

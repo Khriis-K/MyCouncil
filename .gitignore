@@ -70,6 +70,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+MyCouncil.code-workspace
 
 # Testing
 coverage/
@@ -77,7 +78,12 @@ coverage/
 # Docs, repomixes, mockups, etc
 /docs
 /repomixes
+/mocks
 /mockups
+/prompts
 
 # Test files
 test-api.js
+
+# github
+.github/

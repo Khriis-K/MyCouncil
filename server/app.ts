@@ -1,0 +1,115 @@
+import express from 'express';
+import cors from 'cors';
+import { GoogleGenAI } from "@google/genai";
+import rateLimit from 'express-rate-limit';
+import { selectCouncilors } from '../data/counselorMatrix';
+import { buildSystemPrompt } from './promptBuilder';
+// Import Zod schema for request validation
+import { summonSchema } from './schemas';
+import { config } from './config';
+
+const app = express();
+
+// Add error handlers early
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+app.use(cors());
+app.use(express.json());
+
+// Rate Limiter
+const apiLimiter = rateLimit({
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.max,
+  message: { error: "Too many requests from this IP, please try again after 15 minutes" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiter to the summon endpoint
+app.use('/api/summon', apiLimiter);
+
+console.log(`Rate limiting enabled: ${config.env === 'production' ? 'Strict (5 req/15m)' : 'Dev (100 req/15m)'}`);
+
+app.post('/api/summon', async (req, res) => {
+  try {
+    // Validate Input
+    const validationResult = summonSchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: "Validation Error",
+        details: validationResult.error.flatten()
+      });
+    }
+
+    const { dilemma, mbti, councilSize, previousSummary, additionalContext, reflectionFocus } = validationResult.data;
+    
+    if (!config.geminiApiKey) {
+      console.error("API Key missing");
+      return res.status(500).json({ error: "Server misconfiguration: API Key missing" });
+    }
+
+    const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
+
+    // Select counselors dynamically based on user MBTI and council size
+    const selectedCounselors = selectCouncilors(mbti ?? null, councilSize);
+    
+    // Determine if this is a refinement request
+    const isRefinement = !!(previousSummary || additionalContext);
+    const systemPrompt = buildSystemPrompt(selectedCounselors, isRefinement, reflectionFocus);
+
+    // Build user prompt with optional context fields
+    let userPrompt = `User MBTI: ${mbti || "BALANCED"}\nDilemma: ${dilemma}`;
+    
+    if (previousSummary) {
+      userPrompt += `\n\nPrevious Context Summary: ${previousSummary}`;
+    }
+    
+    if (additionalContext) {
+      userPrompt += `\n\nAdditional Context: ${additionalContext}`;
+    }
+    
+    userPrompt += '\n\nGenerate The Council\'s analysis.';
+
+    console.log('Selected counselors:', selectedCounselors.map(c => c.role));
+    console.log('Refinement mode:', isRefinement);
+    console.log('Calling Gemini API...');
+
+    const response = await ai.models.generateContent({
+      model: config.geminiModel,
+      contents: [
+        { role: 'user', parts: [{ text: systemPrompt }] },
+        { role: 'user', parts: [{ text: userPrompt }] }
+      ],
+    });
+
+    console.log('Gemini response received:', response);
+
+    // The response structure is: response.candidates[0].content.parts[0].text
+    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || response.text;
+    
+    if (!text) {
+      console.error('No text in response:', JSON.stringify(response, null, 2));
+      throw new Error("No response from AI");
+    }
+
+    console.log('AI response text:', text.substring(0, 200));
+    
+    // Clean the response text (remove markdown code blocks if present)
+    const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    
+    const data = JSON.parse(cleanedText);
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching council analysis:", error);
+    res.status(500).json({ error: "Failed to generate council analysis" });
+  }
+});
+
+export default app;

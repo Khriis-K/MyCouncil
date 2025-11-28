@@ -5,7 +5,7 @@ import ReflectionSphere from './components/ReflectionSphere';
 import BottomBar from './components/BottomBar';
 import MBTIOverlay from './components/overlays/MBTIOverlay';
 import InsightBar from './components/overlays/InsightBar';
-import CounselorOverlay from './components/overlays/CounselorOverlay';
+import CounselorDossier from './components/overlays/CounselorDossier';
 import DebateOverlay from './components/overlays/DebateOverlay';
 import DilemmaHistoryOverlay from './components/overlays/DilemmaHistoryOverlay';
 import { Counselor, TensionPair, OverlayType, CouncilResponse, ReflectionFocus } from './types';
@@ -97,20 +97,9 @@ const App: React.FC = () => {
   const handleCounselorClick = (counselor: Counselor) => {
     if (selectedCounselor?.id === counselor.id) return; // Don't re-trigger same counselor
     
-    if (selectedCounselor) {
-      // Trigger slide-out, then slide-in new one
-      setPreviousCounselor(selectedCounselor);
-      setSelectedCounselor(null); // Clear immediately to prevent duplicate rendering
-      // CHANGE: Increased from 300 to 350 to prevents animation "snap-back"
-      setTimeout(() => {
-        setSelectedCounselor(counselor);
-        setPreviousCounselor(null);
-        setActiveOverlay('COUNSELOR_INSIGHT_BAR');
-      }, 350); // Match slide-out animation duration
-    } else {
-      setSelectedCounselor(counselor);
-      setActiveOverlay('COUNSELOR_INSIGHT_BAR');
-    }
+    // Open the Insight Bar (Preview) first
+    setSelectedCounselor(counselor);
+    setActiveOverlay('COUNSELOR_INSIGHT_BAR');
   };
 
   // Handle clicks outside InsightBar to close it
@@ -362,7 +351,7 @@ const App: React.FC = () => {
 
       {/* Counselor Side Panel (Step 2) */}
       {activeOverlay === 'COUNSELOR_PANEL' && selectedCounselor && councilData && (
-        <CounselorOverlay
+        <CounselorDossier
           counselor={selectedCounselor}
           dynamicData={councilData.counselors.find(c => c.id === selectedCounselor.id)}
           onClose={closeOverlay}

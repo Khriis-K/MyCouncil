@@ -46,22 +46,18 @@ Follow these instructions to get a copy of the project up and running on your lo
     > **Note**: The backend server uses this key to authenticate with Google's Gemini API.
 
 4.  **Run the Application**:
-    You will need to run both the backend server and the frontend client.
+    Start both the backend server and frontend client with a single command:
 
-    **Terminal 1 (Backend):**
     ```bash
-    npm run server
+    npm start
     ```
-    *Server runs at http://localhost:3000*
+    *   **Frontend**: http://localhost:3001 (Proxies API requests to backend)
+    *   **Backend**: http://localhost:3000
 
-    **Terminal 2 (Frontend):**
-    ```bash
-    npm run dev
-    ```
-    *Client runs at http://localhost:5173*
+    > **Note**: You can still run them individually using `npm run server` and `npm run dev` if preferred.
 
 5.  **Open the App**:
-    -   Visit the URL shown in your frontend terminal (usually `http://localhost:5173`).
+    -   Visit http://localhost:3001 in your browser.
 
 ## 📖 Usage
 

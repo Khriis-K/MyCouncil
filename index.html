@@ -39,11 +39,17 @@
               'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
               'pulse-glow': 'pulseGlow 2.5s ease-in-out infinite',
               'float-glow': 'floatGlow 4s ease-in-out infinite',
+              'atmosphere-breathe': 'atmosphereBreathe 4s ease-in-out infinite',
+              'float': 'float 6s ease-in-out infinite',
             },
             keyframes: {
               fadeIn: {
                 '0%': { opacity: '0' },
                 '100%': { opacity: '1' },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
               },
               fadeOutIn: {
                 '0%': { opacity: '1', transform: 'scale(1)' },
@@ -91,6 +97,10 @@
                 '50%': { 
                   filter: 'drop-shadow(0 0 20px rgba(79,70,229,0.7))'
                 },
+              },
+              atmosphereBreathe: {
+                '0%, 100%': { opacity: '0.6', transform: 'scale(1)' },
+                '50%': { opacity: '1', transform: 'scale(1.02)' },
               }
             }
           },
