@@ -18,6 +18,68 @@ interface ReflectionSphereProps {
   reflectionFocus?: ReflectionFocus;
 }
 
+// Helper to calculate quadratic bezier point at t (0-1)
+const getQuadraticBezierPoint = (
+  start: { x: number; y: number },
+  control: { x: number; y: number },
+  end: { x: number; y: number },
+  t: number
+) => {
+  const x = Math.pow(1 - t, 2) * start.x + 2 * (1 - t) * t * control.x + Math.pow(t, 2) * end.x;
+  const y = Math.pow(1 - t, 2) * start.y + 2 * (1 - t) * t * control.y + Math.pow(t, 2) * end.y;
+  return { x, y };
+};
+
+// Calculate optimal marker position that avoids counselor nodes and center dilemma
+const calculateMarkerPosition = (
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  control: { x: number; y: number },
+  counselorPositions: { x: number; y: number }[],
+  centerX: number,
+  centerY: number
+) => {
+  const minDistanceFromNode = 90; // Minimum distance from counselor nodes (in viewBox units)
+  const minDistanceFromCenter = 220; // Increased to avoid the large center dilemma circle
+  
+  // Try positions closer to the endpoints first (away from center)
+  // Prioritize positions at t=0.25 and t=0.75 which are closer to counselors
+  const candidates = [0.25, 0.75, 0.3, 0.7, 0.2, 0.8, 0.35, 0.65];
+  
+  for (const t of candidates) {
+    const point = getQuadraticBezierPoint(start, control, end, t);
+    
+    // Check distance from center
+    const distFromCenter = Math.sqrt(Math.pow(point.x - centerX, 2) + Math.pow(point.y - centerY, 2));
+    if (distFromCenter < minDistanceFromCenter) continue;
+    
+    // Check distance from all counselor positions
+    let tooClose = false;
+    for (const pos of counselorPositions) {
+      const dist = Math.sqrt(Math.pow(point.x - pos.x, 2) + Math.pow(point.y - pos.y, 2));
+      if (dist < minDistanceFromNode) {
+        tooClose = true;
+        break;
+      }
+    }
+    
+    if (!tooClose) {
+      return { x: point.x, y: point.y, t };
+    }
+  }
+  
+  // Fallback: find midpoint and push it radially outward from center
+  const midpoint = getQuadraticBezierPoint(start, control, end, 0.5);
+  const angleFromCenter = Math.atan2(midpoint.y - centerY, midpoint.x - centerX);
+  // Push significantly outward to clear the center circle
+  const pushDistance = Math.max(minDistanceFromCenter - Math.sqrt(Math.pow(midpoint.x - centerX, 2) + Math.pow(midpoint.y - centerY, 2)) + 40, 60);
+  return {
+    x: midpoint.x + Math.cos(angleFromCenter) * pushDistance,
+    y: midpoint.y + Math.sin(angleFromCenter) * pushDistance,
+    t: 0.5
+  };
+};
+
 const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   dilemma,
   dilemmaSummary,
@@ -34,6 +96,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   reflectionFocus
 }) => {
   const [hoveredCounselorId, setHoveredCounselorId] = React.useState<string | null>(null);
+  const [hoveredTensionIdx, setHoveredTensionIdx] = React.useState<number | null>(null);
 
   // Use dynamic tensions if available, otherwise fall back to static
   const activeTensions = councilData?.tensions.map(t => ({
@@ -161,66 +224,225 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
         </div>
       )}
 
-      {/* Debate Tension Lines Layer */}
+      {/* Debate Tension Lines Layer with Numbered Markers */}
       {isDebateMode && (
-        <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+        <>
+          <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+            {activeTensions.map((pair, idx) => {
+              const idx1 = counselors.findIndex(c => c.id === pair.counselor1);
+              const idx2 = counselors.findIndex(c => c.id === pair.counselor2);
+              if (idx1 === -1 || idx2 === -1) return null;
+
+              const start = getCoords(idx1);
+              const end = getCoords(idx2);
+              const cx = 500;
+              const cy = 500;
+              
+              const isHovered = hoveredTensionIdx === idx;
+              const isConflict = pair.type === 'conflict';
+
+              return (
+                <g 
+                  key={idx} 
+                  className="pointer-events-auto cursor-pointer group" 
+                  onClick={() => onTensionClick(pair)}
+                  onMouseEnter={() => setHoveredTensionIdx(idx)}
+                  onMouseLeave={() => setHoveredTensionIdx(null)}
+                >
+                  {/* Invisible thick line for easier clicking */}
+                  <path
+                    d={`M ${start.x} ${start.y} Q ${cx} ${cy} ${end.x} ${end.y}`}
+                    fill="none"
+                    stroke="transparent"
+                    strokeWidth="40"
+                  />
+                  {/* Visible styled line */}
+                  <path
+                    d={`M ${start.x} ${start.y} Q ${cx} ${cy} ${end.x} ${end.y}`}
+                    fill="none"
+                    stroke={isConflict ? '#ef4444' : '#10b981'}
+                    strokeWidth={isHovered ? 5 : 3}
+                    strokeDasharray={pair.type === 'challenge' ? "12 12" : "0"}
+                    className="transition-all duration-300"
+                    style={{
+                      filter: isHovered 
+                        ? `drop-shadow(0 0 10px ${isConflict ? 'rgba(239,68,68,0.9)' : 'rgba(16,185,129,0.9)'})` 
+                        : `drop-shadow(0 0 5px ${isConflict ? 'rgba(239,68,68,0.5)' : 'rgba(16,185,129,0.5)'})`
+                    }}
+                  />
+                  {/* Animated Pulse on Line */}
+                  <circle r="4" fill="white" opacity={isHovered ? 1 : 0.7}>
+                    <animateMotion dur="2s" repeatCount="indefinite" path={`M ${start.x} ${start.y} Q ${cx} ${cy} ${end.x} ${end.y}`} />
+                  </circle>
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Small Numbered Markers on Lines */}
           {activeTensions.map((pair, idx) => {
-            // Hardcoding mapping for prototype since IDs are fixed
             const idx1 = counselors.findIndex(c => c.id === pair.counselor1);
             const idx2 = counselors.findIndex(c => c.id === pair.counselor2);
             if (idx1 === -1 || idx2 === -1) return null;
 
             const start = getCoords(idx1);
             const end = getCoords(idx2);
+            const control = { x: 500, y: 500 };
 
-            // Calculate control point for curve
-            const cx = 500;
-            const cy = 500;
+            // Get all counselor positions for collision avoidance
+            const allCounselorCoords = counselors.map((_, i) => getCoords(i));
+
+            // Calculate optimal marker position
+            const markerPos = calculateMarkerPosition(start, end, control, allCounselorCoords, 500, 500);
+
+            // Convert from viewBox coordinates (0-1000) to percentage
+            const leftPercent = markerPos.x / 10;
+            const topPercent = markerPos.y / 10;
+
+            const isConflict = pair.type === 'conflict';
+            const isHovered = hoveredTensionIdx === idx;
+            const markerNumber = idx + 1;
 
             return (
-              <g key={idx} className="pointer-events-auto cursor-pointer group" onClick={() => onTensionClick(pair)}>
-                {/* Invisible thick line for easier clicking */}
-                <path
-                  d={`M ${start.x} ${start.y} Q ${cx} ${cy} ${end.x} ${end.y}`}
-                  fill="none"
-                  stroke="transparent"
-                  strokeWidth="40"
-                />
-                {/* Visible styled line */}
-                <path
-                  d={`M ${start.x} ${start.y} Q ${cx} ${cy} ${end.x} ${end.y}`}
-                  fill="none"
-                  stroke={pair.type === 'conflict' ? '#ef4444' : pair.type === 'synthesis' ? '#10b981' : '#facc15'}
-                  strokeWidth="3"
-                  strokeDasharray={pair.type === 'challenge' ? "12 12" : "0"}
-                  className={`transition-all duration-300 ${pair.type === 'conflict' ? 'drop-shadow-[0_0_5px_rgba(239,68,68,0.7)]' : 'drop-shadow-[0_0_5px_rgba(16,185,129,0.7)]'} group-hover:stroke-width-4`}
-                />
-                {/* Animated Pulse on Line */}
-                <circle r="4" fill="white">
-                  <animateMotion dur="2s" repeatCount="indefinite" path={`M ${start.x} ${start.y} Q ${cx} ${cy} ${end.x} ${end.y}`} />
-                </circle>
-              </g>
+              <div
+                key={`marker-${idx}`}
+                className="absolute z-10 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+                style={{
+                  left: `${leftPercent}%`,
+                  top: `${topPercent}%`,
+                }}
+                onClick={() => onTensionClick(pair)}
+                onMouseEnter={() => setHoveredTensionIdx(idx)}
+                onMouseLeave={() => setHoveredTensionIdx(null)}
+              >
+                <div 
+                  className={`
+                    w-7 h-7 rounded-full flex items-center justify-center
+                    font-bold text-xs text-white
+                    transition-all duration-200 shadow-lg
+                    ${isHovered ? 'scale-125' : 'scale-100'}
+                  `}
+                  style={{
+                    backgroundColor: isConflict ? '#ef4444' : '#10b981',
+                    boxShadow: isHovered 
+                      ? `0 0 16px ${isConflict ? 'rgba(239,68,68,0.8)' : 'rgba(16,185,129,0.8)'}` 
+                      : `0 0 8px ${isConflict ? 'rgba(239,68,68,0.5)' : 'rgba(16,185,129,0.5)'}`,
+                  }}
+                >
+                  {markerNumber}
+                </div>
+              </div>
             );
           })}
-        </svg>
+
+          {/* Tension Legend Panel (Fixed to Screen Top Right) */}
+          <div 
+            className="fixed top-20 right-6 w-72 backdrop-blur-md rounded-xl p-4 z-30 animate-fade-in shadow-xl"
+            style={{
+              backgroundColor: 'var(--bg-glass)',
+              border: '1px solid var(--border-subtle)'
+            }}
+          >
+            <div className="flex items-center gap-2 mb-3 pb-2 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+              <span className="material-symbols-outlined text-lg text-yellow-400">electric_bolt</span>
+              <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+                Tensions
+              </h3>
+              {/* Legend Key */}
+              <div className="ml-auto flex items-center gap-3 text-[10px]">
+                <div className="flex items-center gap-1">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                  <span style={{ color: 'var(--text-muted)' }}>Conflict</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                  <span style={{ color: 'var(--text-muted)' }}>Synthesis</span>
+                </div>
+              </div>
+            </div>
+            
+            <ul className="space-y-2">
+              {activeTensions.map((pair, idx) => {
+                const c1 = counselors.find(c => c.id === pair.counselor1);
+                const c2 = counselors.find(c => c.id === pair.counselor2);
+                if (!c1 || !c2) return null;
+
+                const isConflict = pair.type === 'conflict';
+                const isHovered = hoveredTensionIdx === idx;
+                const coreIssue = councilData?.tensions[idx]?.core_issue || 
+                  (isConflict ? 'Opposing viewpoints' : 'Different priorities');
+
+                return (
+                  <li 
+                    key={idx} 
+                    className={`
+                      p-2.5 rounded-lg cursor-pointer transition-all duration-200
+                      ${isHovered ? 'scale-[1.02]' : ''}
+                    `}
+                    style={{
+                      backgroundColor: isHovered 
+                        ? (isConflict ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)')
+                        : 'transparent',
+                      border: `1px solid ${isHovered 
+                        ? (isConflict ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)')
+                        : 'transparent'
+                      }`,
+                    }}
+                    onClick={() => onTensionClick(pair)}
+                    onMouseEnter={() => setHoveredTensionIdx(idx)}
+                    onMouseLeave={() => setHoveredTensionIdx(null)}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      {/* Numbered Badge */}
+                      <div 
+                        className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 mt-0.5"
+                        style={{ backgroundColor: isConflict ? '#ef4444' : '#10b981' }}
+                      >
+                        {idx + 1}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        {/* Counselor Names */}
+                        <div className="flex items-center gap-1.5 text-xs font-medium mb-1">
+                          <span style={{ color: 'var(--text-secondary)' }}>{c1.name}</span>
+                          <span className={isConflict ? 'text-red-400' : 'text-emerald-400'}>↔</span>
+                          <span style={{ color: 'var(--text-secondary)' }}>{c2.name}</span>
+                        </div>
+                        
+                        {/* Core Issue */}
+                        <p 
+                          className="text-[11px] leading-relaxed"
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          {coreIssue}
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </>
       )}
 
       {/* Center Dilemma Node */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
         <button
           onClick={onCenterClick}
-          className="w-64 h-64 rounded-full bg-slate-800/40 backdrop-blur-sm border flex flex-col items-center justify-center text-center p-5 group hover:bg-slate-800/60 transition-all duration-500 cursor-pointer"
+          className="w-64 h-64 rounded-full backdrop-blur-sm border flex flex-col items-center justify-center text-center p-5 group transition-all duration-500 cursor-pointer"
           style={{
-            borderColor: currentAtmosphere?.borderColor || 'rgb(51, 65, 85)',
+            backgroundColor: 'var(--bg-glass)',
+            borderColor: currentAtmosphere?.borderColor || 'var(--border-primary)',
             boxShadow: currentAtmosphere ? `0 0 60px ${currentAtmosphere.glow}` : '0 0 40px rgba(79,70,229,0.2)'
           }}
         >
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 group-hover:text-primary transition-colors">Your Dilemma</span>
-          <p className="text-lg font-bold text-white leading-tight break-words w-full line-clamp-3 px-2">
+          <span className="text-xs font-semibold uppercase tracking-wider mb-2 group-hover:text-primary transition-colors" style={{ color: 'var(--text-muted)' }}>Your Dilemma</span>
+          <p className="text-lg font-bold leading-tight break-words w-full line-clamp-3 px-2" style={{ color: 'var(--text-primary)' }}>
             {dilemmaSummary || "Waiting for input..."}
           </p>
           {contextSummary && (
-            <span className="text-[10px] text-slate-400 mt-2 italic leading-tight px-3 break-words">
+            <span className="text-[10px] mt-2 italic leading-tight px-3 break-words" style={{ color: 'var(--text-muted)' }}>
               {contextSummary}
             </span>
           )}
@@ -245,9 +467,10 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
         let wrapperStyle: React.CSSProperties = {};
 
         // Button styles for appearance
-        let buttonClass = `w-full h-full rounded-full bg-slate-800/80 backdrop-blur-md border flex flex-col items-center justify-center p-2 transition-transform duration-300 ${colors.border} ${colors.text}`;
+        let buttonClass = `w-full h-full rounded-full backdrop-blur-md border flex flex-col items-center justify-center p-2 transition-transform duration-300 ${colors.border} ${colors.text}`;
         let buttonStyle: React.CSSProperties = { 
           ['--glow-color' as string]: colors.glow,
+          backgroundColor: 'var(--bg-glass)',
         };
 
         if (isRefining) {
@@ -286,38 +509,12 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
               disabled={isRefining}
             >
               <span className="material-symbols-outlined text-3xl mb-2">{counselor.icon}</span>
-              <span className="text-xs font-medium text-slate-200">{counselor.name}</span>
+              <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{counselor.name}</span>
             </button>
           </div>
         );
       })}
 
-      {/* Debate Debate Highlights Panel (Fixed position relative to sphere container for prototype) */}
-      {isDebateMode && (
-        <div className="absolute top-0 right-0 w-72 bg-slate-800/80 backdrop-blur-md border border-slate-700/50 rounded-lg p-4 z-20 animate-fade-in">
-          <h3 className="font-semibold text-slate-200 mb-3 text-sm flex items-center">
-            <span className="material-symbols-outlined text-lg mr-2 text-yellow-400">bolt</span>
-            Debate Highlights
-          </h3>
-          <ul className="space-y-3">
-            {activeTensions.map((pair, idx) => {
-              const c1 = counselors.find(c => c.id === pair.counselor1);
-              const c2 = counselors.find(c => c.id === pair.counselor2);
-              if (!c1 || !c2) return null;
-
-              return (
-                <li key={idx} className="text-xs text-slate-400 leading-relaxed">
-                  <span className="font-medium text-slate-300 block mb-0.5">
-                    {c1.name} vs {c2.name}:
-                  </span>
-                  {/* Show dynamic core issue if available */}
-                  {councilData?.tensions[idx]?.core_issue || (pair.type === 'conflict' ? 'Questioning the long-term career benefits.' : 'Exploring emotional needs in future planning.')}
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      )}
     </div>
   );
 };

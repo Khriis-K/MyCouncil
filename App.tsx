@@ -25,6 +25,24 @@ const App: React.FC = () => {
   const [isDebateMode, setIsDebateMode] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false); // Loading state
   
+  // Theme state - syncs with localStorage and OS preference
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('mycouncil-theme');
+      if (stored === 'light' || stored === 'dark') return stored;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'dark';
+  });
+  
+  // Sync theme with document and localStorage
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('mycouncil-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  
   // Refinement context tracking
   const [additionalContext, setAdditionalContext] = useState<string>(''); 
   const [contextSummary, setContextSummary] = useState<string>(''); // AI-generated summary of previous refinements
@@ -240,7 +258,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen bg-background-dark overflow-hidden text-slate-200 font-sans">
+    <div className="flex h-screen w-screen overflow-hidden font-sans" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
 
       {/* 1. Sidebar Configuration */}
       <Sidebar
@@ -264,6 +282,8 @@ const App: React.FC = () => {
         isMBTIOverlayOpen={activeOverlay === 'MBTI_SELECTION'}
         isHighlighted={isSidebarHighlighted}
         hasCouncil={viewState === 'SPHERE'}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       {/* 2. Main Content Area */}
@@ -271,18 +291,26 @@ const App: React.FC = () => {
 
         {/* Background Grid/Effects */}
         <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
-          <div className="w-full h-full bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:40px_40px]"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent"></div>
+          <div 
+            className="w-full h-full bg-[size:40px_40px]"
+            style={{
+              backgroundImage: `linear-gradient(to right, var(--grid-color) 1px, transparent 1px), linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px)`
+            }}
+          ></div>
+          <div className="absolute inset-0" style={{ background: 'var(--grid-fade)' }}></div>
         </div>
 
         {/* View Content */}
         <div className="flex-grow flex items-center justify-center relative z-10">
           {viewState === 'INITIAL' ? (
             <div className="text-center space-y-4 opacity-60 animate-pulse-slow">
-              <div className="w-24 h-24 rounded-full bg-slate-800 mx-auto flex items-center justify-center border border-slate-700">
-                <span className="material-symbols-outlined text-4xl text-slate-600">psychology</span>
+              <div 
+                className="w-24 h-24 rounded-full mx-auto flex items-center justify-center"
+                style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-primary)' }}
+              >
+                <span className="material-symbols-outlined text-4xl" style={{ color: 'var(--text-muted)' }}>psychology</span>
               </div>
-              <p className="text-lg font-medium">Summon the Council to begin reflection.</p>
+              <p className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>Summon the Council to begin reflection.</p>
             </div>
           ) : (
             <ReflectionSphere

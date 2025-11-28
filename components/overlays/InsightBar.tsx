@@ -11,10 +11,17 @@ interface InsightBarProps {
 
 const InsightBar: React.FC<InsightBarProps> = ({ counselor, dynamicData, onViewFull, onClose, isExiting = false }) => {
   const colorAccents: Record<string, string> = {
-    blue: 'bg-blue-500/10 border-blue-500/30',
-    green: 'bg-green-500/10 border-green-500/30',
-    yellow: 'bg-yellow-500/10 border-yellow-500/30',
-    purple: 'bg-purple-500/10 border-purple-500/30',
+    blue: 'border-blue-500/30',
+    green: 'border-green-500/30',
+    yellow: 'border-yellow-500/30',
+    purple: 'border-purple-500/30',
+  };
+
+  const bgAccents: Record<string, string> = {
+    blue: 'rgba(59, 130, 246, 0.1)',
+    green: 'rgba(16, 185, 129, 0.1)',
+    yellow: 'rgba(234, 179, 8, 0.1)',
+    purple: 'rgba(168, 85, 247, 0.1)',
   };
 
   const textColors: Record<string, string> = {
@@ -42,9 +49,15 @@ const InsightBar: React.FC<InsightBarProps> = ({ counselor, dynamicData, onViewF
       }`}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className={`flex items-center gap-4 px-6 py-4 rounded-full border backdrop-blur-md shadow-2xl ${colorAccents[counselor.color]}`}>
+      <div 
+        className={`flex items-center gap-4 px-6 py-4 rounded-full border backdrop-blur-md shadow-2xl ${colorAccents[counselor.color]}`}
+        style={{ backgroundColor: bgAccents[counselor.color] || 'var(--bg-glass)' }}
+      >
         {/* Icon */}
-        <div className={`flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 ${colorAccents[counselor.color]}`}>
+        <div 
+          className={`flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 border ${colorAccents[counselor.color]}`}
+          style={{ backgroundColor: bgAccents[counselor.color] }}
+        >
           <span className={`material-symbols-outlined text-xl ${textColors[counselor.color]}`}>
             {counselor.icon}
           </span>
@@ -54,7 +67,7 @@ const InsightBar: React.FC<InsightBarProps> = ({ counselor, dynamicData, onViewF
         <div className="flex-grow">
           <p className="text-sm leading-relaxed">
             <span className={`font-bold ${textColors[counselor.color]}`}>{counselor.name}: </span>
-            <span className="text-slate-300">{impression}</span>
+            <span style={{ color: 'var(--text-secondary)' }}>{impression}</span>
           </p>
         </div>
 

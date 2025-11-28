@@ -1,0 +1,125 @@
+/* Theme CSS Variables */
+:root {
+  /* Backgrounds */
+  --bg-primary: #f6f6f8;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e5e7eb;
+  --bg-glass: rgba(255, 255, 255, 0.85);
+  --bg-glass-hover: rgba(255, 255, 255, 0.95);
+  
+  /* Text */
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
+  --text-muted: #94a3b8;
+  
+  /* Borders */
+  --border-primary: #e2e8f0;
+  --border-secondary: #cbd5e1;
+  --border-subtle: rgba(0, 0, 0, 0.1);
+  
+  /* Overlays & Effects */
+  --overlay-backdrop: rgba(100, 116, 139, 0.4);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --glow-color: rgba(79, 70, 229, 0.3);
+  
+  /* Grid Pattern */
+  --grid-color: #e2e8f0;
+  --grid-fade: linear-gradient(to top, var(--bg-primary), transparent);
+}
+
+/* Dark Theme */
+.dark {
+  /* Backgrounds */
+  --bg-primary: #101622;
+  --bg-secondary: rgb(30, 41, 59);
+  --bg-tertiary: rgb(51, 65, 85);
+  --bg-glass: rgba(30, 41, 59, 0.7);
+  --bg-glass-hover: rgba(30, 41, 59, 0.9);
+  
+  /* Text */
+  --text-primary: #f1f5f9;
+  --text-secondary: #e2e8f0;
+  --text-tertiary: #cbd5e1;
+  --text-muted: #94a3b8;
+  
+  /* Borders */
+  --border-primary: #334155;
+  --border-secondary: #475569;
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  
+  /* Overlays & Effects */
+  --overlay-backdrop: rgba(15, 23, 42, 0.6);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --glow-color: rgba(79, 70, 229, 0.3);
+  
+  /* Grid Pattern */
+  --grid-color: #1e293b;
+  --grid-fade: linear-gradient(to top, var(--bg-primary), transparent);
+}
+
+/* Base Styles */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-secondary);
+  overflow: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Utility Classes */
+.glass-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+}
+
+.glass-panel-solid {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+}
+
+/* Scrollbar Styling */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Range Slider Customization */
+input[type=range] {
+  -webkit-appearance: none;
+  background: transparent;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  cursor: pointer;
+  margin-top: -6px;
+  box-shadow: 0 0 0 1px #4f46e5;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  background: var(--border-primary);
+  border-radius: 2px;
+}
+
+/* Theme transition for smooth switching */
+*, *::before, *::after {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+}
+
+/* Disable transitions for animations */
+.animate-slide-in-right,
+.animate-slide-out-right,
+.animate-fade-in,
+.animate-slide-from-center {
+  transition: none !important;
+}

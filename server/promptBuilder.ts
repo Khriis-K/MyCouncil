@@ -90,7 +90,7 @@ You must output a JSON object with the following structure:
       "pair_id": "string (e.g., mirror-alterego)",
       "counselor_ids": ["id1", "id2"],
       "type": "conflict" | "synthesis",
-      "core_issue": "The fundamental disagreement in plain language (1 sentence)",
+      "core_issue": "One concise sentence summarizing the disagreement (max 80 characters, complete thought)",
       "dialogue": [
         { "speaker": "id1", "text": "Natural, conversational argument..." },
         { "speaker": "id2", "text": "Counter-argument in character..." },
