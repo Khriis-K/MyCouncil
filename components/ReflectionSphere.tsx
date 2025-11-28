@@ -311,19 +311,20 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
             const idx2 = counselors.findIndex(c => c.id === pair.counselor2);
             if (idx1 === -1 || idx2 === -1) return null;
 
-            const start = getCoords(idx1);
-            const end = getCoords(idx2);
-            const control = { x: svgCenterX, y: svgCenterY };
-
-            // Get all counselor positions for collision avoidance
-            const allCounselorCoords = counselors.map((_, i) => getCoords(i));
-
-            // Calculate optimal marker position
-            const markerPos = calculateMarkerPosition(start, end, control, allCounselorCoords, svgCenterX, svgCenterY);
-
-            // Convert from viewBox coordinates (0-1000) to pixels
-            const leftPx = (markerPos.x / 1000) * layout.width;
-            const topPx = (markerPos.y / 1000) * layout.height;
+            // Use pixel positions directly from counselor positions
+            const pos1 = positions[idx1];
+            const pos2 = positions[idx2];
+            if (!pos1 || !pos2) return null;
+            
+            // Calculate the center of the container
+            const centerX = layout.width / 2;
+            const centerY = layout.height / 2;
+            
+            // Get the bezier curve control point (center) and calculate marker position
+            // Use t=0.35 to place marker closer to one counselor, avoiding center
+            const t = 0.35;
+            const markerX = Math.pow(1 - t, 2) * pos1.x + 2 * (1 - t) * t * centerX + Math.pow(t, 2) * pos2.x;
+            const markerY = Math.pow(1 - t, 2) * pos1.y + 2 * (1 - t) * t * centerY + Math.pow(t, 2) * pos2.y;
 
             const isConflict = pair.type === 'conflict';
             const isHovered = hoveredTensionIdx === idx;
@@ -334,8 +335,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                 key={`marker-${idx}`}
                 className="absolute z-10 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
                 style={{
-                  left: `${leftPx}px`,
-                  top: `${topPx}px`,
+                  left: `${markerX}px`,
+                  top: `${markerY}px`,
                 }}
                 onClick={() => onTensionClick(pair)}
                 onMouseEnter={() => setHoveredTensionIdx(idx)}
@@ -581,32 +582,48 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
         <button
           onClick={onCenterClick}
-          className="rounded-full backdrop-blur-sm border flex flex-col items-center justify-center text-center group transition-all duration-500 cursor-pointer"
+          className="rounded-full backdrop-blur-sm border flex flex-col items-center justify-center text-center group transition-all duration-500 cursor-pointer overflow-hidden"
           style={{
             width: `${layout.centerSize}px`,
             height: `${layout.centerSize}px`,
-            padding: isMobile ? '0.75rem' : '1.25rem',
+            padding: isMobile ? '0.75rem' : '1rem',
             backgroundColor: 'var(--bg-glass)',
             borderColor: currentAtmosphere?.borderColor || 'var(--border-primary)',
             boxShadow: currentAtmosphere ? `0 0 60px ${currentAtmosphere.glow}` : '0 0 40px rgba(79,70,229,0.2)'
           }}
         >
           <span 
-            className="font-semibold uppercase tracking-wider mb-1 group-hover:text-primary transition-colors"
+            className="font-semibold uppercase tracking-wider mb-1 group-hover:text-primary transition-colors flex-shrink-0"
             style={{ fontSize: `${layout.centerLabelSize}px`, color: 'var(--text-muted)' }}
           >
             Your Dilemma
           </span>
           <p 
-            className="font-bold leading-tight break-words w-full line-clamp-3 px-2"
-            style={{ fontSize: `${layout.centerFontSize}px`, color: 'var(--text-primary)' }}
+            className="font-bold leading-snug break-words w-full overflow-hidden text-ellipsis"
+            style={{ 
+              fontSize: `clamp(12px, ${layout.centerSize * 0.08}px, ${layout.centerFontSize}px)`,
+              color: 'var(--text-primary)',
+              display: '-webkit-box',
+              WebkitLineClamp: 4,
+              WebkitBoxOrient: 'vertical',
+              maxHeight: `${layout.centerSize * 0.5}px`,
+              paddingLeft: '0.5rem',
+              paddingRight: '0.5rem',
+            }}
           >
             {dilemmaSummary || "Waiting for input..."}
           </p>
-          {contextSummary && !isLandscape && (
+          {contextSummary && !isLandscape && layout.centerSize > 180 && (
             <span 
-              className="mt-1 italic leading-tight px-3 break-words"
-              style={{ fontSize: `${layout.centerLabelSize}px`, color: 'var(--text-muted)' }}
+              className="mt-1 italic leading-tight px-3 break-words flex-shrink-0 overflow-hidden text-ellipsis"
+              style={{ 
+                fontSize: `${Math.max(10, layout.centerLabelSize - 2)}px`, 
+                color: 'var(--text-muted)',
+                maxHeight: `${layout.centerSize * 0.15}px`,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+              }}
             >
               {contextSummary}
             </span>
