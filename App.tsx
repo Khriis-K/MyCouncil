@@ -20,10 +20,25 @@ const App: React.FC = () => {
   const [selectedMBTI, setSelectedMBTI] = useState<string | null>('BALANCED');
   const [councilSize, setCouncilSize] = useState<number>(4);
   const [reflectionFocus, setReflectionFocus] = useState<ReflectionFocus>('Decision-Making');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [viewState, setViewState] = useState<'INITIAL' | 'SPHERE'>('INITIAL');
   const [isDebateMode, setIsDebateMode] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false); // Loading state
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  
+  // Track screen size for responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // Auto-close sidebar on mobile
+      if (mobile && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sidebarOpen]);
   
   // Theme state - syncs with localStorage and OS preference
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -287,7 +302,10 @@ const App: React.FC = () => {
       />
 
       {/* 2. Main Content Area */}
-      <main className={`relative transition-all duration-300 h-full flex flex-col ${sidebarOpen ? 'ml-[360px] w-[calc(100%-360px)]' : 'ml-0 w-full'}`}>
+      <main 
+        className={`relative transition-all duration-300 h-full flex flex-col ${sidebarOpen && !isMobile ? 'lg:ml-[var(--sidebar-width)]' : 'ml-0'}`}
+        style={{ width: sidebarOpen && !isMobile ? 'calc(100% - var(--sidebar-width))' : '100%' }}
+      >
 
         {/* Background Grid/Effects */}
         <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">

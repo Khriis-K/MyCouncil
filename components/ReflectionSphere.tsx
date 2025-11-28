@@ -97,6 +97,20 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
 }) => {
   const [hoveredCounselorId, setHoveredCounselorId] = React.useState<string | null>(null);
   const [hoveredTensionIdx, setHoveredTensionIdx] = React.useState<number | null>(null);
+  const [isTensionDrawerOpen, setIsTensionDrawerOpen] = React.useState(false);
+  const [isLandscape, setIsLandscape] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  // Detect screen size and orientation
+  React.useEffect(() => {
+    const checkLayout = () => {
+      setIsLandscape(window.innerHeight < 500 && window.innerWidth > window.innerHeight);
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkLayout();
+    window.addEventListener('resize', checkLayout);
+    return () => window.removeEventListener('resize', checkLayout);
+  }, []);
 
   // Use dynamic tensions if available, otherwise fall back to static
   const activeTensions = councilData?.tensions.map(t => ({
@@ -108,9 +122,11 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   const currentFocusOption = reflectionFocus ? REFLECTION_FOCUS_OPTIONS.find(opt => opt.value === reflectionFocus) : null;
   
   // Calculate evenly-spaced circular positions based on number of counselors
+  // Uses CSS variable for radius when available
   const calculatePositions = (count: number) => {
     const positions = [];
-    const radius = 40; // Distance from center (percentage)
+    // Use smaller radius on mobile/landscape for tighter circle
+    const radius = isLandscape ? 35 : (isMobile ? 35 : 40);
     const centerX = 50;
     const centerY = 50;
     const startAngle = -90; // Start at top (12 o'clock)
@@ -202,22 +218,22 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
         </div>
       )}
 
-      {/* Floating Orb Focus Indicator (New) */}
-      {currentFocusOption && (
-        <div className="absolute top-6 right-6 z-20 flex items-center gap-4 px-5 py-3 rounded-full backdrop-blur-md border border-white/10 shadow-2xl animate-float"
+      {/* Floating Orb Focus Indicator - hidden on mobile landscape */}
+      {currentFocusOption && !isLandscape && (
+        <div className={`absolute top-4 right-4 z-20 flex items-center gap-2 md:gap-4 px-3 md:px-5 py-2 md:py-3 rounded-full backdrop-blur-md border border-white/10 shadow-2xl animate-float ${isMobile ? 'scale-90' : ''}`}
              style={{
                background: currentAtmosphere?.glow.replace('0.3', '0.2') || 'rgba(168, 85, 247, 0.2)',
                borderColor: currentAtmosphere?.borderColor || 'rgba(168, 85, 247, 0.4)'
              }}
         >
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-inner ${currentFocusOption.color.replace('text-', 'bg-').replace('400', '500').replace('500', '600')}`}>
-            <span className="material-symbols-outlined text-white text-xl">visibility</span>
+          <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center shadow-inner ${currentFocusOption.color.replace('text-', 'bg-').replace('400', '500').replace('500', '600')}`}>
+            <span className="material-symbols-outlined text-white text-lg md:text-xl">visibility</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-white uppercase tracking-wider">
+            <span className="text-xs md:text-sm font-bold text-white uppercase tracking-wider">
               {currentFocusOption.label.split(' ')[0]} Lens
             </span>
-            <span className={`text-xs font-medium opacity-90 leading-none mt-0.5 ${currentFocusOption.color}`}>
+            <span className={`text-[10px] md:text-xs font-medium opacity-90 leading-none mt-0.5 ${currentFocusOption.color} hidden sm:block`}>
               {currentFocusOption.label.split(' ').slice(1).join(' ') || 'Perspective'}
             </span>
           </div>
@@ -335,9 +351,10 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
             );
           })}
 
-          {/* Tension Legend Panel (Fixed to Screen Top Right) */}
+          {/* Tension Legend - Desktop: Fixed Panel, Mobile/Tablet: Bottom Drawer */}
+          {/* Desktop Panel */}
           <div 
-            className="fixed top-20 right-6 w-72 backdrop-blur-md rounded-xl p-4 z-30 animate-fade-in shadow-xl"
+            className="hidden lg:block fixed top-20 right-6 w-72 backdrop-blur-md rounded-xl p-4 z-30 animate-fade-in shadow-xl"
             style={{
               backgroundColor: 'var(--bg-glass)',
               border: '1px solid var(--border-subtle)'
@@ -423,33 +440,153 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
               })}
             </ul>
           </div>
+
+          {/* Mobile/Tablet: Bottom Drawer Toggle Button */}
+          <button
+            onClick={() => setIsTensionDrawerOpen(!isTensionDrawerOpen)}
+            className="lg:hidden fixed bottom-24 right-4 z-40 w-12 h-12 rounded-full backdrop-blur-md shadow-lg flex items-center justify-center transition-all"
+            style={{
+              backgroundColor: 'var(--bg-glass)',
+              border: '1px solid var(--border-subtle)'
+            }}
+          >
+            <span className="material-symbols-outlined text-yellow-400">
+              {isTensionDrawerOpen ? 'close' : 'electric_bolt'}
+            </span>
+            {/* Badge showing tension count */}
+            {!isTensionDrawerOpen && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                {activeTensions.length}
+              </span>
+            )}
+          </button>
+
+          {/* Mobile/Tablet: Bottom Drawer */}
+          <div 
+            className={`lg:hidden fixed bottom-0 left-0 right-0 z-30 backdrop-blur-md rounded-t-2xl shadow-2xl transition-transform duration-300 ${
+              isTensionDrawerOpen ? 'translate-y-0' : 'translate-y-full'
+            }`}
+            style={{
+              backgroundColor: 'var(--bg-glass)',
+              border: '1px solid var(--border-subtle)',
+              borderBottom: 'none',
+              maxHeight: isLandscape ? '70vh' : '50vh'
+            }}
+          >
+            {/* Drawer Handle */}
+            <div className="flex justify-center py-2">
+              <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'var(--border-secondary)' }}></div>
+            </div>
+            
+            {/* Drawer Header */}
+            <div className="flex items-center gap-2 px-4 pb-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+              <span className="material-symbols-outlined text-lg text-yellow-400">electric_bolt</span>
+              <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+                Tensions
+              </h3>
+              <div className="ml-auto flex items-center gap-3 text-[10px]">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                  <span style={{ color: 'var(--text-muted)' }}>Conflict</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                  <span style={{ color: 'var(--text-muted)' }}>Synthesis</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Drawer Content */}
+            <div className="p-4 overflow-y-auto" style={{ maxHeight: isLandscape ? 'calc(70vh - 60px)' : 'calc(50vh - 60px)' }}>
+              <ul className="space-y-2">
+                {activeTensions.map((pair, idx) => {
+                  const c1 = counselors.find(c => c.id === pair.counselor1);
+                  const c2 = counselors.find(c => c.id === pair.counselor2);
+                  if (!c1 || !c2) return null;
+
+                  const isConflict = pair.type === 'conflict';
+                  const coreIssue = councilData?.tensions[idx]?.core_issue || 
+                    (isConflict ? 'Opposing viewpoints' : 'Different priorities');
+
+                  return (
+                    <li 
+                      key={idx} 
+                      className="p-3 rounded-lg cursor-pointer active:scale-[0.98] transition-all"
+                      style={{
+                        backgroundColor: isConflict ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                        border: `1px solid ${isConflict ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
+                      }}
+                      onClick={() => {
+                        onTensionClick(pair);
+                        setIsTensionDrawerOpen(false);
+                      }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div 
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                          style={{ backgroundColor: isConflict ? '#ef4444' : '#10b981' }}
+                        >
+                          {idx + 1}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 text-sm font-medium mb-1">
+                            <span style={{ color: 'var(--text-secondary)' }}>{c1.name}</span>
+                            <span className={isConflict ? 'text-red-400' : 'text-emerald-400'}>↔</span>
+                            <span style={{ color: 'var(--text-secondary)' }}>{c2.name}</span>
+                          </div>
+                          <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                            {coreIssue}
+                          </p>
+                        </div>
+                        
+                        <span className="material-symbols-outlined text-lg" style={{ color: 'var(--text-muted)' }}>
+                          chevron_right
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+
+          {/* Drawer Backdrop */}
+          {isTensionDrawerOpen && (
+            <div 
+              className="lg:hidden fixed inset-0 z-20 bg-black/30"
+              onClick={() => setIsTensionDrawerOpen(false)}
+            />
+          )}
         </>
       )}
 
-      {/* Center Dilemma Node */}
+      {/* Center Dilemma Node - Responsive sizing */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
         <button
           onClick={onCenterClick}
-          className="w-64 h-64 rounded-full backdrop-blur-sm border flex flex-col items-center justify-center text-center p-5 group transition-all duration-500 cursor-pointer"
+          className={`rounded-full backdrop-blur-sm border flex flex-col items-center justify-center text-center group transition-all duration-500 cursor-pointer ${
+            isLandscape ? 'w-32 h-32 p-2' : (isMobile ? 'w-40 h-40 p-3' : 'w-56 h-56 lg:w-64 lg:h-64 p-4 lg:p-5')
+          }`}
           style={{
             backgroundColor: 'var(--bg-glass)',
             borderColor: currentAtmosphere?.borderColor || 'var(--border-primary)',
             boxShadow: currentAtmosphere ? `0 0 60px ${currentAtmosphere.glow}` : '0 0 40px rgba(79,70,229,0.2)'
           }}
         >
-          <span className="text-xs font-semibold uppercase tracking-wider mb-2 group-hover:text-primary transition-colors" style={{ color: 'var(--text-muted)' }}>Your Dilemma</span>
-          <p className="text-lg font-bold leading-tight break-words w-full line-clamp-3 px-2" style={{ color: 'var(--text-primary)' }}>
+          <span className={`font-semibold uppercase tracking-wider mb-1 group-hover:text-primary transition-colors ${isLandscape ? 'text-[8px]' : 'text-[10px] md:text-xs'}`} style={{ color: 'var(--text-muted)' }}>Your Dilemma</span>
+          <p className={`font-bold leading-tight break-words w-full line-clamp-3 px-1 ${isLandscape ? 'text-xs' : 'text-sm md:text-base lg:text-lg'}`} style={{ color: 'var(--text-primary)' }}>
             {dilemmaSummary || "Waiting for input..."}
           </p>
-          {contextSummary && (
-            <span className="text-[10px] mt-2 italic leading-tight px-3 break-words" style={{ color: 'var(--text-muted)' }}>
+          {contextSummary && !isLandscape && (
+            <span className="text-[8px] md:text-[10px] mt-1 md:mt-2 italic leading-tight px-2 break-words" style={{ color: 'var(--text-muted)' }}>
               {contextSummary}
             </span>
           )}
         </button>
       </div>
 
-      {/* Counselors */}
+      {/* Counselors - Responsive sizing */}
       {counselors.map((counselor, idx) => {
         const pos = positions[idx];
         const colorMap: Record<string, { border: string, text: string, glow: string }> = {
@@ -462,12 +599,18 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
 
         const colors = colorMap[counselor.color] || colorMap['purple'];
 
+        // Responsive node sizes: landscape=64px, mobile=80px, tablet=96px, desktop=128px
+        const nodeSize = isLandscape ? 'w-16 h-16' : (isMobile ? 'w-20 h-20' : 'w-24 h-24 lg:w-32 lg:h-32');
+        const nodeOffset = isLandscape ? '2rem' : (isMobile ? '2.5rem' : '3rem');
+        const iconSize = isLandscape ? 'text-xl' : (isMobile ? 'text-2xl' : 'text-2xl lg:text-3xl');
+        const textSize = isLandscape ? 'text-[9px]' : (isMobile ? 'text-[10px]' : 'text-[10px] lg:text-xs');
+
         // Wrapper styles for positioning
-        let wrapperClass = "absolute w-32 h-32 z-[100] transition-all duration-300 flex items-center justify-center";
+        let wrapperClass = `absolute ${nodeSize} z-[100] transition-all duration-300 flex items-center justify-center`;
         let wrapperStyle: React.CSSProperties = {};
 
         // Button styles for appearance
-        let buttonClass = `w-full h-full rounded-full backdrop-blur-md border flex flex-col items-center justify-center p-2 transition-transform duration-300 ${colors.border} ${colors.text}`;
+        let buttonClass = `w-full h-full rounded-full backdrop-blur-md border flex flex-col items-center justify-center p-1 lg:p-2 transition-transform duration-300 ${colors.border} ${colors.text}`;
         let buttonStyle: React.CSSProperties = { 
           ['--glow-color' as string]: colors.glow,
           backgroundColor: 'var(--bg-glass)',
@@ -476,18 +619,18 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
         if (isRefining) {
           // STATE 1: REFINING
           wrapperClass += ' pointer-events-none opacity-0 scale-50'; 
-          wrapperStyle.top = 'calc(50% - 4rem)';
-          wrapperStyle.left = 'calc(50% - 4rem)';
+          wrapperStyle.top = `calc(50% - ${nodeOffset})`;
+          wrapperStyle.left = `calc(50% - ${nodeOffset})`;
         } else if (isInitialRender) {
           // STATE 2: ENTERING
           wrapperClass += ' animate-slide-from-center';
-          wrapperStyle.top = `calc(${pos.top} - 4rem)`;
-          wrapperStyle.left = `calc(${pos.left} - 4rem)`;
+          wrapperStyle.top = `calc(${pos.top} - ${nodeOffset})`;
+          wrapperStyle.left = `calc(${pos.left} - ${nodeOffset})`;
         } else {
           // STATE 3: STABLE
-          buttonClass += ' animate-pulse-glow hover:scale-110';
-          wrapperStyle.top = `calc(${pos.top} - 4rem)`;
-          wrapperStyle.left = `calc(${pos.left} - 4rem)`;
+          buttonClass += ' animate-pulse-glow hover:scale-110 active:scale-95';
+          wrapperStyle.top = `calc(${pos.top} - ${nodeOffset})`;
+          wrapperStyle.left = `calc(${pos.left} - ${nodeOffset})`;
         }
 
         return (
@@ -508,8 +651,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
               style={buttonStyle}
               disabled={isRefining}
             >
-              <span className="material-symbols-outlined text-3xl mb-2">{counselor.icon}</span>
-              <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{counselor.name}</span>
+              <span className={`material-symbols-outlined ${iconSize} mb-1`}>{counselor.icon}</span>
+              <span className={`${textSize} font-medium text-center leading-tight`} style={{ color: 'var(--text-secondary)' }}>{counselor.name}</span>
             </button>
           </div>
         );

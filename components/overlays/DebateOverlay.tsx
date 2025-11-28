@@ -17,24 +17,24 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
    if (!c1 || !c2) return null;
 
    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
          <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" onClick={onClose}></div>
 
-         <div className="relative w-full max-w-4xl h-[80vh] bg-slate-900 border border-slate-700 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
+         <div className="relative w-full max-w-4xl max-h-[90vh] md:max-h-[80vh] bg-slate-900 border border-slate-700 rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
 
             {/* Header */}
-            <header className="flex items-center justify-between p-6 border-b border-slate-800 bg-slate-900">
+            <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 md:p-6 gap-3 border-b border-slate-800 bg-slate-900">
                <div>
-                  <h2 className="text-xl font-bold text-white">
-                     {showMap ? 'Argument Map: ' : 'Tension Dialogue: '} {c1.name} vs. {c2.name}
+                  <h2 className="text-lg md:text-xl font-bold text-white">
+                     {showMap ? 'Argument Map: ' : 'Tension: '} {c1.name} vs. {c2.name}
                   </h2>
                </div>
-               <div className="flex items-center gap-4">
+               <div className="flex items-center gap-2 md:gap-4 w-full sm:w-auto">
                   <button
                      onClick={() => setShowMap(!showMap)}
-                     className="text-sm font-medium text-slate-300 bg-slate-800 border border-slate-700 rounded-md px-4 py-2 hover:bg-slate-700 transition-colors"
+                     className="flex-1 sm:flex-none text-xs md:text-sm font-medium text-slate-300 bg-slate-800 border border-slate-700 rounded-md px-3 md:px-4 py-2 hover:bg-slate-700 transition-colors"
                   >
-                     {showMap ? 'Show Dialogue Transcript' : 'Show Argument Map'}
+                     {showMap ? 'Dialogue' : 'Argument Map'}
                   </button>
                   <button onClick={onClose} className="text-slate-500 hover:text-white">
                      <span className="material-symbols-outlined">close</span>
@@ -105,7 +105,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                         <span className="text-lg font-bold text-white">Core Conflict: {dynamicData?.core_issue || "Risk vs. Quantification"}</span>
                      </div>
 
-                     <div className="grid grid-cols-2 gap-32 w-full max-w-4xl">
+                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-32 w-full max-w-4xl">
                         {/* Left Side */}
                         <div className="flex flex-col space-y-6">
                            <div className="bg-slate-800 border-l-4 border-blue-500 p-4 rounded-r-lg shadow-lg">
@@ -135,14 +135,14 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
             </div>
 
             {/* Input Area */}
-            <div className="p-6 border-t border-slate-800 bg-slate-900">
-               <div className="flex gap-4">
+            <div className="p-4 md:p-6 border-t border-slate-800 bg-slate-900">
+               <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
                   <input
                      type="text"
                      placeholder="Inject your comment or question..."
-                     className="flex-grow bg-slate-800 border-slate-700 rounded-lg px-4 py-3 text-slate-200 focus:ring-primary focus:border-primary"
+                     className="flex-grow bg-slate-800 border-slate-700 rounded-lg px-4 py-3 text-slate-200 focus:ring-primary focus:border-primary text-sm md:text-base"
                   />
-                  <button className="bg-primary hover:bg-indigo-500 text-white px-6 rounded-lg font-semibold shadow-lg">
+                  <button className="bg-primary hover:bg-indigo-500 text-white px-6 py-3 sm:py-0 rounded-lg font-semibold shadow-lg text-sm md:text-base whitespace-nowrap">
                      Send to Council
                   </button>
                </div>

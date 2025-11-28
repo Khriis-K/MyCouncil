@@ -41,7 +41,7 @@ const CounselorOverlay: React.FC<CounselorOverlayProps> = ({ counselor, dynamicD
       ></div>
 
       {/* Side Panel */}
-      <div className={`fixed inset-y-0 right-0 z-50 w-full max-w-xl h-full bg-slate-900 border-l border-slate-700 shadow-2xl flex flex-col ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'} ${colorStyles[counselor.color].split(' ')[2]}`}>
+      <div className={`fixed inset-y-0 right-0 z-50 w-full sm:max-w-xl h-full bg-slate-900 border-l border-slate-700 shadow-2xl flex flex-col ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'} ${colorStyles[counselor.color].split(' ')[2]}`}>
 
         {/* Header */}
         <header className={`flex items-center p-6 border-b ${colorStyles[counselor.color].split(' ')[1]} bg-slate-900/50`}>

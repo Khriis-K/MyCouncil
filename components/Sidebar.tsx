@@ -48,6 +48,13 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showFocusDescription, setShowFocusDescription] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (isHighlighted && textareaRef.current) {
@@ -81,12 +88,23 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
+      {/* Mobile Backdrop Overlay */}
+      {isMobile && isOpen && (
+        <div 
+          className="fixed inset-0 z-[55] bg-black/50 backdrop-blur-sm"
+          onClick={toggleSidebar}
+        />
+      )}
+      
       <aside
-        className={`fixed inset-y-0 left-0 z-[60] backdrop-blur-xl transition-all duration-300 ease-in-out flex flex-col ${isOpen ? 'w-[360px] translate-x-0' : 'w-[360px] -translate-x-full'
-          }`}
+        className={`fixed inset-y-0 left-0 z-[60] backdrop-blur-xl transition-all duration-300 ease-in-out flex flex-col ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
         style={{ 
-          backgroundColor: theme === 'dark' ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-          borderRight: `1px solid var(--border-primary)`
+          width: isMobile ? '100vw' : 'var(--sidebar-width)',
+          maxWidth: isMobile ? '100vw' : '360px',
+          backgroundColor: theme === 'dark' ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+          borderRight: isMobile ? 'none' : `1px solid var(--border-primary)`
         }}
       >
         <div className="p-6 space-y-8 flex-grow overflow-y-auto scrollbar-hide">
@@ -299,22 +317,39 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar Toggle Handle */}
       <div
-        className={`fixed top-1/2 -translate-y-1/2 z-[55] transition-all duration-300 ${isOpen ? 'left-[360px]' : 'left-0'
-          }`}
+        className={`fixed z-[55] transition-all duration-300 ${
+          isMobile 
+            ? 'top-4 left-4' 
+            : 'top-1/2 -translate-y-1/2'
+        }`}
+        style={{ 
+          left: isMobile 
+            ? (isOpen ? 'auto' : '1rem')
+            : (isOpen ? 'var(--sidebar-width)' : '0'),
+          right: isMobile && isOpen ? '1rem' : 'auto'
+        }}
       >
         <button
           onClick={toggleSidebar}
-          className="h-16 w-6 backdrop-blur-sm rounded-r-lg flex items-center justify-center hover:shadow-[0_0_12px_rgba(79,70,229,0.5)] transition-all"
+          className={`backdrop-blur-sm flex items-center justify-center hover:shadow-[0_0_12px_rgba(79,70,229,0.5)] transition-all ${
+            isMobile 
+              ? 'h-12 w-12 rounded-full shadow-lg' 
+              : 'h-16 w-6 rounded-r-lg'
+          }`}
           style={{
-            backgroundColor: theme === 'dark' ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
-            borderTop: '1px solid var(--border-primary)',
-            borderRight: '1px solid var(--border-primary)',
-            borderBottom: '1px solid var(--border-primary)',
+            backgroundColor: theme === 'dark' ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+            border: isMobile ? '1px solid var(--border-primary)' : undefined,
+            borderTop: isMobile ? undefined : '1px solid var(--border-primary)',
+            borderRight: isMobile ? undefined : '1px solid var(--border-primary)',
+            borderBottom: isMobile ? undefined : '1px solid var(--border-primary)',
             color: 'var(--text-tertiary)'
           }}
         >
           <span className="material-symbols-outlined text-xl">
-            {isOpen ? 'chevron_left' : 'chevron_right'}
+            {isMobile 
+              ? (isOpen ? 'close' : 'menu')
+              : (isOpen ? 'chevron_left' : 'chevron_right')
+            }
           </span>
         </button>
       </div>

@@ -44,29 +44,35 @@ const InsightBar: React.FC<InsightBarProps> = ({ counselor, dynamicData, onViewF
   return (
     <div 
       data-insight-bar
-      className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-40 w-full max-w-5xl px-8 transition-all duration-300 ${
+      className={`fixed bottom-24 md:bottom-24 left-1/2 -translate-x-1/2 z-40 w-full max-w-5xl px-4 md:px-8 transition-all duration-300 ${
         isExiting ? 'animate-slide-out-left' : 'animate-slide-in-from-right'
       }`}
       onClick={(e) => e.stopPropagation()}
     >
       <div 
-        className={`flex items-center gap-4 px-6 py-4 rounded-full border backdrop-blur-md shadow-2xl ${colorAccents[counselor.color]}`}
+        className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-full border backdrop-blur-md shadow-2xl ${colorAccents[counselor.color]}`}
         style={{ backgroundColor: bgAccents[counselor.color] || 'var(--bg-glass)' }}
       >
-        {/* Icon */}
-        <div 
-          className={`flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 border ${colorAccents[counselor.color]}`}
-          style={{ backgroundColor: bgAccents[counselor.color] }}
-        >
-          <span className={`material-symbols-outlined text-xl ${textColors[counselor.color]}`}>
-            {counselor.icon}
-          </span>
+        {/* Top row on mobile: Icon, Name, Close */}
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {/* Icon */}
+          <div 
+            className={`flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 border ${colorAccents[counselor.color]}`}
+            style={{ backgroundColor: bgAccents[counselor.color] }}
+          >
+            <span className={`material-symbols-outlined text-xl ${textColors[counselor.color]}`}>
+              {counselor.icon}
+            </span>
+          </div>
+
+          {/* Counselor Name (on mobile, shown prominently) */}
+          <span className={`font-bold sm:hidden ${textColors[counselor.color]}`}>{counselor.name}</span>
         </div>
 
         {/* Counselor Name & Impression */}
-        <div className="flex-grow">
+        <div className="flex-grow w-full sm:w-auto">
           <p className="text-sm leading-relaxed">
-            <span className={`font-bold ${textColors[counselor.color]}`}>{counselor.name}: </span>
+            <span className={`font-bold hidden sm:inline ${textColors[counselor.color]}`}>{counselor.name}: </span>
             <span style={{ color: 'var(--text-secondary)' }}>{impression}</span>
           </p>
         </div>
@@ -74,7 +80,7 @@ const InsightBar: React.FC<InsightBarProps> = ({ counselor, dynamicData, onViewF
         {/* View Full Button */}
         <button
           onClick={onViewFull}
-          className={`flex-shrink-0 px-5 py-2 rounded-full font-semibold text-xs transition-all ${buttonColors[counselor.color]}`}
+          className={`flex-shrink-0 w-full sm:w-auto px-5 py-2 rounded-full font-semibold text-xs transition-all text-center ${buttonColors[counselor.color]}`}
         >
           View Full Analysis
         </button>
