@@ -27,11 +27,8 @@
   --grid-color: #e2e8f0;
   --grid-fade: linear-gradient(to top, var(--bg-primary), transparent);
   
-  /* Responsive Layout Variables */
+  /* Responsive Layout - defaults for desktop */
   --sidebar-width: 360px;
-  --node-size: 8rem;        /* 128px - counselor nodes */
-  --center-size: 16rem;     /* 256px - center dilemma */
-  --sphere-radius: 40;      /* percentage from center */
 }
 
 /* Dark Theme */
@@ -65,55 +62,99 @@
 }
 
 /* ============================================
-   RESPONSIVE BREAKPOINTS
+   RESPONSIVE SIDEBAR BREAKPOINTS
    ============================================ */
 
-/* Small screens (phones) */
-@media (max-width: 639px) {
+/* Mobile: sidebar as full overlay */
+@media (max-width: 767px) {
   :root {
-    --sidebar-width: 100%;
-    --node-size: 5rem;       /* 80px - still tappable */
-    --center-size: 10rem;    /* 160px */
-    --sphere-radius: 35;
+    --sidebar-width: 100vw;
   }
 }
 
-/* Medium screens (tablets portrait) */
-@media (min-width: 640px) and (max-width: 1023px) {
+/* Tablet: narrower sidebar */
+@media (min-width: 768px) and (max-width: 1279px) {
   :root {
     --sidebar-width: 320px;
-    --node-size: 6rem;       /* 96px */
-    --center-size: 12rem;    /* 192px */
-    --sphere-radius: 38;
   }
 }
 
-/* Large screens (tablets landscape, small laptops) */
-@media (min-width: 1024px) and (max-width: 1279px) {
-  :root {
-    --sidebar-width: 320px;
-    --node-size: 7rem;       /* 112px */
-    --center-size: 14rem;    /* 224px */
-    --sphere-radius: 38;
-  }
-}
-
-/* XL screens (desktops) - default values apply */
+/* Desktop: full sidebar */
 @media (min-width: 1280px) {
   :root {
     --sidebar-width: 360px;
-    --node-size: 8rem;
-    --center-size: 16rem;
-    --sphere-radius: 40;
   }
 }
 
-/* Landscape orientation on mobile/tablet */
-@media (max-height: 500px) and (orientation: landscape) {
-  :root {
-    --node-size: 4rem;       /* 64px - compact for landscape */
-    --center-size: 8rem;     /* 128px */
-    --sphere-radius: 35;
+/* ============================================
+   SPHERE CONTAINER QUERIES
+   Container queries for component-level responsiveness
+   ============================================ */
+
+/* Define the sphere as a container */
+.sphere-container {
+  container-type: size;
+  container-name: sphere;
+}
+
+/* Container query breakpoints for sphere content */
+@container sphere (max-width: 430px) {
+  /* Mobile: very compact */
+  .sphere-node-size {
+    --computed-node-size: 48px;
+    --computed-center-size: 120px;
+    --computed-font-size: 10px;
+    --computed-icon-size: 18px;
+  }
+}
+
+@container sphere (min-width: 431px) and (max-width: 767px) {
+  /* Large mobile / small tablet */
+  .sphere-node-size {
+    --computed-node-size: 64px;
+    --computed-center-size: 140px;
+    --computed-font-size: 11px;
+    --computed-icon-size: 20px;
+  }
+}
+
+@container sphere (min-width: 768px) and (max-width: 1023px) {
+  /* Tablet */
+  .sphere-node-size {
+    --computed-node-size: 80px;
+    --computed-center-size: 180px;
+    --computed-font-size: 11px;
+    --computed-icon-size: 22px;
+  }
+}
+
+@container sphere (min-width: 1024px) and (max-width: 1279px) {
+  /* Small desktop / large tablet */
+  .sphere-node-size {
+    --computed-node-size: 96px;
+    --computed-center-size: 200px;
+    --computed-font-size: 12px;
+    --computed-icon-size: 24px;
+  }
+}
+
+@container sphere (min-width: 1280px) {
+  /* Desktop */
+  .sphere-node-size {
+    --computed-node-size: 112px;
+    --computed-center-size: 224px;
+    --computed-font-size: 12px;
+    --computed-icon-size: 26px;
+  }
+}
+
+/* Constrained height handling */
+@container sphere (max-height: 500px) {
+  .sphere-node-size {
+    --computed-node-size: 56px;
+    --computed-center-size: 120px;
+    --computed-font-size: 10px;
+    --computed-icon-size: 18px;
   }
 }
 
@@ -150,10 +191,12 @@ body {
 /* Range Slider Customization */
 input[type=range] {
   -webkit-appearance: none;
+  appearance: none;
   background: transparent;
 }
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
+  appearance: none;
   height: 16px;
   width: 16px;
   border-radius: 50%;
