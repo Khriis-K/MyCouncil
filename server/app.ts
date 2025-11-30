@@ -104,10 +104,23 @@ app.post('/api/summon', async (req, res) => {
     // Clean the response text (remove markdown code blocks if present)
     const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
     
-    const data = JSON.parse(cleanedText);
-    res.json(data);
+    try {
+      console.log('Cleaned AI Response Text:', cleanedText);
+      const data = JSON.parse(cleanedText);
+      res.json(data);
+    } catch (parseError) {
+      console.error("Failed to parse AI response:", parseError);
+      console.error("Problematic AI response text:", cleanedText);
+      // It's often helpful to see the original raw text too
+      console.error("Original raw AI text before cleaning:", text);
+      res.status(500).json({ 
+        error: "Failed to parse council analysis from AI response",
+        details: typeof parseError === 'object' && parseError !== null && 'message' in parseError ? (parseError as Error).message : String(parseError),
+        bad_response: cleanedText 
+      });
+    }
   } catch (error) {
-    console.error("Error fetching council analysis:", error);
+    console.error("Error fetching council analysis (full error):", error);
     res.status(500).json({ error: "Failed to generate council analysis" });
   }
 });

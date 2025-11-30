@@ -81,6 +81,7 @@ coverage/
 /mocks
 /mockups
 /prompts
+/screenshots
 
 # Test files
 test-api.js

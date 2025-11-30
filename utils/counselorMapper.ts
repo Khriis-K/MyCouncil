@@ -27,13 +27,21 @@ export function buildCounselorsFromResponse(
 
   // Build UI counselor objects from the response
   return councilData.counselors.map((dynamicCounselor, index) => {
-    const roleData = selectedRoles.find(r => r.role === dynamicCounselor.id);
+    // improved lookup: match by role ID OR by stripped title
+    const roleData = selectedRoles.find(r => 
+      r.role === dynamicCounselor.id || 
+      r.title.replace(/^The /, '') === dynamicCounselor.id
+    );
+    
+    const title = roleData?.title || dynamicCounselor.id;
+    // Use the role from roleData to look up the icon, falling back to the dynamic ID
+    const roleKey = roleData?.role || dynamicCounselor.id;
     
     return {
-      id: dynamicCounselor.id,
-      name: roleData?.title || dynamicCounselor.id,
+      id: title.replace(/^The /, ''), // Use stripped title as the primary ID
+      name: title, // Keep full name for other potential uses
       role: roleData?.mbtiCode || 'Unknown',
-      icon: ROLE_ICONS[dynamicCounselor.id] || 'psychology',
+      icon: ROLE_ICONS[roleKey] || 'psychology',
       color: roleData?.color || 'blue',
       description: roleData?.description || '',
       highlight: dynamicCounselor.assessment.substring(0, 100) + '...',

@@ -694,7 +694,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                 className="font-medium text-center leading-tight"
                 style={{ fontSize: `${layout.nodeFontSize}px`, color: 'var(--text-secondary)' }}
               >
-                {counselor.name}
+                {counselor.name.replace(/^The /, '')}
               </span>
             </button>
           </div>

@@ -168,6 +168,18 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
       }
    };
 
+   const handleRemoveCriterion = (id: string) => {
+      setMatrixState(prev => ({
+         ...prev,
+         criteria: prev.criteria.filter(c => c.id !== id)
+      }));
+      setUserWeights(prev => {
+         const next = { ...prev };
+         delete next[id];
+         return next;
+      });
+   };
+
    const handleSend = async () => {
       if (!userInput.trim() || isSending || !dynamicData) return;
 
@@ -287,7 +299,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                               );
                            }
 
-                           const speaker = counselors.find(c => c.id === turn.speaker || c.role === turn.speaker || c.name === turn.speaker);
+                           const speaker = counselors.find(c => c.id === turn.speaker);
                            if (!speaker) {
                               return null;
                            }
@@ -314,7 +326,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                                  {/* Message Bubble */}
                                  <div className={`flex-1 min-w-0 ${isC1 ? 'text-left' : 'text-right'}`}>
                                     <div className={`text-xs mb-1 font-bold tracking-wider uppercase ${colors.text}`}>
-                                       {speaker.name}
+                                       {speaker.name.replace(/^The /, '')}
                                     </div>
                                     <div className={`
                                        p-5 text-sm leading-relaxed text-[var(--text-primary)] shadow-lg backdrop-blur-sm border
@@ -350,9 +362,10 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                         {/* Header Row */}
                         <div className="grid grid-cols-12 gap-4 mb-6 text-center px-4">
                            <div className="col-span-4 text-left text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Criteria</div>
-                           <div className="col-span-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Your Priority (Weight)</div>
-                           <div className={`col-span-2 text-xs font-bold uppercase tracking-wider ${c1Colors.text}`}>{c1.name}</div>
-                           <div className={`col-span-2 text-xs font-bold uppercase tracking-wider ${c2Colors.text}`}>{c2.name}</div>
+                           <div className="col-span-3 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Your Priority (Weight)</div>
+                           <div className={`col-span-2 text-xs font-bold uppercase tracking-wider ${c1Colors.text}`}>{c1.name.replace(/^The /, '')}</div>
+                           <div className={`col-span-2 text-xs font-bold uppercase tracking-wider ${c2Colors.text}`}>{c2.name.replace(/^The /, '')}</div>
+                           <div className="col-span-1"></div>
                         </div>
 
                         {/* Criteria Rows */}
@@ -367,29 +380,38 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
 
                               <div className="col-span-4 font-bold text-sm text-[var(--text-primary)]">{criterion.label}</div>
                               
-                              <div className="col-span-4 flex items-center gap-2">
+                              <div className="col-span-3 flex items-center gap-2">
                                  <input 
                                     type="range" 
                                     min="0" 
                                     max="100" 
                                     value={userWeights[criterion.id] ?? 50} 
                                     onChange={(e) => handleWeightChange(criterion.id, e.target.value)}
-                                    className={`w-full h-1 bg-transparent rounded-lg appearance-none cursor-pointer accent-[var(--text-primary)]`} 
+                                    className="w-full h-1 bg-transparent cursor-pointer" 
                                  />
                               </div>
                               
                               <div className={`col-span-2 text-center font-mono font-bold ${c1Colors.text}`}>
-                                 {criterion.c1_score}/10
+                                 {criterion.c1_score}
                               </div>
                               <div className={`col-span-2 text-center font-mono font-bold ${c2Colors.text}`}>
-                                 {criterion.c2_score}/10
+                                 {criterion.c2_score}
+                              </div>
+                              <div className="col-span-1 flex justify-end">
+                                 <button 
+                                    onClick={() => handleRemoveCriterion(criterion.id)}
+                                    className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-1 rounded-full hover:bg-[var(--bg-secondary)]"
+                                    title="Remove Criterion"
+                                 >
+                                    <span className="material-symbols-outlined text-sm">delete</span>
+                                 </button>
                               </div>
                            </div>
                         ))}
 
                         {/* Add New Criterion Row */}
                         <div className="grid grid-cols-12 gap-4 items-center mb-4 p-4 bg-[var(--bg-tertiary)]/50 rounded-xl border border-dashed border-[var(--border-subtle)] hover:border-[var(--border-primary)] transition-colors">
-                           <div className="col-span-8">
+                           <div className="col-span-7">
                               <input
                                  type="text"
                                  value={newCriterion}
@@ -399,7 +421,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                                  onKeyDown={(e) => e.key === 'Enter' && handleAddCriterion()}
                               />
                            </div>
-                           <div className="col-span-4 flex justify-end">
+                           <div className="col-span-5 flex justify-end">
                               <button
                                  onClick={handleAddCriterion}
                                  disabled={!newCriterion.trim() || isAddingCriterion}
@@ -412,7 +434,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
 
                         {/* Total Score */}
                         <div className="grid grid-cols-12 gap-4 mt-8 pt-6 border-t border-[var(--border-subtle)]">
-                           <div className="col-span-8 text-right font-bold text-lg uppercase tracking-widest text-[var(--text-muted)] flex items-center justify-end h-full">
+                           <div className="col-span-7 text-right font-bold text-lg uppercase tracking-widest text-[var(--text-muted)] flex items-center justify-end h-full">
                               Weighted Alignment
                            </div>
                            <div className={`col-span-2 text-center text-2xl font-bold font-orbitron ${c1Colors.text}`}>
@@ -421,17 +443,18 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                            <div className={`col-span-2 text-center text-2xl font-bold font-orbitron ${c2Colors.text}`}>
                               {c2Percent}%
                            </div>
+                           <div className="col-span-1"></div>
                         </div>
                         
                         <div className="mt-8 text-center animate-fade-in">
                            {isBalanced ? (
-                              <p className="text-sm text-[var(--text-secondary)] bg-[var(--bg-tertiary)] inline-block px-6 py-2 rounded-full border border-[var(--border-primary)]">
+                              <p className="text-sm text-[var(--text-secondary)]">
                                  <span className="text-indigo-400 font-bold">Balanced Approach:</span> Both perspectives align closely with your priorities. Consider a synthesis.
                               </p>
                            ) : (
                               <p className="text-sm text-[var(--text-secondary)]">
                                  Based on your priorities, <span className={`font-bold ${c1Percent > c2Percent ? c1Colors.text : c2Colors.text}`}>
-                                    {c1Percent > c2Percent ? c1.name : c2.name}'s
+                                    {c1Percent > c2Percent ? c1.name.replace(/^The /, '') : c2.name.replace(/^The /, '')}'s
                                  </span> approach aligns better with your goals.
                               </p>
                            )}
@@ -469,5 +492,6 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
       </div>
    );
 };
+
 
 export default DebateOverlay;
