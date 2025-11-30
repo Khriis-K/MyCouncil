@@ -31,53 +31,28 @@ const getQuadraticBezierPoint = (
   return { x, y };
 };
 
-// Calculate optimal marker position that avoids counselor nodes and center dilemma
-const calculateMarkerPosition = (
+// Helper to calculate control point for "Orbital Slingshot"
+// Pushes the curve outward (away from center) to avoid the central dilemma text
+const getSlingshotControlPoint = (
   start: { x: number; y: number },
   end: { x: number; y: number },
-  control: { x: number; y: number },
-  counselorPositions: { x: number; y: number }[],
   centerX: number,
   centerY: number
 ) => {
-  const minDistanceFromNode = 90; // Minimum distance from counselor nodes (in viewBox units)
-  const minDistanceFromCenter = 220; // Increased to avoid the large center dilemma circle
+  const midX = (start.x + end.x) / 2;
+  const midY = (start.y + end.y) / 2;
   
-  // Try positions closer to the endpoints first (away from center)
-  // Prioritize positions at t=0.25 and t=0.75 which are closer to counselors
-  const candidates = [0.25, 0.75, 0.3, 0.7, 0.2, 0.8, 0.35, 0.65];
+  // Vector from center to midpoint
+  const vx = midX - centerX;
+  const vy = midY - centerY;
   
-  for (const t of candidates) {
-    const point = getQuadraticBezierPoint(start, control, end, t);
-    
-    // Check distance from center
-    const distFromCenter = Math.sqrt(Math.pow(point.x - centerX, 2) + Math.pow(point.y - centerY, 2));
-    if (distFromCenter < minDistanceFromCenter) continue;
-    
-    // Check distance from all counselor positions
-    let tooClose = false;
-    for (const pos of counselorPositions) {
-      const dist = Math.sqrt(Math.pow(point.x - pos.x, 2) + Math.pow(point.y - pos.y, 2));
-      if (dist < minDistanceFromNode) {
-        tooClose = true;
-        break;
-      }
-    }
-    
-    if (!tooClose) {
-      return { x: point.x, y: point.y, t };
-    }
-  }
+  // Push OUTWARD by 20% to create a gentle arc away from center
+  // This ensures the badge (at peak) is further from the dilemma text
+  const factor = 0.2; 
   
-  // Fallback: find midpoint and push it radially outward from center
-  const midpoint = getQuadraticBezierPoint(start, control, end, 0.5);
-  const angleFromCenter = Math.atan2(midpoint.y - centerY, midpoint.x - centerX);
-  // Push significantly outward to clear the center circle
-  const pushDistance = Math.max(minDistanceFromCenter - Math.sqrt(Math.pow(midpoint.x - centerX, 2) + Math.pow(midpoint.y - centerY, 2)) + 40, 60);
   return {
-    x: midpoint.x + Math.cos(angleFromCenter) * pushDistance,
-    y: midpoint.y + Math.sin(angleFromCenter) * pushDistance,
-    t: 0.5
+    x: midX + vx * factor,
+    y: midY + vy * factor
   };
 };
 
@@ -264,6 +239,9 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
               const start = getCoords(idx1);
               const end = getCoords(idx2);
               
+              // Calculate control point for slingshot curve
+              const control = getSlingshotControlPoint(start, end, svgCenterX, svgCenterY);
+              
               const isHovered = hoveredTensionIdx === idx;
               const isConflict = pair.type === 'conflict';
 
@@ -277,14 +255,14 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                 >
                   {/* Invisible thick line for easier clicking */}
                   <path
-                    d={`M ${start.x} ${start.y} Q ${svgCenterX} ${svgCenterY} ${end.x} ${end.y}`}
+                    d={`M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`}
                     fill="none"
                     stroke="transparent"
                     strokeWidth="40"
                   />
                   {/* Visible styled line */}
                   <path
-                    d={`M ${start.x} ${start.y} Q ${svgCenterX} ${svgCenterY} ${end.x} ${end.y}`}
+                    d={`M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`}
                     fill="none"
                     stroke={isConflict ? '#ef4444' : '#10b981'}
                     strokeWidth={isHovered ? 5 : 3}
@@ -298,7 +276,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                   />
                   {/* Animated Pulse on Line */}
                   <circle r="4" fill="white" opacity={isHovered ? 1 : 0.7}>
-                    <animateMotion dur="2s" repeatCount="indefinite" path={`M ${start.x} ${start.y} Q ${svgCenterX} ${svgCenterY} ${end.x} ${end.y}`} />
+                    <animateMotion dur="2s" repeatCount="indefinite" path={`M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`} />
                   </circle>
                 </g>
               );
@@ -320,11 +298,15 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
             const centerX = layout.width / 2;
             const centerY = layout.height / 2;
             
-            // Get the bezier curve control point (center) and calculate marker position
-            // Use t=0.35 to place marker closer to one counselor, avoiding center
-            const t = 0.35;
-            const markerX = Math.pow(1 - t, 2) * pos1.x + 2 * (1 - t) * t * centerX + Math.pow(t, 2) * pos2.x;
-            const markerY = Math.pow(1 - t, 2) * pos1.y + 2 * (1 - t) * t * centerY + Math.pow(t, 2) * pos2.y;
+            // Get the bezier curve control point (slingshot logic)
+            const control = getSlingshotControlPoint(pos1, pos2, centerX, centerY);
+            
+            // Use t=0.5 to place marker at the peak of the curve (furthest from center)
+            const t = 0.5;
+            const markerPos = getQuadraticBezierPoint(pos1, control, pos2, t);
+            
+            const markerX = markerPos.x;
+            const markerY = markerPos.y;
 
             const isConflict = pair.type === 'conflict';
             const isHovered = hoveredTensionIdx === idx;

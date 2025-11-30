@@ -57,6 +57,10 @@ export interface CouncilResponse {
     counselor_ids: [string, string];
     type: "conflict" | "synthesis";
     core_issue: string;
+    c1_claim: string;
+    c1_evidence: string;
+    c2_claim: string;
+    c2_evidence: string;
     dialogue: {
       speaker: string;
       text: string;

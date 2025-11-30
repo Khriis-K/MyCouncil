@@ -21,8 +21,8 @@ interface SidebarProps {
   isMBTIOverlayOpen?: boolean;
   isHighlighted?: boolean;
   hasCouncil?: boolean;
-  theme: 'light' | 'dark';
-  onToggleTheme: () => void;
+  theme: 'light' | 'dark' | 'amoled';
+  setThemeMode: (theme: 'light' | 'dark' | 'amoled') => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -44,17 +44,31 @@ const Sidebar: React.FC<SidebarProps> = ({
   isHighlighted = false,
   hasCouncil = false,
   theme,
-  onToggleTheme
+  setThemeMode
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [showFocusDescription, setShowFocusDescription] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  const [progressWidth, setProgressWidth] = useState(0);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Reset progress bar when generation starts/stops
+  useEffect(() => {
+    if (isGenerating) {
+      setProgressWidth(0);
+      // Small delay to ensure render at 0 before transitioning
+      const timer = setTimeout(() => {
+        setProgressWidth(95);
+      }, 50);
+      return () => clearTimeout(timer);
+    } else {
+      setProgressWidth(0);
+    }
+  }, [isGenerating]);
 
   useEffect(() => {
     if (isHighlighted && textareaRef.current) {
@@ -80,8 +94,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   const handleReflectionFocusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFocus = e.target.value as ReflectionFocus;
     setReflectionFocus(newFocus);
-    setShowFocusDescription(true);
-    setTimeout(() => setShowFocusDescription(false), 3000);
   };
 
   const currentFocusOption = REFLECTION_FOCUS_OPTIONS.find(opt => opt.value === reflectionFocus);
@@ -103,14 +115,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         style={{ 
           width: isMobile ? '100vw' : 'var(--sidebar-width)',
           maxWidth: isMobile ? '100vw' : '360px',
-          backgroundColor: theme === 'dark' ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+          backgroundColor: theme === 'light' ? 'rgba(255, 255, 255, 0.95)' : (theme === 'amoled' ? 'rgba(0, 0, 0, 0.95)' : 'rgba(15, 23, 42, 0.95)'),
           borderRight: isMobile ? 'none' : `1px solid var(--border-primary)`
         }}
       >
         <div className="p-6 space-y-8 flex-grow overflow-y-auto scrollbar-hide">
           <header className="flex items-center justify-center mb-4">
             <img 
-              src={theme === 'dark' ? '/imgs/logo_transparent_dark_mode.png' : '/imgs/logo_transparent_light_mode.png'} 
+              src={theme === 'light' ? '/imgs/logo_transparent_light_mode.png' : '/imgs/logo_transparent_dark_mode.png'} 
               alt="MyCouncil" 
               style={{ width: '75%', height: 'auto' }}
               className="animate-float-glow"
@@ -129,7 +141,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 rows={5}
                 className={`w-full rounded-lg focus:ring-primary focus:border-primary resize-none p-3 text-sm transition-all ${isHighlighted ? 'ring-4 ring-primary ring-opacity-50 shadow-[0_0_30px_rgba(79,70,229,0.6)]' : ''} ${hasCouncil ? 'opacity-50 cursor-not-allowed' : ''}`}
                 style={{
-                  backgroundColor: theme === 'dark' ? 'rgb(30, 41, 59)' : 'rgb(241, 245, 249)',
+                  backgroundColor: theme === 'light' ? 'rgb(241, 245, 249)' : (theme === 'amoled' ? 'rgb(18, 18, 18)' : 'rgb(30, 41, 59)'),
                   borderColor: 'var(--border-primary)',
                   color: 'var(--text-primary)'
                 }}
@@ -150,7 +162,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   disabled={hasCouncil}
                   className={`w-full rounded-lg focus:ring-primary focus:border-primary appearance-none p-3 text-sm ${hasCouncil ? 'opacity-50 cursor-not-allowed' : ''}`}
                   style={{
-                    backgroundColor: theme === 'dark' ? 'rgb(30, 41, 59)' : 'rgb(241, 245, 249)',
+                    backgroundColor: theme === 'light' ? 'rgb(241, 245, 249)' : (theme === 'amoled' ? 'rgb(18, 18, 18)' : 'rgb(30, 41, 59)'),
                     borderColor: 'var(--border-primary)',
                     color: 'var(--text-primary)'
                   }}
@@ -163,7 +175,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   expand_more
                 </span>
               </div>
-              {showFocusDescription && currentFocusOption && (
+              {currentFocusOption && (
                 <p className="text-xs mt-2 animate-fade-in" style={{ color: 'var(--text-tertiary)' }}>
                   {currentFocusOption.description}
                 </p>
@@ -180,7 +192,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   disabled={hasCouncil}
                   className={`w-full appearance-none rounded-lg focus:ring-primary focus:border-primary p-3 text-sm transition-colors ${selectedMBTI && selectedMBTI !== 'BALANCED' ? 'border-diplomat' : ''} ${hasCouncil ? 'opacity-50 cursor-not-allowed' : ''}`}
                   style={{
-                    backgroundColor: theme === 'dark' ? 'rgb(30, 41, 59)' : 'rgb(241, 245, 249)',
+                    backgroundColor: theme === 'light' ? 'rgb(241, 245, 249)' : (theme === 'amoled' ? 'rgb(18, 18, 18)' : 'rgb(30, 41, 59)'),
                     borderColor: 'var(--border-primary)',
                     color: 'var(--text-primary)'
                   }}
@@ -234,7 +246,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         }
                       `}
                       style={{
-                        backgroundColor: size === councilSize ? undefined : (theme === 'dark' ? 'rgb(30, 41, 59)' : 'rgb(241, 245, 249)'),
+                        backgroundColor: size === councilSize ? undefined : (theme === 'light' ? 'rgb(241, 245, 249)' : (theme === 'amoled' ? 'rgb(18, 18, 18)' : 'rgb(30, 41, 59)')),
                         borderColor: size >= councilSize && size !== councilSize ? 'var(--border-secondary)' : undefined,
                         color: size > councilSize ? 'var(--text-muted)' : undefined
                       }}
@@ -254,56 +266,74 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Footer with Theme Toggle & Summon/Restart Button */}
         <div className="p-6" style={{ borderTop: '1px solid var(--border-primary)' }}>
-          {/* Theme Toggle Switch */}
-          <div className="flex items-center justify-between mb-4 px-1">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-base" style={{ color: theme === 'light' ? '#f59e0b' : 'var(--text-muted)' }}>light_mode</span>
-            </div>
-            <button
-              onClick={onToggleTheme}
-              className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-              style={{
-                backgroundColor: theme === 'dark' ? '#4f46e5' : '#cbd5e1'
-              }}
-              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            >
-              <span
-                className="inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300"
+          {/* Theme Selection Group */}
+          <div className="flex items-center justify-between mb-4 p-1 rounded-lg" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+            {[
+              { id: 'light', icon: 'light_mode', label: 'Light' },
+              { id: 'dark', icon: 'dark_mode', label: 'Dark' },
+              { id: 'amoled', icon: 'contrast', label: 'OLED' }
+            ].map((mode) => (
+              <button
+                key={mode.id}
+                onClick={() => setThemeMode(mode.id as any)}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-medium transition-all duration-200 ${
+                  theme === mode.id 
+                    ? 'shadow-sm' 
+                    : 'hover:bg-white/5'
+                }`}
                 style={{
-                  transform: theme === 'dark' ? 'translateX(1.375rem)' : 'translateX(0.25rem)'
+                  backgroundColor: theme === mode.id ? 'var(--bg-secondary)' : 'transparent',
+                  color: theme === mode.id ? 'var(--text-primary)' : 'var(--text-muted)',
+                  border: theme === mode.id ? '1px solid var(--border-primary)' : '1px solid transparent'
                 }}
-              />
-            </button>
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-base" style={{ color: theme === 'dark' ? '#a5b4fc' : 'var(--text-muted)' }}>dark_mode</span>
-            </div>
+                title={`Switch to ${mode.label} mode`}
+              >
+                <span className="material-symbols-outlined text-sm">{mode.icon}</span>
+                {mode.label}
+              </button>
+            ))}
           </div>
 
           {!hasCouncil ? (
             <button
               onClick={onSummon}
               disabled={isGenerating}
-              className={`w-full font-semibold py-3 px-4 rounded-lg shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-all duration-300 ease-in-out flex items-center justify-center ${isGenerating
+              className={`relative overflow-hidden w-full font-semibold py-3 px-4 rounded-lg shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-all duration-300 ease-in-out flex items-center justify-center ${isGenerating
                   ? 'cursor-not-allowed'
                   : 'bg-primary hover:bg-indigo-500 text-white'
                 }`}
               style={isGenerating ? { backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-muted)' } : undefined}
             >
-              {isGenerating ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin mr-2" style={{ borderColor: 'var(--text-muted)', borderTopColor: 'transparent' }}></span>
-                  Consulting...
-                </>
-              ) : (
-                'Summon the Council'
+              {/* Progressive Loading Bar */}
+              {isGenerating && (
+                <div 
+                  className="absolute left-0 top-0 bottom-0 transition-all ease-out"
+                  style={{ 
+                    width: `${progressWidth}%`, 
+                    // Heuristic: Base 3s + 3.5s per counselor (Adjusted for Gemini 2.5 Flash latency)
+                    transitionDuration: `${3000 + (councilSize * 3500)}ms`,
+                    backgroundColor: theme === 'amoled' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(79, 70, 229, 0.15)'
+                  }} 
+                />
               )}
+
+              <div className="relative z-10 flex items-center">
+                {isGenerating ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin mr-2" style={{ borderColor: 'var(--text-muted)', borderTopColor: 'transparent' }}></span>
+                    Consulting...
+                  </>
+                ) : (
+                  'Summon the Council'
+                )}
+              </div>
             </button>
           ) : (
             <button
               onClick={onRestart}
               className="w-full font-semibold py-3 px-4 rounded-lg transition-all duration-300 ease-in-out flex items-center justify-center gap-2"
               style={{
-                backgroundColor: theme === 'dark' ? 'rgb(51, 65, 85)' : 'rgb(226, 232, 240)',
+                backgroundColor: theme === 'light' ? 'rgb(226, 232, 240)' : (theme === 'amoled' ? 'rgb(39, 39, 42)' : 'rgb(51, 65, 85)'),
                 color: 'var(--text-primary)',
                 border: '1px solid var(--border-secondary)'
               }}
@@ -337,7 +367,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               : 'h-16 w-6 rounded-r-lg'
           }`}
           style={{
-            backgroundColor: theme === 'dark' ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+            backgroundColor: theme === 'light' ? 'rgba(255, 255, 255, 0.95)' : (theme === 'amoled' ? 'rgba(0, 0, 0, 0.9)' : 'rgba(30, 41, 59, 0.9)'),
             border: isMobile ? '1px solid var(--border-primary)' : undefined,
             borderTop: isMobile ? undefined : '1px solid var(--border-primary)',
             borderRight: isMobile ? undefined : '1px solid var(--border-primary)',

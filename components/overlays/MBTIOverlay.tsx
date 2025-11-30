@@ -195,7 +195,8 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
     <div className="absolute inset-0 z-50 flex flex-col">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-all"
+        className="absolute inset-0 backdrop-blur-md transition-all"
+        style={{ backgroundColor: 'var(--overlay-backdrop)' }}
         onClick={selectedType ? () => setSelectedType(null) : onClose}
       ></div>
 
@@ -224,9 +225,18 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
 
       {/* Right Sidebar for Type Details */}
       {selectedType && activeStyles && (
-        <aside className="fixed top-0 right-0 h-full w-[500px] z-50 bg-slate-900/95 backdrop-blur-2xl border-l border-slate-700 shadow-2xl overflow-hidden animate-slide-in-right flex flex-col">
+        <aside 
+          className="fixed top-0 right-0 h-full w-[500px] z-50 backdrop-blur-2xl border-l shadow-2xl overflow-hidden animate-slide-in-right flex flex-col"
+          style={{ 
+            backgroundColor: 'var(--bg-glass)',
+            borderColor: 'var(--border-primary)'
+          }}
+        >
           {/* Header - Compact */}
-          <header className="flex items-center justify-between px-6 py-3 shrink-0 border-b border-slate-800/50">
+          <header 
+            className="flex items-center justify-between px-6 py-3 shrink-0 border-b"
+            style={{ borderColor: 'var(--border-primary)' }}
+          >
             <h2 className="text-lg font-bold text-white truncate">About {selectedType.code} - {selectedType.name}</h2>
             <button
               onClick={() => setSelectedType(null)}
@@ -240,8 +250,14 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
           <div className="flex-grow flex flex-col px-6 py-4 overflow-hidden gap-4">
 
             {/* Profile Identity - Hero */}
-            <div className="flex items-center gap-5 shrink-0 border-b border-slate-800/50 pb-4">
-              <div className={`w-28 h-28 rounded-xl flex items-center justify-center shrink-0 overflow-hidden border-2 ${activeStyles.border} bg-slate-800/50 shadow-lg`}>
+            <div 
+              className="flex items-center gap-5 shrink-0 border-b pb-4"
+              style={{ borderColor: 'var(--border-primary)' }}
+            >
+              <div 
+                className={`w-28 h-28 rounded-xl flex items-center justify-center shrink-0 overflow-hidden border-2 ${activeStyles.border} shadow-lg`}
+                style={{ backgroundColor: 'var(--bg-tertiary)' }}
+              >
                 <img
                   src={AVATAR_URLS[selectedType.code] || AVATAR_URLS.INTJ}
                   alt={`${selectedType.name} avatar`}
@@ -261,7 +277,13 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
             {/* Fixed Info Panel Area - Shows category information */}
             {clickedSection && (
               <div className="shrink-0 mb-4 animate-fade-in">
-                <div className="p-3 bg-slate-800/80 border border-slate-600 rounded-lg shadow-lg relative max-h-[200px] overflow-y-auto scrollbar-hide">
+                <div 
+                  className="p-3 border rounded-lg shadow-lg relative max-h-[200px] overflow-y-auto scrollbar-hide"
+                  style={{ 
+                    backgroundColor: 'var(--bg-secondary)',
+                    borderColor: 'var(--border-primary)'
+                  }}
+                >
                   <div className="flex items-start gap-2 mb-2">
                     <span className="material-symbols-outlined text-lg text-cyan-400 shrink-0">
                       {clickedSection === 'traits' ? 'psychology' : clickedSection === 'dichotomies' ? 'info' : clickedSection === 'behaviors' ? 'psychology_alt' : 'warning'}
@@ -424,7 +446,13 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
           </div>
 
           {/* Bottom Validation Section - Compact & Integrated */}
-          <div className="px-6 py-5 border-t border-slate-700/60 bg-slate-900/60 backdrop-blur-xl shrink-0 flex flex-col gap-4">
+          <div 
+            className="px-6 py-5 border-t backdrop-blur-xl shrink-0 flex flex-col gap-4"
+            style={{ 
+              backgroundColor: 'var(--bg-glass)',
+              borderColor: 'var(--border-primary)'
+            }}
+          >
             <div className="flex justify-between items-center">
               <h3 className="font-bold text-white text-sm uppercase tracking-wide">Validate Profile</h3>
               <span
@@ -493,7 +521,11 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
 
             <button
               onClick={() => onConfirm(selectedType.code)}
-              className={`w-full bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold py-3 rounded-lg shadow-md transition-all border border-slate-600 text-sm tracking-wide uppercase`}
+              className={`w-full font-bold py-3 rounded-lg shadow-md transition-all duration-300 ease-in-out border text-sm tracking-wide uppercase bg-primary hover:bg-indigo-500 text-white`}
+              style={{ 
+                borderColor: 'transparent',
+                boxShadow: '0 0 15px rgba(79,70,229,0.4)'
+              }}
             >
               Confirm & Select Profile
             </button>

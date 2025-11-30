@@ -3,9 +3,9 @@ import cors from 'cors';
 import { GoogleGenAI } from "@google/genai";
 import rateLimit from 'express-rate-limit';
 import { selectCouncilors } from '../data/counselorMatrix';
-import { buildSystemPrompt } from './promptBuilder';
+import { buildSystemPrompt, buildDebateInjectionPrompt } from './promptBuilder';
 // Import Zod schema for request validation
-import { summonSchema } from './schemas';
+import { summonSchema, debateInjectionSchema } from './schemas';
 import { config } from './config';
 
 const app = express();
@@ -109,6 +109,57 @@ app.post('/api/summon', async (req, res) => {
   } catch (error) {
     console.error("Error fetching council analysis:", error);
     res.status(500).json({ error: "Failed to generate council analysis" });
+  }
+});
+
+app.post('/api/debate/inject', async (req, res) => {
+  try {
+    const validationResult = debateInjectionSchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: "Validation Error",
+        details: validationResult.error.flatten()
+      });
+    }
+
+    const { dilemma, tension, history, user_input, counselors } = validationResult.data;
+
+    if (!config.geminiApiKey) {
+      return res.status(500).json({ error: "Server misconfiguration: API Key missing" });
+    }
+
+    const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
+    // Pass the full tension object (which now includes map fields) to the prompt builder
+    const prompt = buildDebateInjectionPrompt(dilemma, tension, history, user_input, counselors);
+
+    console.log('Generating debate injection response...');
+    console.log('Prompt preview:', prompt.substring(0, 200) + '...');
+    
+    const response = await ai.models.generateContent({
+      model: config.geminiModel,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    });
+
+    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || response.text;
+    if (!text) throw new Error("No response from AI");
+
+    console.log('Raw AI Response for Injection:', text);
+
+    const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const responseData = JSON.parse(cleanedText);
+
+    // Validate response structure
+    if (!responseData.dialogue || !Array.isArray(responseData.dialogue)) {
+       console.warn('Invalid AI response structure:', responseData);
+       throw new Error("AI returned invalid structure (missing dialogue array)");
+    }
+
+    res.json(responseData);
+
+  } catch (error) {
+    console.error("Error processing debate injection:", error);
+    res.status(500).json({ error: "Failed to process debate injection" });
   }
 });
 

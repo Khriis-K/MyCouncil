@@ -41,10 +41,10 @@ const App: React.FC = () => {
   }, [sidebarOpen]);
   
   // Theme state - syncs with localStorage and OS preference
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+  const [theme, setTheme] = useState<'light' | 'dark' | 'amoled'>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('mycouncil-theme');
-      if (stored === 'light' || stored === 'dark') return stored;
+      if (stored === 'light' || stored === 'dark' || stored === 'amoled') return stored;
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
     return 'dark';
@@ -52,11 +52,14 @@ const App: React.FC = () => {
   
   // Sync theme with document and localStorage
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
+    document.documentElement.classList.remove('dark', 'amoled');
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else if (theme === 'amoled') {
+      document.documentElement.classList.add('amoled');
+    }
     localStorage.setItem('mycouncil-theme', theme);
   }, [theme]);
-
-  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   
   // Refinement context tracking
   const [additionalContext, setAdditionalContext] = useState<string>(''); 
@@ -298,7 +301,7 @@ const App: React.FC = () => {
         isHighlighted={isSidebarHighlighted}
         hasCouncil={viewState === 'SPHERE'}
         theme={theme}
-        onToggleTheme={toggleTheme}
+        setThemeMode={setTheme}
       />
 
       {/* 2. Main Content Area */}
@@ -414,6 +417,7 @@ const App: React.FC = () => {
             (t.counselor_ids[0] === selectedTensionPair.counselor2 && t.counselor_ids[1] === selectedTensionPair.counselor1)
           )}
           onClose={closeOverlay}
+          dilemma={dilemma}
         />
       )}
 

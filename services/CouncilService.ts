@@ -72,3 +72,43 @@ export const fetchCouncilAnalysis = async (
     throw error;
   }
 };
+
+export const injectIntoDebate = async (
+  dilemma: string,
+  tension: { core_issue: string; counselor_ids: string[]; c1_claim?: string; c1_evidence?: string; c2_claim?: string; c2_evidence?: string },
+  history: { speaker: string; text: string }[],
+  userInput: string,
+  counselors: { id: string; name: string; role: string; description: string }[]
+): Promise<{ 
+  dialogue: { speaker: string; text: string }[], 
+  mapState: { 
+    core_issue: string; 
+    c1_claim: string; 
+    c1_evidence: string; 
+    c2_claim: string; 
+    c2_evidence: string; 
+  } 
+}> => {
+  try {
+    const response = await fetch('/api/debate/inject', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        dilemma,
+        tension,
+        history,
+        user_input: userInput,
+        counselors
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error injecting into debate:', error);
+    throw error;
+  }
+};
