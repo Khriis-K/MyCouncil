@@ -15,6 +15,7 @@ const CONSTRAINED_HEIGHT = 600;
 const MOBILE_MAX = 430;
 const TABLET_MAX = 1279;
 const THROTTLE_MS = 100;
+const BOTTOM_BAR_OFFSET = 80; // Height of bottom bar + padding
 
 /**
  * Hook that observes container size and returns responsive breakpoint info.
@@ -91,8 +92,13 @@ export function useContainerSize<T extends HTMLElement>(): [RefObject<T>, Contai
 export function calculateLayoutValues(containerSize: ContainerSize) {
   const { width, height, isMobile, isTablet, isDesktop } = containerSize;
   
+  // Account for bottom bar to prevent overlap
+  const safeHeight = Math.max(0, height - BOTTOM_BAR_OFFSET);
+  const centerY = safeHeight / 2;
+
   // Use minimum dimension for all calculations to ensure sphere fits
-  const minDimension = Math.min(width, height);
+  // We use safeHeight here so the radius is constrained by the space ABOVE the bottom bar
+  const minDimension = Math.min(width, safeHeight);
   
   // Node size: scales with screen, larger on desktop
   // Mobile: 60-80px, Tablet: 80-100px, Desktop: 100-140px
@@ -124,8 +130,9 @@ export function calculateLayoutValues(containerSize: ContainerSize) {
     centerSize,
     orbitRadius,       // In pixels - use this for positioning
     minDimension,      // Export for centering calculations
-    width,             // Container width
-    height,            // Container height
+    width,
+    height,
+    centerY,           // New: Center Y position adjusted for bottom bar
     // Font sizes - much larger for readability
     nodeFontSize: isMobile ? 11 : isTablet ? 12 : 14,
     centerFontSize: isMobile ? 14 : isTablet ? 18 : 22,

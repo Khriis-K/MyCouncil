@@ -98,7 +98,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
     // Use pixel radius from layout, centered in the container
     const radius = layout.orbitRadius;
     const centerX = layout.width / 2;   // Pixel center X
-    const centerY = layout.height / 2;  // Pixel center Y
+    const centerY = layout.centerY;     // Pixel center Y (adjusted for bottom bar)
     const startAngle = -90; // Start at top (12 o'clock)
     
     for (let i = 0; i < count; i++) {
@@ -130,7 +130,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   
   // Get center coordinates for SVG
   const svgCenterX = 500;  // Center of 1000x1000 viewBox
-  const svgCenterY = 500;
+  const svgCenterY = (layout.centerY / layout.height) * 1000; // Adjusted center for bottom bar
 
   // Ambient atmosphere colors for each lens
   const atmosphereColors: Record<string, { gradient: string, glow: string, borderColor: string }> = {
@@ -296,7 +296,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
             
             // Calculate the center of the container
             const centerX = layout.width / 2;
-            const centerY = layout.height / 2;
+            const centerY = layout.centerY;
             
             // Get the bezier curve control point (slingshot logic)
             const control = getSlingshotControlPoint(pos1, pos2, centerX, centerY);
@@ -632,7 +632,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
         
         // Center of container in pixels
         const centerX = layout.width / 2;
-        const centerY = layout.height / 2;
+        const centerY = layout.centerY;
 
         // Wrapper styles for positioning - use pixel values
         let wrapperClass = `absolute z-[100] transition-all duration-300 flex items-center justify-center`;
