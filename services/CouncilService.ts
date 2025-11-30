@@ -75,7 +75,19 @@ export const fetchCouncilAnalysis = async (
 
 export const injectIntoDebate = async (
   dilemma: string,
-  tension: { core_issue: string; counselor_ids: string[]; c1_claim?: string; c1_evidence?: string; c2_claim?: string; c2_evidence?: string },
+  tension: { 
+    core_issue: string; 
+    counselor_ids: string[]; 
+    matrix?: { 
+      criteria: { 
+        id: string; 
+        label: string; 
+        c1_score: number; 
+        c2_score: number; 
+        reasoning: string 
+      }[] 
+    } 
+  },
   history: { speaker: string; text: string }[],
   userInput: string,
   counselors: { id: string; name: string; role: string; description: string }[]
@@ -83,10 +95,15 @@ export const injectIntoDebate = async (
   dialogue: { speaker: string; text: string }[], 
   mapState: { 
     core_issue: string; 
-    c1_claim: string; 
-    c1_evidence: string; 
-    c2_claim: string; 
-    c2_evidence: string; 
+    matrix: { 
+      criteria: { 
+        id: string; 
+        label: string; 
+        c1_score: number; 
+        c2_score: number; 
+        reasoning: string 
+      }[] 
+    } 
   } 
 }> => {
   try {

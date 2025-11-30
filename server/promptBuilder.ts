@@ -91,10 +91,17 @@ You must output a JSON object with the following structure:
       "counselor_ids": ["id1", "id2"],
       "type": "conflict" | "synthesis",
       "core_issue": "One concise sentence summarizing the disagreement specifically regarding the user's situation (e.g. 'Whether to prioritize the promotion or family time')",
-      "c1_claim": "A concise (max 10 words) summary of Counselor 1's main argument",
-      "c1_evidence": "A concise (max 10 words) key piece of evidence or reasoning for Counselor 1",
-      "c2_claim": "A concise (max 10 words) summary of Counselor 2's main argument",
-      "c2_evidence": "A concise (max 10 words) key piece of evidence or reasoning for Counselor 2",
+      "matrix": {
+        "criteria": [
+          {
+            "id": "unique_id_1",
+            "label": "Short criterion name (e.g. 'Long-term Stability')",
+            "c1_score": 9,
+            "c2_score": 4,
+            "reasoning": "Brief explanation of the score difference"
+          }
+        ]
+      },
       "dialogue": [
         { "speaker": "id1", "text": "Argument that explicitly references specific details/facts from the user's dilemma (NO abstract jargon)..." },
         { "speaker": "id2", "text": "Counter-argument citing specific constraints or feelings mentioned by the user..." },
@@ -117,7 +124,18 @@ Critical Guidelines:
 
 export function buildDebateInjectionPrompt(
   dilemma: string,
-  tension: { core_issue: string; c1_claim?: string; c1_evidence?: string; c2_claim?: string; c2_evidence?: string },
+  tension: { 
+    core_issue: string; 
+    matrix?: { 
+      criteria: { 
+        id: string; 
+        label: string; 
+        c1_score: number; 
+        c2_score: number; 
+        reasoning: string 
+      }[] 
+    } 
+  },
   dialogueHistory: { speaker: string; text: string }[],
   userInjection: string,
   counselors: { id: string; name: string; role: string; description: string }[]
@@ -130,11 +148,11 @@ export function buildDebateInjectionPrompt(
     return `${speakerName}: "${turn.text}"`;
   }).join('\n');
 
-  const currentMapState = tension.c1_claim ? `
-CURRENT ARGUMENT MAP:
+  const currentMapState = tension.matrix ? `
+CURRENT DECISION MATRIX:
 Core Conflict: "${tension.core_issue}"
-${c1.name}'s Position: Claim: "${tension.c1_claim}" | Evidence: "${tension.c1_evidence}"
-${c2.name}'s Position: Claim: "${tension.c2_claim}" | Evidence: "${tension.c2_evidence}"
+Criteria:
+${tension.matrix.criteria.map(c => `- ${c.label}: ${c1.name}=${c.c1_score}/10, ${c2.name}=${c.c2_score}/10 (${c.reasoning})`).join('\n')}
 ` : `Core Conflict: "${tension.core_issue}"`;
 
   return `
@@ -161,10 +179,10 @@ TASK:
    - Keep responses conversational, punchy, and in-character.
    - You MUST return at least one response from each counselor.
 
-2. UPDATE THE ARGUMENT MAP:
-   - Based on the user's input and the new dialogue, update the "Core Conflict", "Claims", and "Evidence" to reflect the evolved state of the debate.
-   - If the user introduced a new constraint or perspective, the Core Conflict should shift to address it.
-   - Claims and Evidence should be concise (max 10 words).
+2. UPDATE THE DECISION MATRIX:
+   - Based on the user's input and the new dialogue, update the "Core Conflict" and the "Criteria" scores/reasoning.
+   - If the user introduced a new perspective, you may add a new criterion or adjust existing scores.
+   - Scores are 1-10 (1 = low alignment, 10 = high alignment).
 
 OUTPUT FORMAT:
 Return ONLY a JSON object with this structure. No markdown.
@@ -175,10 +193,17 @@ Return ONLY a JSON object with this structure. No markdown.
   ],
   "mapState": {
     "core_issue": "Updated concise summary of the disagreement",
-    "c1_claim": "Updated claim for ${c1.name}",
-    "c1_evidence": "Updated evidence for ${c1.name}",
-    "c2_claim": "Updated claim for ${c2.name}",
-    "c2_evidence": "Updated evidence for ${c2.name}"
+    "matrix": {
+      "criteria": [
+        {
+          "id": "c1",
+          "label": "Criterion Name",
+          "c1_score": 8,
+          "c2_score": 5,
+          "reasoning": "Why the scores changed or remained"
+        }
+      ]
+    }
   }
 }
 `;

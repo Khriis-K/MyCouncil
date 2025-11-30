@@ -18,10 +18,15 @@ export const debateInjectionSchema = z.object({
   tension: z.object({
     core_issue: z.string(),
     counselor_ids: z.array(z.string()).length(2),
-    c1_claim: z.string().optional(),
-    c1_evidence: z.string().optional(),
-    c2_claim: z.string().optional(),
-    c2_evidence: z.string().optional()
+    matrix: z.object({
+      criteria: z.array(z.object({
+        id: z.string(),
+        label: z.string(),
+        c1_score: z.number(),
+        c2_score: z.number(),
+        reasoning: z.string()
+      }))
+    })
   }),
   history: z.array(z.object({
     speaker: z.string(),
