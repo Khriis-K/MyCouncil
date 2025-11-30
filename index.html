@@ -98,10 +98,12 @@
               },
               floatGlow: {
                 '0%, 100%': { 
-                  filter: 'drop-shadow(0 0 8px rgba(79,70,229,0.3))'
+                  filter: 'drop-shadow(0 0 0 rgba(0,0,0,0))',
+                  transform: 'translateY(0)'     
                 },
                 '50%': { 
-                  filter: 'drop-shadow(0 0 20px rgba(79,70,229,0.7))'
+                  filter: 'drop-shadow(0 0 35px var(--glow-color))', 
+                  transform: 'translateY(-6px)'     
                 },
               },
               atmosphereBreathe: {

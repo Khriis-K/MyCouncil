@@ -1,3 +1,20 @@
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    filter: drop-shadow(0 0 32px #6366f1) drop-shadow(0 0 12px #818cf8);
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.98;
+    filter: drop-shadow(0 0 48px #6366f1) drop-shadow(0 0 24px #818cf8);
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 32px #6366f1) drop-shadow(0 0 12px #818cf8);
+    transform: scale(1);
+  }
+}
 /* Theme CSS Variables */
 :root {
   /* Backgrounds */
