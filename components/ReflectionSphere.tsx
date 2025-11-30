@@ -228,7 +228,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
       )}
 
       {/* Debate Tension Lines Layer with Numbered Markers */}
-      {isDebateMode && (
+      {isDebateMode && !isRefining && (
         <>
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 1000 1000" preserveAspectRatio="none">
             {activeTensions.map((pair, idx) => {

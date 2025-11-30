@@ -282,6 +282,7 @@ input[type=range]::-moz-range-track {
 
 /* Disable transitions for animations */
 .animate-slide-in-right,
+.animate-slide-in-left,
 .animate-slide-out-right,
 .animate-fade-in,
 .animate-slide-from-center {

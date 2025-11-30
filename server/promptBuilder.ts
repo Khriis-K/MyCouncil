@@ -100,7 +100,7 @@ You must output a JSON object with the following structure:
             "label": "Short criterion name (e.g. 'Long-term Stability')",
             "c1_score": 9,
             "c2_score": 4,
-            "reasoning": "Brief explanation of the score difference"
+            "reasoning": "Concise (max 20 words) explanation of the score difference"
           }
         ]
       },
@@ -213,7 +213,7 @@ Return ONLY a JSON object with this structure. No markdown. The 'speaker' MUST b
           "label": "Criterion Name",
           "c1_score": 8,
           "c2_score": 5,
-          "reasoning": "Why the scores changed or remained"
+          "reasoning": "Concise (max 20 words) explanation of why scores changed/remained"
         }
       ]
     }

@@ -76,6 +76,9 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
 
    const [newCriterion, setNewCriterion] = useState('');
    const [isAddingCriterion, setIsAddingCriterion] = useState(false);
+   
+   // Controls staggered revealing of messages
+   const [visibleCount, setVisibleCount] = useState(0);
 
    const c1 = counselors.find(c => c.id === pair.counselor1);
    const c2 = counselors.find(c => c.id === pair.counselor2);
@@ -97,12 +100,32 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
       }
    }, [matrixState]);
 
-   // Auto-scroll to bottom when dialogue updates
+   // Staggered message revealing effect
+   useEffect(() => {
+      if (visibleCount < dialogue.length) {
+         const nextMsg = dialogue[visibleCount];
+         const isUser = nextMsg?.speaker === 'user';
+         // User messages appear instantly. AI messages have a delay.
+         // First message has a shorter delay to feel responsive.
+         const delay = isUser ? 0 : (visibleCount === 0 ? 500 : 2000);
+         
+         const timer = setTimeout(() => {
+            setVisibleCount(prev => prev + 1);
+         }, delay);
+         
+         return () => clearTimeout(timer);
+      }
+   }, [visibleCount, dialogue]);
+
+   // Auto-scroll to bottom when new message becomes visible
    useEffect(() => {
       if (scrollRef.current) {
-         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+         scrollRef.current.scrollTo({
+            top: scrollRef.current.scrollHeight,
+            behavior: 'smooth'
+         });
       }
-   }, [dialogue]);
+   }, [visibleCount]);
 
    if (!c1 || !c2) return null;
 
@@ -286,8 +309,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                {!showMatrix ? (
                   /* Council Clash Dialogue View */
                   <div className="p-8 space-y-8 min-h-full">
-                     {dialogue.length > 0 ? (
-                        dialogue.map((turn, idx) => {
+                     {dialogue.slice(0, visibleCount).map((turn, idx) => {
                            if (turn.speaker === 'user') {
                               return (
                                  <div key={idx} className="flex justify-center w-full animate-fade-in">
@@ -310,8 +332,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                            return (
                               <div 
                                  key={idx} 
-                                 className={`flex items-start gap-4 w-full md:w-2/3 ${isC1 ? '' : 'ml-auto flex-row-reverse'} animate-slide-in-right`}
-                                 style={{ animationDelay: `${idx * 100}ms` }}
+                                 className={`flex items-start gap-4 w-full md:w-2/3 ${isC1 ? 'animate-slide-in-left' : 'ml-auto flex-row-reverse animate-slide-in-right'}`}
                               >
                                  {/* Avatar */}
                                  <div className={`
@@ -338,12 +359,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                                  </div>
                               </div>
                            );
-                        })
-                     ) : (
-                        <div className="flex items-center justify-center h-full text-[var(--text-muted)]">
-                           Initializing debate...
-                        </div>
-                     )}
+                        })}
                      
                      {isSending && (
                         <div className="flex justify-center w-full py-4">
@@ -369,13 +385,24 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                         </div>
 
                         {/* Criteria Rows */}
-                        {matrixState.criteria.map((criterion) => (
+                        {matrixState.criteria.map((criterion, index) => (
                            <div key={criterion.id} className="grid grid-cols-12 gap-4 items-center mb-4 p-4 bg-[var(--bg-tertiary)] rounded-xl border border-[var(--border-subtle)] hover:border-[var(--border-primary)] transition-colors group relative">
                               
                               {/* Tooltip for Reasoning */}
-                              <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full bg-black/90 text-white text-xs p-2 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-64 text-center z-50 mb-2">
-                                 {criterion.reasoning}
-                                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 border-4 border-transparent border-t-black/90"></div>
+                              <div className={`absolute left-1/2 -translate-x-1/2 bg-black/90 text-white text-xs p-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-80 text-center z-[60] shadow-xl ${
+                                 index < 2 
+                                    ? 'top-full mt-3' 
+                                    : 'bottom-full mb-3'
+                              }`}>
+                                 <div className="font-bold mb-1 text-indigo-200">{criterion.label}</div>
+                                 <div className="leading-relaxed">{criterion.reasoning}</div>
+                                 
+                                 {/* Arrow */}
+                                 <div className={`absolute left-1/2 -translate-x-1/2 border-8 border-transparent ${
+                                    index < 2
+                                       ? 'bottom-full border-b-black/90'
+                                       : 'top-full border-t-black/90'
+                                 }`}></div>
                               </div>
 
                               <div className="col-span-4 font-bold text-sm text-[var(--text-primary)]">{criterion.label}</div>
