@@ -14,6 +14,13 @@ import { fetchCouncilAnalysis } from './services/CouncilService';
 import { buildCounselorsFromResponse, buildTensionPairs } from './utils/counselorMapper';
 import { useChat } from './hooks/useChat';
 
+const estimateLoadTime = (dilemmaLength: number, councilSize: number): number => {
+  const baseTime = 15000; // 15 seconds
+  const councilSizeFactor = councilSize * 3000; // 3 seconds per counselor
+  const dilemmaLengthFactor = dilemmaLength * 10; // 0.01 seconds per char
+  return baseTime + councilSizeFactor + dilemmaLengthFactor;
+};
+
 const App: React.FC = () => {
   // --- State ---
   const [dilemma, setDilemma] = useState<string>('');
@@ -104,6 +111,8 @@ const App: React.FC = () => {
 
     console.log("Setting isGenerating to true");
     setIsGenerating(true);
+    const estimatedTimeMs = estimateLoadTime(dilemma.length, councilSize);
+    setLoadingMessage(`Summoning council... Estimated time: ${Math.round(estimatedTimeMs / 1000)}s`);
 
     try {
       console.log("Calling fetchCouncilAnalysis...");
@@ -171,7 +180,8 @@ const App: React.FC = () => {
     
     console.log("handleRefine called with context:", additionalContext);
     setIsRefining(true);
-    setLoadingMessage('Council reevaluating...');
+    const estimatedTimeMs = estimateLoadTime(dilemma.length + additionalContext.length, councilSize); // Add additional context length
+    setLoadingMessage(`Council reevaluating... Estimated time: ${Math.round(estimatedTimeMs / 1000)}s`);
     
     // Store refinement in history
     setRefinementHistory(prev => [...prev, additionalContext]);
