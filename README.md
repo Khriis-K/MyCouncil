@@ -1,4 +1,4 @@
-![MyCouncil Logo](imgs/logo_transparent_dark_mode.png)
+<img src="imgs/logo_transparent_dark_mode.png" alt="MyCouncil Logo" width="33%" />
 
 # MyCouncil
 
