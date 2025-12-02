@@ -23,6 +23,7 @@ interface SidebarProps {
   hasCouncil?: boolean;
   theme: 'light' | 'dark' | 'amoled';
   setThemeMode: (theme: 'light' | 'dark' | 'amoled') => void;
+  estimatedLoadDuration?: number;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -44,11 +45,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   isHighlighted = false,
   hasCouncil = false,
   theme,
-  setThemeMode
+  setThemeMode,
+  estimatedLoadDuration = 0 // Provide a default value
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
-  const [progressWidth, setProgressWidth] = useState(0);
+  const [currentProgress, setCurrentProgress] = useState(0);
+  const animationFrameId = useRef<number | null>(null);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -56,19 +59,50 @@ const Sidebar: React.FC<SidebarProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Reset progress bar when generation starts/stops
   useEffect(() => {
-    if (isGenerating) {
-      setProgressWidth(0);
-      // Small delay to ensure render at 0 before transitioning
-      const timer = setTimeout(() => {
-        setProgressWidth(95);
-      }, 50);
-      return () => clearTimeout(timer);
-    } else {
-      setProgressWidth(0);
+    if (isGenerating && estimatedLoadDuration) {
+      setCurrentProgress(0); // Reset progress
+
+      const startTime = performance.now();
+      const targetProgress = 95; // Stop just short of 100% to allow instant completion
+      
+      const animateProgress = (currentTime: number) => {
+        const elapsedTime = currentTime - startTime;
+        let progress = (elapsedTime / estimatedLoadDuration) * targetProgress;
+        
+        if (progress >= targetProgress) {
+          progress = targetProgress;
+          if (animationFrameId.current) {
+            cancelAnimationFrame(animationFrameId.current);
+            animationFrameId.current = null;
+          }
+        }
+        setCurrentProgress(progress);
+
+        if (progress < targetProgress) {
+          animationFrameId.current = requestAnimationFrame(animateProgress);
+        }
+      };
+
+      animationFrameId.current = requestAnimationFrame(animateProgress);
+
+      return () => {
+        if (animationFrameId.current) {
+          cancelAnimationFrame(animationFrameId.current);
+        }
+      };
+    } else if (!isGenerating) {
+      // If generation stops, immediately complete the progress bar
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
+        animationFrameId.current = null;
+      }
+      setCurrentProgress(100); // Instantly fill to 100%
+      // After a short delay, reset to 0 for next generation
+      const resetTimer = setTimeout(() => setCurrentProgress(0), 500); 
+      return () => clearTimeout(resetTimer);
     }
-  }, [isGenerating]);
+  }, [isGenerating, estimatedLoadDuration]);
 
   useEffect(() => {
     if (isHighlighted && textareaRef.current) {
@@ -309,9 +343,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div 
                   className="absolute left-0 top-0 bottom-0 transition-all ease-out"
                   style={{ 
-                    width: `${progressWidth}%`, 
-                    // Heuristic: Base 3s + 3.5s per counselor (Adjusted for Gemini 2.5 Flash latency)
-                    transitionDuration: `${3000 + (councilSize * 3500)}ms`,
+                    width: `${currentProgress}%`, 
+                    transitionDuration: `${estimatedLoadDuration || 0}ms`, // Use estimated duration for CSS transition
                     backgroundColor: theme === 'amoled' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(79, 70, 229, 0.15)'
                   }} 
                 />

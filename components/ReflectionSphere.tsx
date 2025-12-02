@@ -81,8 +81,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   // spheres-expand: counselors moving from center to orbit
   // stable: animation complete, normal interaction
   // spheres-collapse: counselors moving from orbit to center (refining)
-  // center-fade-out: center node fading out (refining complete)
-  const [animationPhase, setAnimationPhase] = React.useState<'hidden' | 'center-fade-in' | 'spheres-expand' | 'stable' | 'spheres-collapse' | 'center-fade-out'>(
+  // center-pulse: center node visible but pulsing with loading text (refining)
+  const [animationPhase, setAnimationPhase] = React.useState<'hidden' | 'center-fade-in' | 'spheres-expand' | 'stable' | 'spheres-collapse' | 'center-pulse'>(
     isInitialRender ? 'hidden' : 'stable'
   );
 
@@ -123,19 +123,14 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
       // (N-1 * interval) + duration
       const collapseTime = ((counselors.length - 1) * 1000) + 1500;
 
-      // Phase 2: Center Fade Out (Starts after spheres are gone)
+      // Phase 2: Center Pulse (Starts after spheres are gone)
+      // Instead of fading out, we switch to "Council in Discussion"
       const t1 = setTimeout(() => {
-        setAnimationPhase('center-fade-out');
+        setAnimationPhase('center-pulse');
       }, collapseTime);
-
-      // Phase 3: Hidden (After center fades out - 2000ms)
-      const t2 = setTimeout(() => {
-        setAnimationPhase('hidden');
-      }, collapseTime + 2000);
 
       return () => {
         clearTimeout(t1);
-        clearTimeout(t2);
       };
     } else {
       // Ensure we settle in stable state when not rendering/animating
@@ -626,10 +621,10 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
 
       {/* Center Dilemma Node - Dynamic container-aware sizing */}
       <div 
-        className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 transition-opacity ${
-          animationPhase === 'center-fade-in' || animationPhase === 'center-fade-out' ? 'duration-[2000ms]' : 'duration-0'
+        className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 transition-all duration-[2000ms] ${
+          animationPhase === 'hidden' ? 'opacity-0' : 'opacity-100'
         } ${
-          animationPhase === 'hidden' || animationPhase === 'center-fade-out' ? 'opacity-0' : 'opacity-100'
+          animationPhase === 'center-pulse' ? 'animate-pulse-slow' : ''
         }`}
       >
         <button
@@ -648,10 +643,10 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
             className="font-semibold uppercase tracking-wider mb-1 group-hover:text-primary transition-colors flex-shrink-0"
             style={{ fontSize: `${layout.centerLabelSize}px`, color: 'var(--text-muted)' }}
           >
-            Your Dilemma
+            {animationPhase === 'center-pulse' ? 'Status' : 'Your Dilemma'}
           </span>
           <p 
-            className="font-bold leading-snug break-words w-full overflow-hidden text-ellipsis"
+            className="font-bold leading-snug break-words w-full overflow-hidden text-ellipsis transition-opacity duration-500"
             style={{ 
               fontSize: `clamp(12px, ${layout.centerSize * 0.08}px, ${layout.centerFontSize}px)`,
               color: 'var(--text-primary)',
@@ -663,14 +658,16 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
               paddingRight: '0.5rem',
             }}
           >
-            {dilemmaSummary || "Waiting for input..."}
+            {animationPhase === 'center-pulse' ? "Council in Discussion..." : (dilemmaSummary || "Waiting for input...")}
           </p>
-          {contextSummary && !isLandscape && layout.centerSize > 180 && (
+          
+          {/* Subtitle: Context Summary */}
+          {contextSummary && animationPhase !== 'center-pulse' && (
             <span 
-              className="mt-1 italic leading-tight px-3 break-words flex-shrink-0 overflow-hidden text-ellipsis"
+              className="mt-2 italic leading-tight px-3 break-words flex-shrink-0 overflow-hidden text-ellipsis opacity-80"
               style={{ 
-                fontSize: `${Math.max(10, layout.centerLabelSize - 2)}px`, 
-                color: 'var(--text-muted)',
+                fontSize: `${Math.max(10, layout.centerLabelSize - 1)}px`, 
+                color: 'var(--text-secondary)',
                 maxHeight: `${layout.centerSize * 0.15}px`,
                 display: '-webkit-box',
                 WebkitLineClamp: 2,
@@ -720,7 +717,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
         const isStable = animationPhase === 'stable';
 
         // Position Logic
-        if (isHidden || isCenterFadeIn || isCenterFadeOut) {
+        if (isHidden || isCenterFadeIn || animationPhase === 'center-pulse') {
           // Centered and hidden
           wrapperStyle.top = `${centerY - nodeOffset}px`;
           wrapperStyle.left = `${centerX - nodeOffset}px`;

@@ -15,9 +15,9 @@ import { buildCounselorsFromResponse, buildTensionPairs } from './utils/counselo
 import { useChat } from './hooks/useChat';
 
 const estimateLoadTime = (dilemmaLength: number, councilSize: number): number => {
-  const baseTime = 15000; // 15 seconds
-  const councilSizeFactor = councilSize * 3000; // 3 seconds per counselor
-  const dilemmaLengthFactor = dilemmaLength * 10; // 0.01 seconds per char
+  const baseTime = 12000; // Adjusted base time (was 15000)
+  const councilSizeFactor = councilSize * 2500; // Adjusted factor (was 3000)
+  const dilemmaLengthFactor = dilemmaLength * 8; // Adjusted factor (was 10)
   return baseTime + councilSizeFactor + dilemmaLengthFactor;
 };
 
@@ -79,6 +79,7 @@ const App: React.FC = () => {
   const [isInitialRender, setIsInitialRender] = useState(false); // For initial counselor animation
   const [loadingMessage, setLoadingMessage] = useState<string>(''); // For center bubble during refinement
   const [refinementHistory, setRefinementHistory] = useState<string[]>([]); // Track all refinement contexts
+  const [estimatedTimeMs, setEstimatedTimeMs] = useState<number>(0);
   
   // Highlight states
   const [isBottomBarHighlighted, setIsBottomBarHighlighted] = useState(false);
@@ -111,8 +112,9 @@ const App: React.FC = () => {
 
     console.log("Setting isGenerating to true");
     setIsGenerating(true);
-    const estimatedTimeMs = estimateLoadTime(dilemma.length, councilSize);
-    setLoadingMessage(`Summoning council... Estimated time: ${Math.round(estimatedTimeMs / 1000)}s`);
+    const timeEstimate = estimateLoadTime(dilemma.length, councilSize);
+    setEstimatedTimeMs(timeEstimate);
+    // removed setLoadingMessage to avoid subtitle on initial summon
 
     try {
       console.log("Calling fetchCouncilAnalysis...");
@@ -180,8 +182,9 @@ const App: React.FC = () => {
     
     console.log("handleRefine called with context:", additionalContext);
     setIsRefining(true);
-    const estimatedTimeMs = estimateLoadTime(dilemma.length + additionalContext.length, councilSize); // Add additional context length
-    setLoadingMessage(`Council reevaluating... Estimated time: ${Math.round(estimatedTimeMs / 1000)}s`);
+    const timeEstimate = estimateLoadTime(dilemma.length + additionalContext.length, councilSize); // Add additional context length
+    setEstimatedTimeMs(timeEstimate);
+    // removed setLoadingMessage to avoid subtitle during refinement
     
     // Store refinement in history
     setRefinementHistory(prev => [...prev, additionalContext]);
@@ -313,11 +316,11 @@ const App: React.FC = () => {
         onRestart={handleRestartScenario}
         isGenerating={isGenerating}
         isMBTIOverlayOpen={activeOverlay === 'MBTI_SELECTION'}
-        isHighlighted={isSidebarHighlighted}
-        hasCouncil={viewState === 'SPHERE'}
-        theme={theme}
-        setThemeMode={setTheme}
-      />
+              isHighlighted={isSidebarHighlighted}
+              hasCouncil={viewState === 'SPHERE'}
+              theme={theme}
+              setThemeMode={setTheme}
+              estimatedLoadDuration={estimatedTimeMs}      />
 
       {/* 2. Main Content Area */}
       <main 
