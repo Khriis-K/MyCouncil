@@ -1,14 +1,17 @@
+![MyCouncil Logo](imgs/logo_transparent_dark_mode.png)
+
 # MyCouncil
 
 **MyCouncil** is an interactive AI-powered reflection tool designed to help users navigate complex dilemmas. By "summoning a council" of diverse AI personas, users receive multi-faceted advice tailored to their situation and personality type.
 
-## 🌟 Features
+## 🌟 Key Capabilities
 
--   **Personalized Council**: Input your personal dilemma and receive insights from a diverse group of AI "Counselors," each representing a different archetype or perspective.
--   **MBTI Integration**: Customize the council's advice by selecting your MBTI personality type, or choose a "Balanced" approach for a neutral perspective.
--   **Reflection Sphere**: A visual interface that maps out your council, allowing you to explore different viewpoints intuitively.
--   **Debate Mode**: Watch your counselors debate! The system identifies "Tension Pairs"—conflicting viewpoints between counselors—and generates a dialogue to help you understand the trade-offs of your decision.
--   **Deep Dive Overlays**: Click on individual counselors for detailed advice or on tension lines to read specific debates.
+-   **Customizable Council Summoning**: Define your dilemma and assemble a council of 3-7 AI personas. Customize their "cognitive style" by selecting your MBTI type, or choose a balanced panel.
+-   **Reflection Lenses**: Direct the council's analytical focus. Choose from **Decision-Making** (practical trade-offs), **Emotional Processing** (internal values), or **Creative Problem Solving** (novel approaches).
+-   **Interactive Council Clash**: Watch counselors debate your dilemma in real-time. Identify "Tension Pairs" where perspectives conflict, and **inject your own thoughts** into the debate to see how they react and adjust their stances.
+-   **1-on-1 Counselor Chat**: Go beyond the initial advice. Open a direct chat line with any counselor to ask follow-up questions or dig deeper into their specific perspective.
+-   **Iterative Refinement**: As you reflect, new context often emerges. Add new details to your dilemma, and watch the council re-evaluate their positions and update their advice in real-time.
+-   **Visual Insight Mapping**: Explore a dynamic 3D "Reflection Sphere" where counselors orbit your central dilemma. Visual tension lines highlight conflicting viewpoints, helping you understand the landscape of your decision.
 
 ## 🛠️ Tech Stack
 
@@ -16,7 +19,7 @@
 -   **Backend**: Node.js, Express
 -   **Build Tool**: [Vite](https://vitejs.dev/)
 -   **Language**: [TypeScript](https://www.typescriptlang.org/)
--   **AI Integration**: [Google Gemini API](https://ai.google.dev/) (@google/genai)
+-   **AI Integration**: [Google Gemini API](https://ai.google.dev/) (@google/genai) with advanced prompt engineering for natural, conversational dialogue and consistent pronoun usage.
 -   **Styling**: Tailwind CSS & Custom CSS
 
 ## 🚀 Getting Started
