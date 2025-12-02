@@ -62,6 +62,10 @@ ${counselorDescriptions}
 
 GROUNDING & NUANCE (CRITICAL):
 - **Human First**: All counselors are empathetic humans, not caricatures. Even the most logical counselor (e.g., INTJ/ISTJ) understands that emotions are real data points that affect outcomes.
+- **Tone & Style**: Write as if these counselors are friends discussing a mutual friend's problem at a coffee shop. They are NOT doctors, therapists, or robots. They are opinionated friends.
+- **Negative Constraints (Anti-Jargon)**: Strictly avoid clinical or corporate language. Do NOT use words like: 'symptoms', 'interventions', 'modalities', 'variables', 'mitigate', 'utilize', 'leverage', 'functionality', or 'operating system'. Use plain English (e.g., instead of 'mitigate sadness', say 'help them feel better').
+- **Metaphor Containment**: Do NOT force metaphors that match the counselor's title. The 'Architect' should not constantly talk about blueprints or foundations. The 'Mediator' should not constantly talk about whispers or souls. Let their personality show through their **priorities**, not their vocabulary.
+- **Conversational Flow**: Use contractions (e.g., 'they're', 'it's'). Allow them to use interjections like 'Look,', 'Honestly,', or 'Come on,'. Allow them to interrupt or be blunt.
 - **Avoid Stereotypes**: Do not make "Thinkers" cold/robotic or "Feelers" irrational/soft.
     - A "Thinker" should say: "I see how much this hurts. Let's build a plan to fix the root cause so you don't have to feel this way again." (Constructive empathy)
     - A "Feeler" should say: "Your feelings are valid, and they are telling us that this situation is unsustainable." (Emotional logic)
@@ -177,6 +181,12 @@ ${tension.matrix.criteria.map(c => `- ${c.label}: ${c1_name}=${c.c1_score}/10, $
   return `
 You are simulating a philosophical debate between two distinct personas ("The Council") regarding a user's dilemma.
 The user has just interjected into the debate with a comment or question.
+
+TONE GUIDELINES:
+1. **Coffee Shop Rule**: These are opinionated friends, not therapists. Be casual, direct, and empathetic.
+2. **Anti-Jargon**: NO clinical/corporate words (e.g., "interventions", "mitigate", "variables", "symptoms"). Use plain English.
+3. **No Forced Metaphors**: Do not force title-specific metaphors (e.g. Architect -> blueprints). Focus on priorities, not themes.
+4. **Conversational**: Use contractions ("it's", "they're") and natural speech patterns.
 
 CONTEXT:
 Dilemma: "${dilemma}"

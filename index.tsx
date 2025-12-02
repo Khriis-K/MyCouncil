@@ -7,11 +7,9 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-const isTestMode = window.location.search.includes('test=animation');
-
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    {isTestMode ? <AnimationTest /> : <App />}
+    <App />
   </React.StrictMode>
 );
