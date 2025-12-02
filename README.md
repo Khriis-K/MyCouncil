@@ -1,4 +1,6 @@
-<img src="imgs/logo_transparent_dark_mode.png" alt="MyCouncil Logo" width="33%" />
+<p align="center">
+    <img src="imgs/logo_transparent_dark_mode.png" alt="MyCouncil Logo" width="33%" />
+</p>
 
 # MyCouncil
 
