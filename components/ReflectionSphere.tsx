@@ -80,7 +80,9 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   // center-fade-in: center node fading in (0 -> 100 opacity)
   // spheres-expand: counselors moving from center to orbit
   // stable: animation complete, normal interaction
-  const [animationPhase, setAnimationPhase] = React.useState<'hidden' | 'center-fade-in' | 'spheres-expand' | 'stable'>(
+  // spheres-collapse: counselors moving from orbit to center (refining)
+  // center-fade-out: center node fading out (refining complete)
+  const [animationPhase, setAnimationPhase] = React.useState<'hidden' | 'center-fade-in' | 'spheres-expand' | 'stable' | 'spheres-collapse' | 'center-fade-out'>(
     isInitialRender ? 'hidden' : 'stable'
   );
 
@@ -111,11 +113,38 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
         clearTimeout(t1);
         clearTimeout(t2);
       };
+    } else if (isRefining) {
+      // REFINEMENT EXIT SEQUENCE
+      
+      // Phase 1: Spheres Collapse (Starts immediately)
+      setAnimationPhase('spheres-collapse');
+
+      // Calculate total time for all spheres to collapse
+      // (N-1 * interval) + duration
+      const collapseTime = ((counselors.length - 1) * 1000) + 1500;
+
+      // Phase 2: Center Fade Out (Starts after spheres are gone)
+      const t1 = setTimeout(() => {
+        setAnimationPhase('center-fade-out');
+      }, collapseTime);
+
+      // Phase 3: Hidden (After center fades out - 2000ms)
+      const t2 = setTimeout(() => {
+        setAnimationPhase('hidden');
+      }, collapseTime + 2000);
+
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     } else {
       // Ensure we settle in stable state when not rendering/animating
-      setAnimationPhase('stable');
+      // Only reset to stable if we are NOT in the middle of an initial render
+      if (!isInitialRender) {
+         setAnimationPhase('stable');
+      }
     }
-  }, [isInitialRender]);
+  }, [isInitialRender, isRefining, counselors.length]);
 
   // Use dynamic tensions if available, otherwise fall back to static
   const activeTensions = councilData?.tensions.map(t => ({
@@ -598,9 +627,9 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
       {/* Center Dilemma Node - Dynamic container-aware sizing */}
       <div 
         className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 transition-opacity ${
-          animationPhase === 'center-fade-in' ? 'duration-[2000ms]' : 'duration-0'
+          animationPhase === 'center-fade-in' || animationPhase === 'center-fade-out' ? 'duration-[2000ms]' : 'duration-0'
         } ${
-          animationPhase === 'hidden' ? 'opacity-0' : 'opacity-100'
+          animationPhase === 'hidden' || animationPhase === 'center-fade-out' ? 'opacity-0' : 'opacity-100'
         }`}
       >
         <button
@@ -684,12 +713,14 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
 
         // Determine visual state based on animation phase
         const isHidden = animationPhase === 'hidden';
-        const isCenterFade = animationPhase === 'center-fade-in';
+        const isCenterFadeIn = animationPhase === 'center-fade-in';
+        const isCenterFadeOut = animationPhase === 'center-fade-out';
         const isSpheresExpand = animationPhase === 'spheres-expand';
+        const isSpheresCollapse = animationPhase === 'spheres-collapse';
         const isStable = animationPhase === 'stable';
 
         // Position Logic
-        if (isHidden || isCenterFade || isRefining) {
+        if (isHidden || isCenterFadeIn || isCenterFadeOut) {
           // Centered and hidden
           wrapperStyle.top = `${centerY - nodeOffset}px`;
           wrapperStyle.left = `${centerX - nodeOffset}px`;
@@ -697,7 +728,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
           wrapperStyle.transform = 'scale(0.5)';
           wrapperStyle.pointerEvents = 'none';
         } else if (isSpheresExpand) {
-          // Moving to orbit
+          // Moving to orbit (Entrance)
           wrapperStyle.top = `${pos.y - nodeOffset}px`;
           wrapperStyle.left = `${pos.x - nodeOffset}px`;
           wrapperStyle.opacity = 1;
@@ -705,6 +736,15 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
           // Staggered transition for expansion - sequential (one finishes, next starts)
           wrapperStyle.transition = `all 1500ms ease-out`;
           wrapperStyle.transitionDelay = `${idx * 1000}ms`; 
+        } else if (isSpheresCollapse) {
+          // Moving to center (Exit)
+          wrapperStyle.top = `${centerY - nodeOffset}px`;
+          wrapperStyle.left = `${centerX - nodeOffset}px`;
+          wrapperStyle.opacity = 0;
+          wrapperStyle.transform = 'scale(0.5)';
+          // Mirror of entrance: same speed, same stagger interval
+          wrapperStyle.transition = `all 1500ms ease-in`;
+          wrapperStyle.transitionDelay = `${idx * 1000}ms`;
         } else if (isStable) {
           // Stable in orbit (no delay, ready for hover)
           wrapperStyle.top = `${pos.y - nodeOffset}px`;
