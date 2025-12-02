@@ -26,7 +26,7 @@ export const debateInjectionSchema = z.object({
         c2_score: z.number(),
         reasoning: z.string()
       }))
-    })
+    }).optional()
   }),
   history: z.array(z.object({
     speaker: z.string(),
@@ -39,4 +39,15 @@ export const debateInjectionSchema = z.object({
     role: z.string(),
     description: z.string()
   })).min(2)
+});
+
+export const chatSchema = z.object({
+  counselorId: z.string(),
+  dilemma: z.string(),
+  mbti: z.string().nullable().optional(),
+  history: z.array(z.object({
+    sender: z.enum(['user', 'counselor']),
+    text: z.string()
+  })),
+  message: z.string().min(1).max(500)
 });

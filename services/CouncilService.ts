@@ -129,3 +129,34 @@ export const injectIntoDebate = async (
     throw error;
   }
 };
+
+export const sendCounselorChat = async (
+  counselorId: string,
+  dilemma: string,
+  mbti: string | null,
+  history: { sender: 'user' | 'counselor'; text: string }[],
+  message: string
+): Promise<{ response: string }> => {
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        counselorId,
+        dilemma,
+        mbti,
+        history,
+        message
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error sending chat message:', error);
+    throw error;
+  }
+};

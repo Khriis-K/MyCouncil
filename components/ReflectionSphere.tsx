@@ -74,6 +74,15 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   const [hoveredCounselorId, setHoveredCounselorId] = React.useState<string | null>(null);
   const [hoveredTensionIdx, setHoveredTensionIdx] = React.useState<number | null>(null);
   const [isTensionDrawerOpen, setIsTensionDrawerOpen] = React.useState(false);
+  
+  // Animation Phase State Management
+  // hidden: everything invisible (start of refinement/summon)
+  // center-fade-in: center node fading in (0 -> 100 opacity)
+  // spheres-expand: counselors moving from center to orbit
+  // stable: animation complete, normal interaction
+  const [animationPhase, setAnimationPhase] = React.useState<'hidden' | 'center-fade-in' | 'spheres-expand' | 'stable'>(
+    isInitialRender ? 'hidden' : 'stable'
+  );
 
   // Use container-aware sizing hook
   const [containerRef, containerSize] = useContainerSize<HTMLDivElement>();
@@ -81,6 +90,32 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   
   // Derived flags for convenience
   const { isConstrained, isLandscape, isMobile, isTablet } = containerSize;
+
+  // Orchestrate the animation sequence when isInitialRender changes
+  React.useEffect(() => {
+    if (isInitialRender) {
+      // Start hidden
+      setAnimationPhase('hidden');
+      
+      // Phase 1: Center Fade In (Starts almost immediately)
+      const t1 = setTimeout(() => {
+        setAnimationPhase('center-fade-in');
+      }, 100);
+      
+      // Phase 2: Spheres Expand (Starts after center is fully visible - 2000ms fade)
+      const t2 = setTimeout(() => {
+        setAnimationPhase('spheres-expand');
+      }, 2100);
+      
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    } else {
+      // Ensure we settle in stable state when not rendering/animating
+      setAnimationPhase('stable');
+    }
+  }, [isInitialRender]);
 
   // Use dynamic tensions if available, otherwise fall back to static
   const activeTensions = councilData?.tensions.map(t => ({
@@ -561,7 +596,13 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
       )}
 
       {/* Center Dilemma Node - Dynamic container-aware sizing */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+      <div 
+        className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 transition-opacity ${
+          animationPhase === 'center-fade-in' ? 'duration-[2000ms]' : 'duration-0'
+        } ${
+          animationPhase === 'hidden' ? 'opacity-0' : 'opacity-100'
+        }`}
+      >
         <button
           onClick={onCenterClick}
           className="rounded-full backdrop-blur-sm border flex flex-col items-center justify-center text-center group transition-all duration-500 cursor-pointer overflow-hidden"
@@ -635,11 +676,43 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
         const centerY = layout.centerY;
 
         // Wrapper styles for positioning - use pixel values
-        let wrapperClass = `absolute z-[100] transition-all duration-300 flex items-center justify-center`;
+        let wrapperClass = `absolute z-[100] transition-all flex items-center justify-center`;
         let wrapperStyle: React.CSSProperties = {
           width: `${nodeSizePx}px`,
           height: `${nodeSizePx}px`,
         };
+
+        // Determine visual state based on animation phase
+        const isHidden = animationPhase === 'hidden';
+        const isCenterFade = animationPhase === 'center-fade-in';
+        const isSpheresExpand = animationPhase === 'spheres-expand';
+        const isStable = animationPhase === 'stable';
+
+        // Position Logic
+        if (isHidden || isCenterFade || isRefining) {
+          // Centered and hidden
+          wrapperStyle.top = `${centerY - nodeOffset}px`;
+          wrapperStyle.left = `${centerX - nodeOffset}px`;
+          wrapperStyle.opacity = 0;
+          wrapperStyle.transform = 'scale(0.5)';
+          wrapperStyle.pointerEvents = 'none';
+        } else if (isSpheresExpand) {
+          // Moving to orbit
+          wrapperStyle.top = `${pos.y - nodeOffset}px`;
+          wrapperStyle.left = `${pos.x - nodeOffset}px`;
+          wrapperStyle.opacity = 1;
+          wrapperStyle.transform = 'scale(1)';
+          // Staggered transition for expansion - sequential (one finishes, next starts)
+          wrapperStyle.transition = `all 1500ms ease-out`;
+          wrapperStyle.transitionDelay = `${idx * 1000}ms`; 
+        } else if (isStable) {
+          // Stable in orbit (no delay, ready for hover)
+          wrapperStyle.top = `${pos.y - nodeOffset}px`;
+          wrapperStyle.left = `${pos.x - nodeOffset}px`;
+          wrapperStyle.opacity = 1;
+          wrapperStyle.transform = 'scale(1)';
+          wrapperStyle.transition = 'transform 300ms ease'; // Only animate transform on hover
+        }
 
         // Button styles for appearance
         let buttonClass = `w-full h-full rounded-full backdrop-blur-md border flex flex-col items-center justify-center transition-transform duration-300 ${colors.border} ${colors.text}`;
@@ -649,21 +722,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
           padding: isMobile ? '0.25rem' : '0.5rem',
         };
 
-        if (isRefining) {
-          // STATE 1: REFINING - collapse to center
-          wrapperClass += ' pointer-events-none opacity-0 scale-50'; 
-          wrapperStyle.top = `${centerY - nodeOffset}px`;
-          wrapperStyle.left = `${centerX - nodeOffset}px`;
-        } else if (isInitialRender) {
-          // STATE 2: ENTERING - animate from center
-          wrapperClass += ' animate-slide-from-center';
-          wrapperStyle.top = `${pos.y - nodeOffset}px`;
-          wrapperStyle.left = `${pos.x - nodeOffset}px`;
-        } else {
-          // STATE 3: STABLE - normal position using pixel coordinates
-          buttonClass += ' animate-pulse-glow hover:scale-110 active:scale-95';
-          wrapperStyle.top = `${pos.y - nodeOffset}px`;
-          wrapperStyle.left = `${pos.x - nodeOffset}px`;
+        if (isStable) {
+           buttonClass += ' animate-pulse-glow hover:scale-110 active:scale-95';
         }
 
         return (

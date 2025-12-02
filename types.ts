@@ -72,3 +72,10 @@ export interface CouncilResponse {
     }[];
   }[];
 }
+
+export interface ChatMessage {
+  id: string;
+  sender: 'user' | 'counselor';
+  text: string;
+  timestamp: number;
+}

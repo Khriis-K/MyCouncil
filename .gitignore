@@ -88,3 +88,6 @@ test-api.js
 
 # github
 .github/
+
+# Agent stuff
+GEMINI.md

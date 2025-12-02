@@ -1,23 +1,56 @@
-import React, { useState } from 'react';
-import { Counselor, CouncilResponse } from '../../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { Counselor, CouncilResponse, ChatMessage } from '../../types';
 
 interface CounselorDossierProps {
   counselor: Counselor;
   dynamicData?: CouncilResponse['counselors'][0];
   onClose: () => void;
+  chatMessages: ChatMessage[];
+  isTyping: boolean;
+  onSendMessage: (message: string) => void;
 }
 
 type Tab = 'INSIGHT' | 'PROTOCOL' | 'COMMS';
 
-const CounselorDossier: React.FC<CounselorDossierProps> = ({ counselor, dynamicData, onClose }) => {
+const CounselorDossier: React.FC<CounselorDossierProps> = ({ 
+  counselor, 
+  dynamicData, 
+  onClose,
+  chatMessages,
+  isTyping,
+  onSendMessage
+}) => {
   const [activeTab, setActiveTab] = useState<Tab>('INSIGHT');
   const [isClosing, setIsClosing] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   const handleClose = () => {
     setIsClosing(true);
     setTimeout(() => {
       onClose();
     }, 400);
+  };
+
+  // Auto-scroll to bottom of chat
+  useEffect(() => {
+    if (activeTab === 'COMMS' && chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, activeTab, isTyping]);
+
+  const handleSend = () => {
+    if (inputValue.trim()) {
+      onSendMessage(inputValue);
+      setInputValue('');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   // Color mapping for dynamic styling based on counselor color
@@ -230,39 +263,62 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({ counselor, dynamicD
 
           {activeTab === 'COMMS' && (
             <div className="animate-fade-in h-full flex flex-col">
-              <div className="flex-1 space-y-4">
-                <div className="flex justify-end">
-                  <div 
-                    className="rounded-lg rounded-br-none p-3 max-w-[85%] text-sm"
-                    style={{
-                      backgroundColor: 'var(--bg-secondary)',
-                      border: '1px solid var(--border-primary)',
-                      color: 'var(--text-secondary)'
-                    }}
-                  >
-                    Can you explain more about that last point?
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                {chatMessages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full opacity-50 gap-2">
+                    <span className="material-symbols-outlined text-4xl">forum</span>
+                    <p className="text-sm">Start a conversation with {counselor.name}...</p>
                   </div>
-                </div>
-                <div className="flex justify-start">
-                  <div className={`${colors.bg} border ${colors.border} rounded-lg rounded-bl-none p-3 max-w-[85%] text-sm`} style={{ color: 'var(--text-secondary)' }}>
-                    Certainly. The key is to separate the emotional narrative from the strategic reality.
-                  </div>
-                </div>
+                ) : (
+                  chatMessages.map((msg) => (
+                    <div 
+                      key={msg.id} 
+                      className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                                                                  <div
+                                                                    className={`rounded-lg p-3 max-w-[85%] text-sm shadow-sm ${
+                                                                      msg.sender === 'user'
+                                                                        ? `bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-secondary)] rounded-br-none animate-slide-in-right`
+                                                                        : `${colors.bg} border ${colors.border} text-[var(--text-secondary)] rounded-bl-none animate-slide-in-left`
+                                                                    }`}
+                                                                  >
+                                                                    {msg.text}
+                                                                  </div>                    </div>
+                  ))
+                )}
+                
+                {isTyping && (
+                   <div className="flex justify-start">
+                     <div className={`${colors.bg} border ${colors.border} rounded-lg rounded-bl-none p-3 flex items-center gap-1`}>
+                       <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce"></span>
+                       <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                       <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                     </div>
+                   </div>
+                )}
+                <div ref={chatEndRef} />
               </div>
               
               <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-primary)' }}>
                 <div className="relative">
                   <input 
                     type="text" 
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={handleKeyDown}
                     placeholder={`Message ${counselor.name}...`}
-                    className="w-full rounded-lg py-3 px-4 text-sm focus:outline-none transition-colors"
+                    className="w-full rounded-lg py-3 px-4 text-sm focus:outline-none transition-colors pr-10"
                     style={{
                       backgroundColor: 'var(--bg-secondary)',
                       border: '1px solid var(--border-primary)',
                       color: 'var(--text-primary)'
                     }}
                   />
-                  <button className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded ${colors.text}`}>
+                  <button 
+                    onClick={handleSend}
+                    disabled={!inputValue.trim() || isTyping}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded transition-opacity ${inputValue.trim() ? 'opacity-100' : 'opacity-50'} ${colors.text}`}
+                  >
                     <span className="material-symbols-outlined text-lg">send</span>
                   </button>
                 </div>

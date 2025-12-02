@@ -2,10 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import { GoogleGenAI } from "@google/genai";
 import rateLimit from 'express-rate-limit';
-import { selectCouncilors } from '../data/counselorMatrix';
-import { buildSystemPrompt, buildDebateInjectionPrompt } from './promptBuilder';
+import { selectCouncilors, COUNSELOR_MATRIX } from '../data/counselorMatrix';
+import { buildSystemPrompt, buildDebateInjectionPrompt, buildChatPrompt } from './promptBuilder';
 // Import Zod schema for request validation
-import { summonSchema, debateInjectionSchema } from './schemas';
+import { summonSchema, debateInjectionSchema, chatSchema } from './schemas';
 import { config } from './config';
 
 const app = express();
@@ -173,6 +173,57 @@ app.post('/api/debate/inject', async (req, res) => {
   } catch (error) {
     console.error("Error processing debate injection:", error);
     res.status(500).json({ error: "Failed to process debate injection" });
+  }
+});
+
+app.post('/api/chat', async (req, res) => {
+  try {
+    const validationResult = chatSchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: "Validation Error",
+        details: validationResult.error.flatten()
+      });
+    }
+
+    const { counselorId, dilemma, mbti, history, message } = validationResult.data;
+
+    if (!config.geminiApiKey) {
+      return res.status(500).json({ error: "Server misconfiguration: API Key missing" });
+    }
+
+    // Look up the specific counselor based on User MBTI
+    const mbtiKey = mbti && mbti !== 'BALANCED' && COUNSELOR_MATRIX[mbti] ? mbti : 'BALANCED';
+    const potentialCounselors = COUNSELOR_MATRIX[mbtiKey];
+    
+    // Find the counselor by ID (which is the title without "The ")
+    const counselor = potentialCounselors.find(c => c.title.replace(/^The /, '') === counselorId);
+
+    if (!counselor) {
+      return res.status(404).json({ error: "Counselor not found for this MBTI type" });
+    }
+
+    const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
+    const prompt = buildChatPrompt(dilemma, history as any, message, counselor, mbtiKey);
+
+    console.log(`Generating chat response for ${counselor.title}...`);
+    
+    const response = await ai.models.generateContent({
+      model: config.geminiModel,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    });
+
+    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || response.text;
+    if (!text) throw new Error("No response from AI");
+
+    console.log('AI Chat Response:', text.substring(0, 100) + '...');
+
+    res.json({ response: text.trim() });
+
+  } catch (error) {
+    console.error("Error processing chat:", error);
+    res.status(500).json({ error: "Failed to generate chat response" });
   }
 });
 

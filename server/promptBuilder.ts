@@ -23,6 +23,11 @@ export function buildSystemPrompt(selectedCounselors: ReturnType<typeof selectCo
 
   const counselorIds = selectedCounselors.map(c => `"${getTitle(c.title)}"`).join(' | ');
 
+  // Calculate target number of tensions based on council size
+  // 3-4 Counselors: 2 Pairs (Focus on core conflict)
+  // 5+ Counselors: 3 Pairs (Add nuance/synthesis)
+  const targetTensionCount = selectedCounselors.length >= 5 ? 3 : 2;
+
   const refinementGuidance = isRefinement ? `
 IMPORTANT - REFINEMENT MODE:
 This is a follow-up request. The user has provided additional context to refine their original dilemma.
@@ -110,12 +115,15 @@ You must output a JSON object with the following structure:
         // ... 4-6 turns of authentic dialogue
       ]
     },
-    // ... generate 2 distinct tension pairs (prioritize Mirror vs Alter Ego, and Consigliere vs another counselor)
+    // ... generate ${targetTensionCount} distinct tension pairs (prioritize Mirror vs Alter Ego, and Consigliere vs another counselor)
   ]
 }
 
 Critical Guidelines:
 - **Ground the Debate**: In the 'tensions' dialogue, counselors MUST mention specific details from the user's story. Do not just debate abstract concepts like "Risk vs. Safety"—debate the *actual* risk the user is facing (e.g., "If they quit now, they lose the bonus").
+- **PRONOUNS (Dialogue vs Assessment)**: 
+  - In the **'tensions' dialogue**, the counselors are debating *each other*. They should refer to the user in the **third person ("they/them")**. Do NOT address the user directly as "you" in the dialogue.
+  - In the **'counselors' assessments**, the counselor IS speaking to the user. Use **second person ("you")**.
 - Write assessments as if speaking directly to the user, not analyzing them from outside
 - Show different perspectives through reasoning style and priorities, not personality labels
 - Avoid phrases like "your cognitive functions" or "as an INFJ" - just embody the perspective
@@ -190,6 +198,7 @@ TASK:
    - Keep responses conversational, punchy, and in-character.
    - You MUST return at least one response from each counselor.
    - In the dialogue, refer to the counselors by their titles: ${c1_name} and ${c2_name}.
+   - **PRONOUNS**: Now that the user has entered the conversation, you may address them directly as "you", OR continue to refer to them as "they/them" if speaking to the other counselor. Mix these naturally based on who the response is targeted at.
 
 2. UPDATE THE DECISION MATRIX:
    - Based on the user's input and the new dialogue, update the "Core Conflict" and the "Criteria" scores/reasoning.
@@ -219,5 +228,47 @@ Return ONLY a JSON object with this structure. No markdown. The 'speaker' MUST b
     }
   }
 }
+`;
+}
+
+export function buildChatPrompt(
+  dilemma: string,
+  history: { sender: 'user' | 'counselor', text: string }[],
+  newMessage: string,
+  counselor: { title: string; role: string; description: string; mbtiCode: string },
+  userMbti: string
+): string {
+  const counselorName = counselor.title.replace(/^The /, '');
+
+  const historyText = history.map(turn => {
+    const speaker = turn.sender === 'user' ? 'User' : counselorName;
+    return `${speaker}: "${turn.text}"`;
+  }).join('\n');
+
+  return `
+You are roleplaying as "${counselorName}", a counselor with the personality type ${counselor.mbtiCode} (${counselor.role}).
+Your Goal: Engage in a one-on-one deep dive session with the user about their dilemma.
+
+YOUR PERSONA:
+${counselor.description}
+
+USER CONTEXT:
+User MBTI: ${userMbti || "Unknown/Balanced"}
+Dilemma: "${dilemma}"
+
+CONVERSATION SO FAR:
+${historyText}
+User: "${newMessage}"
+
+INSTRUCTIONS:
+1. Respond directly to the user's latest message.
+2. Stay strictly in character.
+   - If you are a Thinker (T), focus on logic, strategy, and objective analysis.
+   - If you are a Feeler (F), focus on values, emotions, and interpersonal dynamics.
+   - If you are a Sensor (S), be practical, grounded, and detail-oriented.
+   - If you are an Intuitive (N), be abstract, future-oriented, and look for patterns.
+3. Be concise (max 2-3 sentences). This is a chat interface, not a letter.
+4. You may include a short follow-up question if it helps deepen the reflection, but it is not required. Statements, insights, or empathetic acknowledgments are also excellent ways to conclude.
+5. Do NOT use markdown or JSON. Just return the raw text response.
 `;
 }

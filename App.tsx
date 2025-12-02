@@ -12,6 +12,7 @@ import { Counselor, TensionPair, OverlayType, CouncilResponse, ReflectionFocus }
 import { COUNSELORS, TENSION_PAIRS } from './constants';
 import { fetchCouncilAnalysis } from './services/CouncilService';
 import { buildCounselorsFromResponse, buildTensionPairs } from './utils/counselorMapper';
+import { useChat } from './hooks/useChat';
 
 const App: React.FC = () => {
   // --- State ---
@@ -26,6 +27,8 @@ const App: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false); // Loading state
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   
+  const { chatHistory, isTyping, sendMessage } = useChat();
+
   // Track screen size for responsive behavior
   useEffect(() => {
     const handleResize = () => {
@@ -112,10 +115,11 @@ const App: React.FC = () => {
       setViewState('SPHERE');
       setIsInitialRender(true); // Trigger initial animation
       
-      // Reset animation flag after animation completes
+      // Reset animation flag after staggered animations complete
+      // Reset animation flag after staggered animations complete
       setTimeout(() => {
         setIsInitialRender(false);
-      }, 800); // After staggered animations complete
+      }, 9700); // Allow enough time for center fade (800ms) + max stagger (4 * 200ms) + expansion (600ms)
 
       // On mobile/tablet you might close sidebar here, keeping open for desktop
       if (window.innerWidth < 1024) setSidebarOpen(false);
@@ -198,9 +202,10 @@ const App: React.FC = () => {
       
       // Trigger slide-in animation
       setIsInitialRender(true);
+      // Reset animation flag after staggered animations complete
       setTimeout(() => {
         setIsInitialRender(false);
-      }, 800);
+      }, 9700);
       
       // Clear additional context input
       setAdditionalContext('');
@@ -404,6 +409,9 @@ const App: React.FC = () => {
           counselor={selectedCounselor}
           dynamicData={councilData.counselors.find(c => c.id === selectedCounselor.id)}
           onClose={closeOverlay}
+          chatMessages={chatHistory[selectedCounselor.id] || []}
+          isTyping={isTyping[selectedCounselor.id] || false}
+          onSendMessage={(msg) => sendMessage(selectedCounselor.id, msg, dilemma, selectedMBTI)}
         />
       )}
 
