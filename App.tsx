@@ -182,6 +182,7 @@ const App: React.FC = () => {
     
     console.log("handleRefine called with context:", additionalContext);
     setIsRefining(true);
+    setIsDebateMode(false); // Auto-switch off Debate Mode on refine/refresh
     const timeEstimate = estimateLoadTime(dilemma.length + additionalContext.length, councilSize); // Add additional context length
     setEstimatedTimeMs(timeEstimate);
     // removed setLoadingMessage to avoid subtitle during refinement

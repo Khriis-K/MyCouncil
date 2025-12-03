@@ -79,9 +79,10 @@ const BottomBar: React.FC<BottomBarProps> = ({
             <button
               id="debate-mode"
               onClick={toggleDebateMode}
+              disabled={isRefining}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                 isDebateMode ? 'bg-primary' : ''
-              }`}
+              } ${isRefining ? 'opacity-50 cursor-not-allowed' : ''}`}
               style={!isDebateMode ? { backgroundColor: 'var(--border-secondary)' } : undefined}
             >
               <span
