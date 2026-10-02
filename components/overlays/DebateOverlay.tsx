@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { TensionPair, Counselor, CouncilResponse } from '../../types';
 import { injectIntoDebate } from '../../services/CouncilService';
 
@@ -354,7 +355,18 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                                        ${colors.panelBg} ${colors.panelBorder}
                                        ${isC1 ? 'rounded-r-2xl rounded-bl-2xl' : 'rounded-l-2xl rounded-br-2xl'}
                                     `}>
-                                       {turn.text}
+                                       <ReactMarkdown
+                                          components={{
+                                             p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>,
+                                             strong: ({children}) => <strong className={`font-bold ${colors.text}`}>{children}</strong>,
+                                             em: ({children}) => <em className="italic opacity-90">{children}</em>,
+                                             ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                                             ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                                             li: ({children}) => <li className="ml-2">{children}</li>
+                                          }}
+                                       >
+                                          {turn.text}
+                                       </ReactMarkdown>
                                     </div>
                                  </div>
                               </div>

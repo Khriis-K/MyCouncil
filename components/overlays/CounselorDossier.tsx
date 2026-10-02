@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Counselor, CouncilResponse, ChatMessage } from '../../types';
 
 interface CounselorDossierProps {
@@ -282,7 +283,18 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
                                                                         : `${colors.bg} border ${colors.border} text-[var(--text-secondary)] rounded-bl-none animate-slide-in-left`
                                                                     }`}
                                                                   >
-                                                                    {msg.text}
+                                                                    <ReactMarkdown
+                                                                      components={{
+                                                                        p: ({children}) => <p className="mb-1 last:mb-0">{children}</p>,
+                                                                        strong: ({children}) => <strong className="font-bold text-[var(--text-primary)]">{children}</strong>,
+                                                                        em: ({children}) => <em className="italic opacity-90">{children}</em>,
+                                                                        ul: ({children}) => <ul className="list-disc list-inside mb-1">{children}</ul>,
+                                                                        ol: ({children}) => <ol className="list-decimal list-inside mb-1">{children}</ol>,
+                                                                        li: ({children}) => <li className="ml-1">{children}</li>
+                                                                      }}
+                                                                    >
+                                                                      {msg.text}
+                                                                    </ReactMarkdown>
                                                                   </div>                    </div>
                   ))
                 )}
