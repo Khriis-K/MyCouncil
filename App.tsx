@@ -379,6 +379,20 @@ const App: React.FC = () => {
           />
         )}
 
+        {/* Debate/Tension Details - Inside Main to respect Sidebar */}
+        {activeOverlay === 'DEBATE_DIALOGUE' && selectedTensionPair && councilData && (
+          <DebateOverlay
+            pair={selectedTensionPair}
+            counselors={buildCounselorsFromResponse(selectedMBTI, councilSize, councilData)}
+            dynamicData={councilData.tensions.find(t =>
+              (t.counselor_ids[0] === selectedTensionPair.counselor1 && t.counselor_ids[1] === selectedTensionPair.counselor2) ||
+              (t.counselor_ids[0] === selectedTensionPair.counselor2 && t.counselor_ids[1] === selectedTensionPair.counselor1)
+            )}
+            onClose={closeOverlay}
+            dilemma={dilemma}
+          />
+        )}
+
         {/* Bottom Bar */}
         <BottomBar
           isDebateMode={isDebateMode}
@@ -426,20 +440,6 @@ const App: React.FC = () => {
           chatMessages={chatHistory[selectedCounselor.id] || []}
           isTyping={isTyping[selectedCounselor.id] || false}
           onSendMessage={(msg) => sendMessage(selectedCounselor.id, msg, dilemma, selectedMBTI)}
-        />
-      )}
-
-      {/* Debate/Tension Details */}
-      {activeOverlay === 'DEBATE_DIALOGUE' && selectedTensionPair && councilData && (
-        <DebateOverlay
-          pair={selectedTensionPair}
-          counselors={buildCounselorsFromResponse(selectedMBTI, councilSize, councilData)}
-          dynamicData={councilData.tensions.find(t =>
-            (t.counselor_ids[0] === selectedTensionPair.counselor1 && t.counselor_ids[1] === selectedTensionPair.counselor2) ||
-            (t.counselor_ids[0] === selectedTensionPair.counselor2 && t.counselor_ids[1] === selectedTensionPair.counselor1)
-          )}
-          onClose={closeOverlay}
-          dilemma={dilemma}
         />
       )}
 

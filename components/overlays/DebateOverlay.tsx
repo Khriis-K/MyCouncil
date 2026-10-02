@@ -258,7 +258,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
    };
 
    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-sans">
+      <div className="absolute inset-0 z-50 flex items-center justify-center p-4 font-sans">
          {/* Backdrop */}
          <div className="absolute inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-sm" onClick={onClose}></div>
 
