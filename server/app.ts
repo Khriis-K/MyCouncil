@@ -1,12 +1,12 @@
 import express from 'express';
 import cors from 'cors';
-import { GoogleGenAI } from "@google/genai";
 import rateLimit from 'express-rate-limit';
 import { selectCouncilors, COUNSELOR_MATRIX } from '../data/counselorMatrix';
 import { buildSystemPrompt, buildDebateInjectionPrompt, buildChatPrompt } from './promptBuilder';
 // Import Zod schema for request validation
 import { summonSchema, debateInjectionSchema, chatSchema } from './schemas';
 import { config } from './config';
+import { generateText } from './llm';
 
 const app = express();
 
@@ -50,12 +50,10 @@ app.post('/api/summon', async (req, res) => {
 
     const { dilemma, mbti, councilSize, previousSummary, additionalContext, reflectionFocus } = validationResult.data;
     
-    if (!config.geminiApiKey) {
+    if (!config.openRouterApiKey) {
       console.error("API Key missing");
       return res.status(500).json({ error: "Server misconfiguration: API Key missing" });
     }
-
-    const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
 
     // Select counselors dynamically based on user MBTI and council size
     const selectedCounselors = selectCouncilors(mbti ?? null, councilSize);
@@ -79,25 +77,12 @@ app.post('/api/summon', async (req, res) => {
 
     console.log('Selected counselors:', selectedCounselors.map(c => c.role));
     console.log('Refinement mode:', isRefinement);
-    console.log('Calling Gemini API...');
+    console.log(`Calling ${config.model}...`);
 
-    const response = await ai.models.generateContent({
-      model: config.geminiModel,
-      contents: [
-        { role: 'user', parts: [{ text: systemPrompt }] },
-        { role: 'user', parts: [{ text: userPrompt }] }
-      ],
-    });
-
-    console.log('Gemini response received:', response);
-
-    // The response structure is: response.candidates[0].content.parts[0].text
-    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || response.text;
-    
-    if (!text) {
-      console.error('No text in response:', JSON.stringify(response, null, 2));
-      throw new Error("No response from AI");
-    }
+    const text = await generateText([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ]);
 
     console.log('AI response text:', text.substring(0, 200));
     
@@ -138,24 +123,17 @@ app.post('/api/debate/inject', async (req, res) => {
 
     const { dilemma, tension, history, user_input, counselors } = validationResult.data;
 
-    if (!config.geminiApiKey) {
+    if (!config.openRouterApiKey) {
       return res.status(500).json({ error: "Server misconfiguration: API Key missing" });
     }
 
-    const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
     // Pass the full tension object (which now includes map fields) to the prompt builder
     const prompt = buildDebateInjectionPrompt(dilemma, tension, history, user_input, counselors);
 
     console.log('Generating debate injection response...');
     console.log('Prompt preview:', prompt.substring(0, 200) + '...');
     
-    const response = await ai.models.generateContent({
-      model: config.geminiModel,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    });
-
-    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || response.text;
-    if (!text) throw new Error("No response from AI");
+    const text = await generateText([{ role: 'user', content: prompt }]);
 
     console.log('Raw AI Response for Injection:', text);
 
@@ -189,7 +167,7 @@ app.post('/api/chat', async (req, res) => {
 
     const { counselorId, dilemma, mbti, history, message } = validationResult.data;
 
-    if (!config.geminiApiKey) {
+    if (!config.openRouterApiKey) {
       return res.status(500).json({ error: "Server misconfiguration: API Key missing" });
     }
 
@@ -204,18 +182,11 @@ app.post('/api/chat', async (req, res) => {
       return res.status(404).json({ error: "Counselor not found for this MBTI type" });
     }
 
-    const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
     const prompt = buildChatPrompt(dilemma, history as any, message, counselor, mbtiKey);
 
     console.log(`Generating chat response for ${counselor.title}...`);
     
-    const response = await ai.models.generateContent({
-      model: config.geminiModel,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    });
-
-    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || response.text;
-    if (!text) throw new Error("No response from AI");
+    const text = await generateText([{ role: 'user', content: prompt }]);
 
     console.log('AI Chat Response:', text.substring(0, 100) + '...');
 
