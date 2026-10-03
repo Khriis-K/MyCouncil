@@ -41,6 +41,16 @@ export const debateInjectionSchema = z.object({
   })).min(2)
 });
 
+export const memorySourceSchema = z.object({
+  id: z.string().max(100),
+  channel: z.enum(['refinement', 'chat', 'debate']),
+  speaker: z.enum(['user', 'counselor']),
+  counselorId: z.string().max(100).optional(),
+  debatePairId: z.string().max(200).optional(),
+  text: z.string().max(2000),
+  timestamp: z.number(),
+});
+
 export const chatSchema = z.object({
   counselorId: z.string(),
   dilemma: z.string(),
@@ -49,5 +59,6 @@ export const chatSchema = z.object({
     sender: z.enum(['user', 'counselor']),
     text: z.string()
   })),
-  message: z.string().min(1).max(500)
+  message: z.string().min(1).max(500),
+  memorySources: z.array(memorySourceSchema).max(500).optional()
 });

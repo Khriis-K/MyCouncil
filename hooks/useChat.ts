@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { ChatMessage } from '../types';
+import { ChatMessage, MemorySource } from '../types';
 import { sendCounselorChat } from '../services/CouncilService';
 
 export const useChat = () => {
@@ -10,7 +10,8 @@ export const useChat = () => {
     counselorId: string,
     messageText: string,
     dilemma: string,
-    mbti: string | null
+    mbti: string | null,
+    memorySources: MemorySource[]
   ) => {
     if (!messageText.trim()) return;
 
@@ -38,13 +39,16 @@ export const useChat = () => {
         text: msg.text
       }));
 
-      const data = await sendCounselorChat(counselorId, dilemma, mbti, historyForApi, messageText);
+      const data = await sendCounselorChat(counselorId, dilemma, mbti, historyForApi, messageText, memorySources);
 
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'counselor',
         text: data.response,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        recalled: data.memory?.used.length
+          ? data.memory.used.map(({ text, channel, counselorId }) => ({ text, channel, counselorId }))
+          : undefined
       };
 
       setChatHistory(prev => ({

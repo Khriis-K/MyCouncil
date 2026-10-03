@@ -246,7 +246,8 @@ export function buildChatPrompt(
   history: { sender: 'user' | 'counselor', text: string }[],
   newMessage: string,
   counselor: { title: string; role: string; description: string; mbtiCode: string },
-  userMbti: string
+  userMbti: string,
+  memoriesSection = ''
 ): string {
   const counselorName = counselor.title.replace(/^The /, '');
 
@@ -265,7 +266,9 @@ ${counselor.description}
 USER CONTEXT:
 User MBTI: ${userMbti || "Unknown/Balanced"}
 Dilemma: "${dilemma}"
-
+${memoriesSection ? `
+${memoriesSection}
+` : ''}
 CONVERSATION SO FAR:
 ${historyText}
 User: "${newMessage}"

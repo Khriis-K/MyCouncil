@@ -9,9 +9,11 @@
     "server": "nodemon --exec tsx server/index.ts",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "models:download": "tsx scripts/models-download.ts"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.3.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
