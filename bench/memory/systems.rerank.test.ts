@@ -32,6 +32,14 @@ describe('rerank systems', () => {
     expect(reranked.timingsMs).toHaveProperty('rerank');
   });
 
+  test('a reranker failure is an error in the bench, never silently scored as stage 1', async () => {
+    const broken: Reranker = { id: 'broken', score: async () => { throw new Error('model missing'); } };
+    const systems = createSystems({ ...base, rerankers: { minilm: broken, 'bge-base': broken }, productionReranker: 'minilm' });
+    for (const name of ['dense+rerank', 'dense+rerank-bge', 'memory-production']) {
+      await expect(systems.find(s => s.name === name)!.run({ scenario, probe })).rejects.toThrow(/rerank_failed: model missing/);
+    }
+  });
+
   test('memory-production follows the configured reranker', async () => {
     expect((await system('memory-production', 'bge-base').run({ scenario, probe })).trace!.config.rerankerId).toBe('bge');
     expect((await system('memory-production', 'none').run({ scenario, probe })).trace!.config.rerankerId).toBeNull();

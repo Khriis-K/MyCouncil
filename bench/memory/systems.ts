@@ -41,6 +41,16 @@ export interface SystemOptions {
   productionReranker: RerankerName;
 }
 
+export function productionRerankerOf({ rerankers, productionReranker }: SystemOptions): Reranker | null {
+  return productionReranker === 'none' ? null : rerankers[productionReranker];
+}
+
+// The product degrades to stage-1 order when reranking fails; a benchmark row must not, or it
+// would report stage-1 quality under a rerank system's name.
+function assertReranked(trace: RetrievalTrace) {
+  if (trace.fallback) throw new Error(`${trace.config.rerankerId}: ${trace.fallback}`);
+}
+
 const byTime = (a: TimelineEvent, b: TimelineEvent) => a.timestamp - b.timestamp;
 const newestFirst = (a: TimelineEvent, b: TimelineEvent) => b.timestamp - a.timestamp;
 const charCount = (events: { text: string }[]) => events.reduce((n, e) => n + e.text.length, 0);
@@ -97,6 +107,7 @@ const dense = (name: string, reranker: Reranker | null, { embedder, k, candidate
     const { used, trace } = await retrieveMemories({
       query: chatQuery(ctx), sources: ctx.scenario.timeline, excludeSourceIds: [], k, candidatePool, embedder, reranker, endpoint: 'bench',
     });
+    assertReranked(trace);
     return {
       ranked: rankedFromTrace(trace),
       context: new Set(used.map(u => u.sourceId)),
@@ -108,10 +119,11 @@ const dense = (name: string, reranker: Reranker | null, { embedder, k, candidate
 });
 
 // Shipped chat prompt: the thread's last `window` turns verbatim, plus retrieved memories that exclude them.
-const memoryProduction = ({ embedder, k, window, candidatePool, rerankers, productionReranker }: SystemOptions): System => ({
+const memoryProduction = (options: SystemOptions): System => ({
   name: 'memory-production',
   async run(ctx) {
-    const reranker = productionReranker === 'none' ? null : rerankers[productionReranker];
+    const { embedder, k, window, candidatePool } = options;
+    const reranker = productionRerankerOf(options);
     const { scenario, probe } = ctx;
     const sources = scenario.timeline;
     const windowIds =
@@ -127,6 +139,7 @@ const memoryProduction = ({ embedder, k, window, candidatePool, rerankers, produ
           })
         : await retrieveMemories({ query: probe.text, sources, excludeSourceIds: windowIds, k, candidatePool, embedder, reranker, endpoint: 'bench' });
     if (!recall.trace) throw new Error(`memory-production retrieval fell back: ${recall.fallback ?? 'no trace'}`);
+    assertReranked(recall.trace);
 
     const windowEvents = sources.filter(e => windowIds.includes(e.id));
     const windowUsers = windowEvents.filter(e => e.speaker === 'user').sort(newestFirst).map(e => e.id);

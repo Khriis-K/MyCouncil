@@ -3,14 +3,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { config } from '../../server/config';
-import { CachedEmbedder, type Embedder } from '../../server/memory/embedder';
-import type { RerankerName } from '../../server/memory/models';
-import { createReranker, type Reranker } from '../../server/memory/reranker';
+import { CachedEmbedder } from '../../server/memory/embedder';
+import { createReranker } from '../../server/memory/reranker';
 import type { RetrievalTrace } from '../../server/memory/types';
 import { TransformersEmbedder } from '../../server/memory/transformersEmbedder';
 import { allGoldAtK, contextRecall, contextTokens, METRIC_KS, mrr, ndcgAtK, recallAtK } from './metrics';
 import { datasetSchema, type Dataset } from './schema';
-import { createSystems, type System } from './systems';
+import { createSystems, productionRerankerOf, type System, type SystemOptions } from './systems';
 
 const BENCH_DIR = import.meta.dirname;
 const CATEGORIES = ['explicit', 'implicit', 'multi', 'update'] as const;
@@ -97,15 +96,9 @@ export interface BenchResults {
   aggregates: Record<string, { overall: Aggregate; byCategory: Record<string, Aggregate> }>;
 }
 
-export interface RunOptions {
+export interface RunOptions extends SystemOptions {
   dataset: Dataset;
   split: string;
-  embedder: Embedder;
-  k: number;
-  window: number;
-  candidatePool: number;
-  rerankers: Record<Exclude<RerankerName, 'none'>, Reranker>;
-  productionReranker: RerankerName;
   systems?: string[];
 }
 
@@ -182,7 +175,7 @@ export async function runBenchmark(options: RunOptions): Promise<BenchResults> {
   return {
     meta: {
       split, timestamp: new Date().toISOString(), datasetVersion: dataset.version, embedderId: embedder.id,
-      rerankerId: options.productionReranker === 'none' ? null : options.rerankers[options.productionReranker].id,
+      rerankerId: productionRerankerOf(options)?.id ?? null,
       k, window, candidatePool, machine: os.cpus()[0]?.model ?? 'unknown',
     },
     systems: systems.map(s => s.name),
