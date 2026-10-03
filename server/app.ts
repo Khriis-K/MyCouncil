@@ -2,12 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { selectCouncilors, COUNSELOR_MATRIX } from '../data/counselorMatrix';
-import { buildSystemPrompt, buildDebateInjectionPrompt, buildChatPrompt } from './promptBuilder';
+import { buildSystemPrompt, buildDebateInjectionPrompt, buildChatPrompt, buildSummonUserPrompt } from './promptBuilder';
 // Import Zod schema for request validation
 import { summonSchema, debateInjectionSchema, chatSchema } from './schemas';
 import { config } from './config';
 import { generateText } from './llm';
-import { recallForChat } from './memory/chatMemory';
+import { recallForChat, recallForDebate, recallForRefinement, type MemoryRecall, type RecallEndpoint } from './memory/chatMemory';
 import { formatMemoriesForPrompt } from './memory/format';
 import { reportRetrieval, TRACE_FILE } from './memory/observability';
 
@@ -21,6 +21,20 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
+
+// Logs the retrieval and shapes it for the response; the same for every generation path.
+function reportRecall(recall: MemoryRecall, endpoint: RecallEndpoint) {
+  if (recall.trace) {
+    reportRetrieval(recall.trace, { debug: config.memory.debug, traceFile: TRACE_FILE });
+  } else {
+    console.log(`[memory] ${endpoint} skipped (${recall.fallback})`);
+  }
+  return {
+    used: recall.used.map(u => ({ id: u.id, sourceId: u.sourceId, text: u.text, channel: u.channel, counselorId: u.counselorId })),
+    fallback: recall.fallback,
+    ...(config.memory.debug && recall.trace && { trace: recall.trace }),
+  };
+}
 
 app.use(cors());
 app.use(express.json());
@@ -51,7 +65,7 @@ app.post('/api/summon', async (req, res) => {
       });
     }
 
-    const { dilemma, mbti, councilSize, previousSummary, additionalContext, reflectionFocus } = validationResult.data;
+    const { dilemma, mbti, councilSize, previousSummary, additionalContext, reflectionFocus, memorySources } = validationResult.data;
     
     if (!config.openRouterApiKey) {
       console.error("API Key missing");
@@ -65,18 +79,16 @@ app.post('/api/summon', async (req, res) => {
     const isRefinement = !!(previousSummary || additionalContext);
     const systemPrompt = buildSystemPrompt(selectedCounselors, isRefinement, reflectionFocus);
 
-    // Build user prompt with optional context fields
-    let userPrompt = `User MBTI: ${mbti || "BALANCED"}\nDilemma: ${dilemma}`;
-    
-    if (previousSummary) {
-      userPrompt += `\n\nPrevious Context Summary: ${previousSummary}`;
-    }
-    
-    if (additionalContext) {
-      userPrompt += `\n\nAdditional Context: ${additionalContext}`;
-    }
-    
-    userPrompt += '\n\nGenerate The Council\'s analysis.';
+    // Only a refinement recalls: an initial summon has nothing earlier to remember.
+    const recall = additionalContext
+      ? await recallForRefinement({ additionalContext, sources: memorySources, settings: config.memory })
+      : undefined;
+    const memory = recall && reportRecall(recall, 'refinement');
+
+    const userPrompt = buildSummonUserPrompt({
+      mbti, dilemma, previousSummary, additionalContext,
+      memoriesSection: recall && formatMemoriesForPrompt(recall.used, {}),
+    });
 
     console.log('Selected counselors:', selectedCounselors.map(c => c.role));
     console.log('Refinement mode:', isRefinement);
@@ -95,7 +107,7 @@ app.post('/api/summon', async (req, res) => {
     try {
       console.log('Cleaned AI Response Text:', cleanedText);
       const data = JSON.parse(cleanedText);
-      res.json(data);
+      res.json(memory ? { ...data, memory } : data);
     } catch (parseError) {
       console.error("Failed to parse AI response:", parseError);
       console.error("Problematic AI response text:", cleanedText);
@@ -124,14 +136,17 @@ app.post('/api/debate/inject', async (req, res) => {
       });
     }
 
-    const { dilemma, tension, history, user_input, counselors } = validationResult.data;
+    const { dilemma, tension, history, user_input, counselors, memorySources } = validationResult.data;
 
     if (!config.openRouterApiKey) {
       return res.status(500).json({ error: "Server misconfiguration: API Key missing" });
     }
 
+    const recall = await recallForDebate({ userInput: user_input, history, counselorIds: tension.counselor_ids, sources: memorySources, settings: config.memory });
+    const memory = reportRecall(recall, 'debate');
+
     // Pass the full tension object (which now includes map fields) to the prompt builder
-    const prompt = buildDebateInjectionPrompt(dilemma, tension, history, user_input, counselors);
+    const prompt = buildDebateInjectionPrompt(dilemma, tension, history, user_input, counselors, formatMemoriesForPrompt(recall.used, {}));
 
     console.log('Generating debate injection response...');
     console.log('Prompt preview:', prompt.substring(0, 200) + '...');
@@ -149,7 +164,7 @@ app.post('/api/debate/inject', async (req, res) => {
        throw new Error("AI returned invalid structure (missing dialogue array)");
     }
 
-    res.json(responseData);
+    res.json({ ...responseData, memory });
 
   } catch (error) {
     console.error("Error processing debate injection:", error);
@@ -190,11 +205,7 @@ app.post('/api/chat', async (req, res) => {
     const promptHistory = recall.fallback ? history : history.slice(-config.memory.recentWindow);
     const prompt = buildChatPrompt(dilemma, promptHistory, message, counselor, mbtiKey, formatMemoriesForPrompt(recall.used, {}));
 
-    if (recall.trace) {
-      reportRetrieval(recall.trace, { debug: config.memory.debug, traceFile: TRACE_FILE });
-    } else {
-      console.log(`[memory] chat skipped (${recall.fallback})`);
-    }
+    const memory = reportRecall(recall, 'chat');
 
     console.log(`Generating chat response for ${counselor.title}...`);
     
@@ -204,11 +215,7 @@ app.post('/api/chat', async (req, res) => {
 
     res.json({
       response: text.trim(),
-      memory: {
-        used: recall.used.map(u => ({ id: u.id, sourceId: u.sourceId, text: u.text, channel: u.channel, counselorId: u.counselorId })),
-        fallback: recall.fallback,
-        ...(config.memory.debug && recall.trace && { trace: recall.trace }),
-      },
+      memory,
     });
 
   } catch (error) {

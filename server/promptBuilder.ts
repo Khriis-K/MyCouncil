@@ -152,7 +152,8 @@ export function buildDebateInjectionPrompt(
   },
   dialogueHistory: { speaker: string; text: string }[],
   userInjection: string,
-  counselors: { id: string; name: string; role: string; description: string }[]
+  counselors: { id: string; name: string; role: string; description: string }[],
+  memoriesSection = ''
 ): string {
   const c1_base = counselors[0];
   const c2_base = counselors[1];
@@ -191,7 +192,9 @@ TONE GUIDELINES:
 CONTEXT:
 Dilemma: "${dilemma}"
 ${currentMapState}
-
+${memoriesSection ? `
+${memoriesSection}
+` : ''}
 THE DEBATERS:
 1. ${c1_name}: ${c1_base.description}
 2. ${c2_name}: ${c2_base.description}
@@ -239,6 +242,21 @@ Return ONLY a JSON object with this structure. No markdown. The 'speaker' MUST b
   }
 }
 `;
+}
+
+export function buildSummonUserPrompt(params: {
+  mbti?: string | null;
+  dilemma: string;
+  previousSummary?: string;
+  additionalContext?: string;
+  memoriesSection?: string;
+}): string {
+  const { mbti, dilemma, previousSummary, additionalContext, memoriesSection } = params;
+  let prompt = `User MBTI: ${mbti || "BALANCED"}\nDilemma: ${dilemma}`;
+  if (previousSummary) prompt += `\n\nPrevious Context Summary: ${previousSummary}`;
+  if (additionalContext) prompt += `\n\nAdditional Context: ${additionalContext}`;
+  if (memoriesSection) prompt += `\n\n${memoriesSection}`;
+  return prompt + '\n\nGenerate The Council\'s analysis.';
 }
 
 export function buildChatPrompt(

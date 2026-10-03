@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { buildChatQuery } from './queries';
+import { buildChatQuery, buildDebateQuery, buildRefinementQuery } from './queries';
 
 describe('buildChatQuery', () => {
   test('a long message is the query as-is', () => {
@@ -13,5 +13,25 @@ describe('buildChatQuery', () => {
 
   test('a short message without a counselor turn is as-is', () => {
     expect(buildChatQuery('In March')).toBe('In March');
+  });
+});
+
+describe('buildRefinementQuery', () => {
+  test('is the new context text', () => {
+    expect(buildRefinementQuery('my sister would move in with us')).toBe('my sister would move in with us');
+  });
+
+  test('a short context is not expanded', () => {
+    expect(buildRefinementQuery('In March')).toBe('In March');
+  });
+});
+
+describe('buildDebateQuery', () => {
+  test('is the user input', () => {
+    expect(buildDebateQuery('what about the cost of the new place')).toBe('what about the cost of the new place');
+  });
+
+  test('a short input is not expanded', () => {
+    expect(buildDebateQuery('I disagree')).toBe('I disagree');
   });
 });

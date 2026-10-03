@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { buildMemoryUnits } from '../server/memory/chunker';
 import { buildMemorySources } from './memorySources';
 
 describe('buildMemorySources', () => {
@@ -56,5 +57,62 @@ describe('buildMemorySources', () => {
     expect(sources).toHaveLength(500);
     expect(sources.at(-1)!.id).toBe('refinement:599');
     expect(sources[0].id).toBe('refinement:100');
+  });
+});
+
+describe('buildMemorySources debate entries', () => {
+  const interjection = {
+    pairId: 'Architect-Advocate',
+    userText: 'my sister would have to move in with us',
+    precedingCounselorText: 'Stay where your roots are.',
+    timestamp: 100,
+  };
+
+  test('maps an interjection to a user source plus the counselor turn before it', () => {
+    const sources = buildMemorySources({ chatHistory: {}, refinements: [], debateLog: [interjection] });
+    expect(sources).toEqual([
+      { id: 'debate:0:counselor', channel: 'debate', speaker: 'counselor', debatePairId: 'Architect-Advocate', text: 'Stay where your roots are.', timestamp: 99 },
+      { id: 'debate:0', channel: 'debate', speaker: 'user', debatePairId: 'Architect-Advocate', text: 'my sister would have to move in with us', timestamp: 100 },
+    ]);
+  });
+
+  test('without a preceding counselor turn only the user source is emitted', () => {
+    const { precedingCounselorText: _p, ...bare } = interjection;
+    expect(buildMemorySources({ chatHistory: {}, refinements: [], debateLog: [bare] })).toEqual([
+      { id: 'debate:0', channel: 'debate', speaker: 'user', debatePairId: 'Architect-Advocate', text: 'my sister would have to move in with us', timestamp: 100 },
+    ]);
+  });
+
+  test('the counselor turn gives a short reply its context in the chunker', () => {
+    const short = { ...interjection, userText: 'In March', precedingCounselorText: 'When does your lease end?' };
+    const units = buildMemoryUnits(buildMemorySources({ chatHistory: {}, refinements: [], debateLog: [short] }));
+    expect(units).toHaveLength(1);
+    expect(units[0].embedText).toBe('Counselor asked: "When does your lease end?"\nUser: "In March"');
+  });
+
+  test('keeps ids stable when more interjections are appended', () => {
+    const before = buildMemorySources({ chatHistory: {}, refinements: [], debateLog: [interjection] });
+    const after = buildMemorySources({
+      chatHistory: {},
+      refinements: [],
+      debateLog: [interjection, { ...interjection, pairId: 'Sage-Rebel', userText: 'later', timestamp: 200 }],
+    });
+    expect(after.slice(0, 2).map(s => s.id)).toEqual(before.map(s => s.id));
+    expect(after.map(s => s.id)).toEqual(['debate:0:counselor', 'debate:0', 'debate:1:counselor', 'debate:1']);
+  });
+
+  test('truncates debate text to the 2000-char server limit', () => {
+    const long = { ...interjection, userText: 'a'.repeat(3000), precedingCounselorText: 'b'.repeat(3000) };
+    const sources = buildMemorySources({ chatHistory: {}, refinements: [], debateLog: [long] });
+    expect(sources.map(s => s.text.length)).toEqual([2000, 2000]);
+  });
+
+  test('interleaves debate entries with chat and refinements by time', () => {
+    const sources = buildMemorySources({
+      chatHistory: { Architect: [{ id: '1', sender: 'user', text: 'chat', timestamp: 50 }] },
+      refinements: [{ text: 'ref', timestamp: 150 }],
+      debateLog: [interjection],
+    });
+    expect(sources.map(s => s.id)).toEqual(['chat:Architect:1', 'debate:0:counselor', 'debate:0', 'refinement:0']);
   });
 });

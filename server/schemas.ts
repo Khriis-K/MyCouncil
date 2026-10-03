@@ -1,5 +1,17 @@
 import { z } from 'zod';
 
+export const memorySourceSchema = z.object({
+  id: z.string().max(100),
+  channel: z.enum(['refinement', 'chat', 'debate']),
+  speaker: z.enum(['user', 'counselor']),
+  counselorId: z.string().max(100).optional(),
+  debatePairId: z.string().max(200).optional(),
+  text: z.string().max(2000),
+  timestamp: z.number(),
+});
+
+const memorySources = z.array(memorySourceSchema).max(500).optional();
+
 export const summonSchema = z.object({
   dilemma: z.string()
     .min(10, "Dilemma must be at least 10 characters long")
@@ -11,6 +23,7 @@ export const summonSchema = z.object({
     .max(300, "Additional context cannot exceed 300 characters")
     .optional(),
   reflectionFocus: z.enum(['Decision-Making', 'Emotional Processing', 'Creative Problem Solving']).optional(),
+  memorySources
 });
 
 export const debateInjectionSchema = z.object({
@@ -38,17 +51,8 @@ export const debateInjectionSchema = z.object({
     name: z.string(),
     role: z.string(),
     description: z.string()
-  })).min(2)
-});
-
-export const memorySourceSchema = z.object({
-  id: z.string().max(100),
-  channel: z.enum(['refinement', 'chat', 'debate']),
-  speaker: z.enum(['user', 'counselor']),
-  counselorId: z.string().max(100).optional(),
-  debatePairId: z.string().max(200).optional(),
-  text: z.string().max(2000),
-  timestamp: z.number(),
+  })).min(2),
+  memorySources
 });
 
 export const chatSchema = z.object({
@@ -60,5 +64,5 @@ export const chatSchema = z.object({
     text: z.string()
   })),
   message: z.string().min(1).max(500),
-  memorySources: z.array(memorySourceSchema).max(500).optional()
+  memorySources
 });

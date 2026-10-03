@@ -8,7 +8,7 @@ import InsightBar from './components/overlays/InsightBar';
 import CounselorDossier from './components/overlays/CounselorDossier';
 import DebateOverlay from './components/overlays/DebateOverlay';
 import DilemmaHistoryOverlay from './components/overlays/DilemmaHistoryOverlay';
-import { Counselor, TensionPair, OverlayType, CouncilResponse, ReflectionFocus } from './types';
+import { Counselor, TensionPair, OverlayType, CouncilResponse, ReflectionFocus, DebateInterjection } from './types';
 import { COUNSELORS, TENSION_PAIRS } from './constants';
 import { fetchCouncilAnalysis } from './services/CouncilService';
 import { buildCounselorsFromResponse, buildTensionPairs } from './utils/counselorMapper';
@@ -80,6 +80,8 @@ const App: React.FC = () => {
   const [isInitialRender, setIsInitialRender] = useState(false); // For initial counselor animation
   const [loadingMessage, setLoadingMessage] = useState<string>(''); // For center bubble during refinement
   const [refinementHistory, setRefinementHistory] = useState<{ text: string; timestamp: number }[]>([]); // Track all refinement contexts
+  const [debateLog, setDebateLog] = useState<DebateInterjection[]>([]); // User interjections across all debates, for memory
+  const memorySources = buildMemorySources({ chatHistory, refinements: refinementHistory, debateLog });
   const [estimatedTimeMs, setEstimatedTimeMs] = useState<number>(0);
   
   // Highlight states
@@ -199,7 +201,8 @@ const App: React.FC = () => {
         councilSize,
         contextSummary, // Previous summary (empty on first refinement)
         additionalContext, // New context
-        reflectionFocus
+        reflectionFocus,
+        memorySources // From this render, so it doesn't hold the refinement being sent (that's the query)
       );
       
       console.log("Refinement success:", data);
@@ -270,6 +273,7 @@ const App: React.FC = () => {
     setOriginalSummary('');
     setContextSummary('');
     setRefinementHistory([]);
+    setDebateLog([]);
     setAdditionalContext('');
     setActiveOverlay('NONE');
     setSelectedCounselor(null);
@@ -391,6 +395,8 @@ const App: React.FC = () => {
             )}
             onClose={closeOverlay}
             dilemma={dilemma}
+            memorySources={memorySources}
+            onInterjection={i => setDebateLog(prev => [...prev, i])}
           />
         )}
 
@@ -440,7 +446,7 @@ const App: React.FC = () => {
           onClose={closeOverlay}
           chatMessages={chatHistory[selectedCounselor.id] || []}
           isTyping={isTyping[selectedCounselor.id] || false}
-          onSendMessage={(msg) => sendMessage(selectedCounselor.id, msg, dilemma, selectedMBTI, buildMemorySources({ chatHistory, refinements: refinementHistory }))}
+          onSendMessage={(msg) => sendMessage(selectedCounselor.id, msg, dilemma, selectedMBTI, memorySources)}
         />
       )}
 
