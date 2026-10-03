@@ -42,6 +42,8 @@ export interface TraceCandidate {
   finalRank?: number;
   /** stage1Rank - finalRank: positive means the reranker promoted it */
   rankDelta?: number;
+  /** 'ltr' only: the raw feature vector, in FEATURE_NAMES order */
+  ltrFeatures?: number[];
   selected: boolean;
 }
 
@@ -49,7 +51,8 @@ export interface RetrievalTrace {
   requestId: string;
   endpoint: 'chat' | 'debate' | 'refinement' | 'bench';
   query: string;
-  config: { embedderId: string; stage1: Stage1Mode; rerankerId: string | null; candidatePool: number; k: number };
+  /** stage1 'union' is the 'ltr' pool: the dense top n plus the BM25 top n, in RRF order, uncut */
+  config: { embedderId: string; stage1: Stage1Mode | 'union'; rerankerId: string | null; candidatePool: number; k: number };
   /** units searched, after exclusion */
   indexSize: number;
   /** units dropped because their source was excluded (e.g. the verbatim window) */

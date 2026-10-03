@@ -1,4 +1,6 @@
 import { CachedEmbedder, type Embedder } from './embedder';
+import type { QueryOrigin } from './features';
+import { createLtrRanker, type LtrRanker } from './ltr';
 import { retrieveMemories } from './pipeline';
 import type { RerankerName } from './models';
 import { createProductionSelector } from './productionSelector';
@@ -31,10 +33,13 @@ export interface MemoryRecall {
 let sharedEmbedder: CachedEmbedder | undefined;
 const defaultEmbedder = () => (sharedEmbedder ??= new CachedEmbedder(new TransformersEmbedder()));
 
-const sharedRerankers = new Map<RerankerName, Reranker | null>();
+const sharedRerankers = new Map<RerankerName, Reranker | LtrRanker | null>();
 function defaultReranker({ reranker: name = 'none', k, selectorTimeoutMs }: MemorySettings) {
   if (!sharedRerankers.has(name)) {
-    sharedRerankers.set(name, name === 'llm-select' ? createProductionSelector(k, selectorTimeoutMs) : createReranker(name));
+    sharedRerankers.set(
+      name,
+      name === 'llm-select' ? createProductionSelector(k, selectorTimeoutMs) : name === 'ltr' ? createLtrRanker() : createReranker(name),
+    );
   }
   return sharedRerankers.get(name)!;
 }
@@ -74,13 +79,13 @@ interface RecallOptions {
   settings: MemorySettings;
   embedder?: Embedder;
   /** overrides settings.reranker */
-  reranker?: Reranker | null;
+  reranker?: Reranker | LtrRanker | null;
 }
 
 async function recall(
   options: RecallOptions,
   endpoint: RecallEndpoint,
-  plan: (sources: MemorySource[]) => { query: string; excludeSourceIds: string[] },
+  plan: (sources: MemorySource[]) => { query: string; excludeSourceIds: string[]; origin: QueryOrigin },
 ): Promise<MemoryRecall> {
   const { settings } = options;
   const sources = options.sources ?? [];
@@ -108,12 +113,15 @@ export function recallForChat(params: RecallOptions & { counselorId: string; mes
   return recall(params, 'chat', sources => ({
     query: buildChatQuery(message, lastCounselorTurn(sources, counselorId)),
     excludeSourceIds: windowSourceIds(sources, counselorId, settings.recentWindow),
+    origin: { channel: 'chat', counselorId },
   }));
 }
 
 // The client sends only earlier refinements, so nothing here is already in the prompt.
 export function recallForRefinement(params: RecallOptions & { additionalContext: string }): Promise<MemoryRecall> {
-  return recall(params, 'refinement', () => ({ query: buildRefinementQuery(params.additionalContext), excludeSourceIds: [] }));
+  return recall(params, 'refinement', () => ({
+    query: buildRefinementQuery(params.additionalContext), excludeSourceIds: [], origin: { channel: 'refinement' },
+  }));
 }
 
 export function recallForDebate(
@@ -122,5 +130,6 @@ export function recallForDebate(
   return recall(params, 'debate', sources => ({
     query: buildDebateQuery(params.userInput),
     excludeSourceIds: debateTranscriptSourceIds(sources, params.history, params.counselorIds),
+    origin: { channel: 'debate', debatePairId: params.counselorIds.join('-') },
   }));
 }

@@ -22,4 +22,5 @@ export const RERANKER_MODELS = {
 
 export type CrossEncoderName = keyof typeof RERANKER_MODELS;
 // 'llm-select': the chat model picks from the dense candidates, behind the dense top 2 (see productionSelector.ts).
-export type RerankerName = 'none' | 'llm-select' | CrossEncoderName;
+// 'ltr': learned score fusion over the dense + BM25 union, MiniLM and context (see ltr.ts).
+export type RerankerName = 'none' | 'llm-select' | 'ltr' | CrossEncoderName;

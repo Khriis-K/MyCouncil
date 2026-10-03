@@ -1,10 +1,12 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { config } from '../../server/config';
 import { generateText } from '../../server/llm';
 import { CachedEmbedder } from '../../server/memory/embedder';
+import { FEATURE_NAMES } from '../../server/memory/features';
+import { createLtrRanker, LTR_WEIGHTS_FILE } from '../../server/memory/ltr';
 import { LlmSelector } from '../../server/memory/llmSelector';
 import { createProductionSelector } from '../../server/memory/productionSelector';
 import { createReranker } from '../../server/memory/reranker';
@@ -127,6 +129,8 @@ export interface BenchResults {
     split: string; timestamp: string; datasetVersion: string; embedderId: string; rerankerId: string | null; llmSelectorId?: string;
     k: number; window: number; candidatePool: number; machine: string;
     provenance: Provenance;
+    /** set when the ltr system ran: its learned weights on z-scored features, by feature name */
+    ltr?: { id: string; bias: number; weights: Record<string, number> };
   };
   systems: string[];
   rows: ResultRow[];
@@ -162,7 +166,10 @@ function collectProvenance(options: RunOptions, timestamp: string): Provenance {
     datasetPath: options.datasetPath ? path.relative(REPO_ROOT, options.datasetPath).split(path.sep).join('/') : null,
     datasetSha256: options.datasetPath ? sha256File(options.datasetPath) : null,
     embedderId: options.embedder.id,
-    rerankerIds: Object.fromEntries(Object.entries(options.rerankers).map(([name, r]) => [name, r.id])),
+    rerankerIds: {
+      ...Object.fromEntries(Object.entries(options.rerankers).map(([name, r]) => [name, r.id])),
+      ...(options.ltr && { ltr: options.ltr.id }),
+    },
     llmSelectorId: options.llmSelector?.id ?? null,
     memoryConfig: config.memory,
     git: gitInfo(),
@@ -234,6 +241,13 @@ export async function runBenchmark(options: RunOptions): Promise<BenchResults> {
       llmSelectorId: options.llmSelector?.id,
       k, window, candidatePool, machine: os.cpus()[0]?.model ?? 'unknown',
       provenance: collectProvenance(options, timestamp),
+      ...(options.ltr && names.includes('ltr') && {
+        ltr: {
+          id: options.ltr.id,
+          bias: options.ltr.model.bias,
+          weights: Object.fromEntries(FEATURE_NAMES.map((name, i) => [name, options.ltr!.model.weights[i]])),
+        },
+      }),
     },
     systems: names,
     rows,
@@ -328,7 +342,7 @@ export function renderMarkdown(results: BenchResults): string {
   }
   lines.push(
     ...channelSection(results), ...distanceSection(results), ...transitionsSection(results),
-    ...bootstrapSection(results), ...latencySection(results), '', ...provenanceSection(results),
+    ...bootstrapSection(results), ...ltrSection(results), ...latencySection(results), '', ...provenanceSection(results),
   );
   return lines.join('\n') + '\n';
 }
@@ -389,6 +403,22 @@ function bootstrapSection({ systems, bootstrap }: BenchResults): string[] {
         return `${signed(c.meanDiff)} [${signed(c.lo)}, ${signed(c.hi)}]${c.lo > 0 || c.hi < 0 ? '*' : ''}`;
       })]),
     ),
+    '',
+  ];
+}
+
+function ltrSection({ meta }: BenchResults): string[] {
+  if (!meta.ltr) return [];
+  return [
+    '## LTR weights (standardized)',
+    '',
+    `- ranker: ${meta.ltr.id}`,
+    '- ltr was trained on the whole dev split, so its dev numbers here are in-sample and optimistic: read results/latest-ltr-cv.md for the honest dev estimate, and the test split for the held-out comparison',
+    '- weights act on z-scored features, so their sizes are comparable; the sign is the direction of the effect',
+    '',
+    table(['feature', 'weight'], Object.entries(meta.ltr.weights).map(([name, w]) => [name, signed(w)])),
+    '',
+    `- bias: ${signed(meta.ltr.bias)}`,
     '',
   ];
 }
@@ -523,6 +553,7 @@ async function main() {
   const complete = (messages: Parameters<typeof generateText>[0]) => generateText(messages, config.model, { temperature: 0 });
   // Needs the OpenRouter key; without it the LLM selector systems are simply not offered.
   const llm = Boolean(config.openRouterApiKey);
+  const minilm = createReranker('minilm')!;
   const options: RunOptions = {
     dataset,
     split: args.split,
@@ -530,12 +561,14 @@ async function main() {
     k: args.k,
     window: args.window,
     candidatePool: config.memory.candidatePool,
-    rerankers: { minilm: createReranker('minilm')!, 'bge-base': createReranker('bge-base')! },
+    rerankers: { minilm, 'bge-base': createReranker('bge-base')! },
     productionReranker: config.memory.reranker,
     productionStage1: config.memory.stage1,
     llmSelector: llm ? new LlmSelector(complete, config.model, args.k) : undefined,
     // No timeout: the bench measures the full call; production caps it with config.memory.selectorTimeoutMs.
     hybridSelector: llm ? createProductionSelector(args.k) : undefined,
+    // Until the ranker is trained there are no weights, and the ltr system is simply not offered.
+    ltr: existsSync(LTR_WEIGHTS_FILE) ? createLtrRanker(LTR_WEIGHTS_FILE, minilm) : undefined,
     systems: args.systems,
     datasetPath: dataPath,
   };

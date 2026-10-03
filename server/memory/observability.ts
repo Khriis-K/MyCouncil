@@ -1,5 +1,6 @@
 import { appendFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
+import { FEATURE_NAMES } from './features';
 import type { RetrievalTrace } from './types';
 
 export const TRACE_FILE = path.resolve('logs/memory-traces.jsonl');
@@ -28,6 +29,7 @@ export function candidateRows(trace: RetrievalTrace) {
     finalRank: blank(c.finalRank),
     rankDelta: blank(c.rankDelta),
     selected: c.selected,
+    ...(c.ltrFeatures && Object.fromEntries(FEATURE_NAMES.map((name, i) => [name, blank(c.ltrFeatures![i], 3)]))),
     preview: c.textPreview,
   }));
 }
