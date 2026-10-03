@@ -47,5 +47,157 @@
     "before": "If I want to reconnect with the hiking group, would it be strange to explain that my qualifying exams got in the way and I'd like to try again?",
     "after": "I want to go back to the hiking club and actually show up at the next department happy hour. How do I walk back in after bailing on both?",
     "reason": "another turn also answers: d8 (qualifying exams) answered the \"exams got in the way\" part, and f5 was not needed. Rewritten to need both f1 and f5."
+  },
+  {
+    "probe": "career-5-p4",
+    "regrade": {
+      "superseded": "career-5-f4",
+      "update": "career-5-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 4: The raise changed from $18,000/$87,000 total to $22,000/$91,000 total, which materially changes the financial-security comparison."
+  },
+  {
+    "probe": "relocation-2-p1",
+    "regrade": {
+      "superseded": "relocation-2-f3",
+      "update": "relocation-2-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 5: The compensation changed from $185,000 base to $195,000 base plus a $30,000 signing bonus, so the probe's stated comparison is outdated."
+  },
+  {
+    "probe": "romantic-relationship-1-p4",
+    "regrade": {
+      "superseded": "romantic-relationship-1-f5",
+      "update": "romantic-relationship-1-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 7: In-person LA meetings are no longer essential because the client agreed to fully remote meetings, removing a major stated cost of moving."
+  },
+  {
+    "probe": "romantic-relationship-2-p3",
+    "regrade": {
+      "superseded": "romantic-relationship-2-f7",
+      "update": "romantic-relationship-2-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 8: The new $4,000-per-month client materially changes the premise that money is currently too tight to consider a more expensive home."
+  },
+  {
+    "probe": "romantic-relationship-2-p4",
+    "regrade": {
+      "superseded": "romantic-relationship-2-f2",
+      "update": "romantic-relationship-2-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 9: The current proposal is now a three-bedroom shared with a roommate, not simply a two-bedroom with a dedicated office; that changes whether living together addresses the user's concerns."
+  },
+  {
+    "probe": "romantic-relationship-3-p1",
+    "regrade": {
+      "superseded": "romantic-relationship-3-f3",
+      "update": "romantic-relationship-3-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 10: The gold says the offer was declined, while the update establishes that the position is available again—the key fact assumed by the probe."
+  },
+  {
+    "probe": "romantic-relationship-3-p4",
+    "regrade": {
+      "superseded": "romantic-relationship-3-f3",
+      "update": "romantic-relationship-3-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 11: Whether the Boston opportunity can still be pursued depends on the later update that the company reopened the offer."
+  },
+  {
+    "probe": "romantic-relationship-5-p3",
+    "regrade": {
+      "superseded": "romantic-relationship-5-f4",
+      "update": "romantic-relationship-5-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 12: A good answer needs the update that therapy is still available and already scheduled; otherwise it may wrongly treat the missed first offer as the current situation."
+  },
+  {
+    "probe": "romantic-relationship-5-p4",
+    "regrade": {
+      "superseded": "romantic-relationship-5-f6",
+      "update": "romantic-relationship-5-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 13: Rachel is moving out next weekend, so the claimed ongoing lack of physical space is about to change materially."
+  },
+  {
+    "probe": "family-and-caregiving-2-p4",
+    "regrade": {
+      "superseded": "family-and-caregiving-2-f2",
+      "update": "family-and-caregiving-2-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 14: Karen's contribution increased from $800 to $1,200 monthly, invalidating the probe's $825 monthly shortfall calculation."
+  },
+  {
+    "probe": "family-and-caregiving-4-p4",
+    "regrade": {
+      "superseded": "family-and-caregiving-4-f2",
+      "update": "family-and-caregiving-4-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 15: The new option to defend by Zoom materially changes the travel and preparation tradeoff posed by the probe."
+  },
+  {
+    "probe": "finances-4-p2",
+    "regrade": {
+      "superseded": "finances-4-f2",
+      "update": "finances-4-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 16: The required retirement target rose from $1.2 million to $1.5 million, directly changing whether the household would have enough."
+  },
+  {
+    "probe": "finances-6-p4",
+    "regrade": {
+      "superseded": "finances-6-f2",
+      "update": "finances-6-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 18: The severance changed from 18 months/$135,000 to 22 months/$165,000, directly changing the amount available per month."
+  },
+  {
+    "probe": "finances-6-p4",
+    "regrade": {
+      "superseded": "finances-6-f4",
+      "update": "finances-6-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 19: The scholarship reduces the family's annual college cost from $18,000 to $6,000, directly changing how much severance remains."
+  },
+  {
+    "probe": "education-1-p2",
+    "regrade": {
+      "superseded": "education-1-f1",
+      "update": "education-1-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 20: The decision deadline moved from January 15 to January 8, materially reducing the time available to evaluate the options."
+  },
+  {
+    "probe": "education-1-p4",
+    "regrade": {
+      "superseded": "education-1-f2",
+      "update": "education-1-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 22: The competing publication materially changes the probe's premise that pivoting would simply throw away otherwise valuable unpublished work."
+  },
+  {
+    "probe": "education-6-p4",
+    "regrade": {
+      "superseded": "education-6-f4",
+      "update": "education-6-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 23: The mother's availability changed from two days to three different days per week, directly changing the childcare plan and its gaps."
+  },
+  {
+    "probe": "health-and-wellbeing-2-p1",
+    "regrade": {
+      "superseded": "health-and-wellbeing-2-f3",
+      "update": "health-and-wellbeing-2-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 24: The correct out-of-pocket cost is now a $20 copay rather than $35 per session."
+  },
+  {
+    "probe": "health-and-wellbeing-6-p3",
+    "regrade": {
+      "superseded": "health-and-wellbeing-6-f2",
+      "update": "health-and-wellbeing-6-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 25: Two new clients improve the current income decline from about 60% to 35%, materially changing the claim that next month's expenses are barely affordable."
   }
 ]

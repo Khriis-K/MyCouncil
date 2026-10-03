@@ -13,7 +13,7 @@
 **Other gold:** career-1-f2: The company just closed a Series A round of $8 million in October, so there's funding for at least two years according to our CEO.
 
 - [ ] stale
-- [ ] fine
+- [x] fine
 
 ## 2. career-1-p4 (multi)
 
@@ -26,7 +26,7 @@
 **Other gold:** career-1-f1: My manager Sarah told me last week that she sees me leading the mobile team within six months, which honestly surprised me because I've only been here four months.
 
 - [ ] stale
-- [ ] fine
+- [x] fine
 
 ## 3. career-3-p1 (explicit)
 
@@ -37,7 +37,7 @@
 **Later update career-3-u1:** Actually, Derek just moved our Thursday meeting to next Monday at 10am because he has to fly to the San Jose office this week.
 
 - [ ] stale
-- [ ] fine
+- [x] fine
 
 ## 4. career-5-p4 (multi)
 
@@ -49,8 +49,10 @@
 
 **Other gold:** career-5-f1: My husband Tom lost his accounting job in March, and he's been freelancing but only bringing in about $2,400 a month, which barely covers his student loan payments and our older son's college expenses.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** The raise changed from $18,000/$87,000 total to $22,000/$91,000 total, which materially changes the financial-security comparison.
 
 ## 5. relocation-2-p1 (explicit)
 
@@ -60,8 +62,10 @@
 
 **Later update relocation-2-u2:** I negotiated yesterday and they came back with $195k base plus a $30k signing bonus, which honestly makes it even harder to say no.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** The compensation changed from $185,000 base to $195,000 base plus a $30,000 signing bonus, so the probe's stated comparison is outdated.
 
 ## 6. relocation-6-p4 (multi)
 
@@ -74,7 +78,7 @@
 **Other gold:** relocation-6-f4: My younger sister Emma is 22 and still lives at home. She's been calling me almost every week saying she feels overwhelmed being the only one nearby to help with Mom's appointments.
 
 - [ ] stale
-- [ ] fine
+- [x] fine
 
 ## 7. romantic-relationship-1-p4 (multi)
 
@@ -86,8 +90,10 @@
 
 **Other gold:** romantic-relationship-1-f6: My sister lives just twenty minutes away and she's been my rock, especially after our mom passed away two years ago.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** In-person LA meetings are no longer essential because the client agreed to fully remote meetings, removing a major stated cost of moving.
 
 ## 8. romantic-relationship-2-p3 (implicit)
 
@@ -97,8 +103,10 @@
 
 **Later update romantic-relationship-2-u2:** I just landed a new client this week that will bring in $4,000 a month for at least six months, so money isn't as tight as it was.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** The new $4,000-per-month client materially changes the premise that money is currently too tight to consider a more expensive home.
 
 ## 9. romantic-relationship-2-p4 (multi)
 
@@ -110,8 +118,10 @@
 
 **Other gold:** romantic-relationship-2-f5: Marcus works a regular 9-to-5 at an architecture firm, so he keeps really different hours than I do.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** The current proposal is now a three-bedroom shared with a roommate, not simply a two-bedroom with a dedicated office; that changes whether living together addresses the user's concerns.
 
 ## 10. romantic-relationship-3-p1 (explicit)
 
@@ -121,8 +131,10 @@
 
 **Later update romantic-relationship-3-u1:** Actually, the company just reached out again yesterday saying the Boston position is still open if I want it.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** The gold says the offer was declined, while the update establishes that the position is available again—the key fact assumed by the probe.
 
 ## 11. romantic-relationship-3-p4 (multi)
 
@@ -134,8 +146,10 @@
 
 **Other gold:** romantic-relationship-3-f7: My lease here runs through next August, so I'm committed to Chicago for almost another year.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** Whether the Boston opportunity can still be pursued depends on the later update that the company reopened the offer.
 
 ## 12. romantic-relationship-5-p3 (implicit)
 
@@ -145,8 +159,10 @@
 
 **Later update romantic-relationship-5-u1:** Actually, Marcus brought up therapy again yesterday, and this time he said he's already found a therapist and made an appointment for us next Thursday.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** A good answer needs the update that therapy is still available and already scheduled; otherwise it may wrongly treat the missed first offer as the current situation.
 
 ## 13. romantic-relationship-5-p4 (multi)
 
@@ -158,8 +174,10 @@
 
 **Other gold:** romantic-relationship-5-f5: I teach ninth grade English, and this semester I took on advising the drama club too because no one else would do it.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** Rachel is moving out next weekend, so the claimed ongoing lack of physical space is about to change materially.
 
 ## 14. family-and-caregiving-2-p4 (multi)
 
@@ -171,8 +189,10 @@
 
 **Other gold:** family-and-caregiving-2-f5: There's a home care agency that could send someone for $25 an hour, but I'd need to commit to at least 15 hours per week.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** Karen's contribution increased from $800 to $1,200 monthly, invalidating the probe's $825 monthly shortfall calculation.
 
 ## 15. family-and-caregiving-4-p4 (multi)
 
@@ -184,8 +204,10 @@
 
 **Other gold:** family-and-caregiving-4-f1: My mom's surgery is scheduled for November 18th, and her doctor said she'll need at least four weeks of recovery before she can handle any physical caregiving tasks again.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** The new option to defend by Zoom materially changes the travel and preparation tradeoff posed by the probe.
 
 ## 16. finances-4-p2 (implicit)
 
@@ -195,8 +217,10 @@
 
 **Later update finances-4-u1:** Actually, I checked with our advisor again yesterday and he revised the number – we'd need closer to $1.5 million because he factored in higher healthcare costs than he originally estimated.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** The required retirement target rose from $1.2 million to $1.5 million, directly changing whether the household would have enough.
 
 ## 17. finances-4-p4 (multi)
 
@@ -209,7 +233,7 @@
 **Other gold:** finances-4-f4: Housing costs in Dallas are actually about 15% lower than Charlotte, so we could probably sell our house here and buy something comparable there with money left over.
 
 - [ ] stale
-- [ ] fine
+- [x] fine
 
 ## 18. finances-6-p4 (multi)
 
@@ -221,8 +245,10 @@
 
 **Other gold:** finances-6-f4: My daughter Emily is a sophomore at Kent State and we're covering about $18,000 per year for her tuition and expenses.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** The severance changed from 18 months/$135,000 to 22 months/$165,000, directly changing the amount available per month.
 
 ## 19. finances-6-p4 (multi)
 
@@ -234,8 +260,10 @@
 
 **Other gold:** finances-6-f2: The severance package would give me 18 months of full salary, which comes to about $135,000 before taxes.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** The scholarship reduces the family's annual college cost from $18,000 to $6,000, directly changing how much severance remains.
 
 ## 20. education-1-p2 (implicit)
 
@@ -245,8 +273,10 @@
 
 **Later update education-1-u2:** Dr. Harrison just emailed me saying he needs my decision by January 8th instead because the computational project has a grant deadline coming up sooner than he thought.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** The decision deadline moved from January 15 to January 8, materially reducing the time available to evaluate the options.
 
 ## 21. education-1-p4 (multi)
 
@@ -259,7 +289,7 @@
 **Other gold:** education-1-f2: I've already spent eighteen months collecting data on protein interactions, and switching now would mean that work might not be publishable.
 
 - [ ] stale
-- [ ] fine
+- [x] fine
 
 ## 22. education-1-p4 (multi)
 
@@ -271,8 +301,10 @@
 
 **Other gold:** education-1-f1: Dr. Harrison gave me until January 15th to decide about the pivot, which is only three weeks away.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** The competing publication materially changes the probe's premise that pivoting would simply throw away otherwise valuable unpublished work.
 
 ## 23. education-6-p4 (multi)
 
@@ -284,8 +316,10 @@
 
 **Other gold:** education-6-f3: My take-home pay after taxes and health insurance is around $2,300 per month.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** The mother's availability changed from two days to three different days per week, directly changing the childcare plan and its gaps.
 
 ## 24. health-and-wellbeing-2-p1 (explicit)
 
@@ -295,8 +329,10 @@
 
 **Later update health-and-wellbeing-2-u2:** I just checked my insurance portal more carefully, and it turns out PT is actually fully covered after my $20 copay, not $35.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** The correct out-of-pocket cost is now a $20 copay rather than $35 per session.
 
 ## 25. health-and-wellbeing-6-p3 (implicit)
 
@@ -306,8 +342,10 @@
 
 **Later update health-and-wellbeing-6-u1:** Actually, I just landed two smaller clients yesterday, so my income situation isn't quite as dire—probably down about 35% now instead of 60%.
 
-- [ ] stale
+- [x] stale
 - [ ] fine
+
+**Note:** Two new clients improve the current income decline from about 60% to 35%, materially changing the claim that next month's expenses are barely affordable.
 
 ## 26. health-and-wellbeing-6-p4 (multi)
 
@@ -320,7 +358,7 @@
 **Other gold:** health-and-wellbeing-6-f1: The first episode happened on January 15th, right after I lost my biggest client who'd been giving me steady work for eighteen months.
 
 - [ ] stale
-- [ ] fine
+- [x] fine
 
 ## 27. friendship-and-social-life-3-p2 (implicit)
 
@@ -331,4 +369,12 @@
 **Later update friendship-and-social-life-3-u1:** Actually, I realized it was closer to four months ago when Marcus moved our poker nights to his basement, back in early August.
 
 - [ ] stale
-- [ ] fine
+- [x] fine
+
+## Summary
+
+**19 stale / 8 fine**
+
+Stale: 4, 5, 7–16, 18–20, 22–25.
+
+Fine: 1–3, 6, 17, 21, 26, 27.

@@ -30,6 +30,12 @@ describe('renderReport human review section', () => {
     expect(md).toMatch(/not reviewed/);
   });
 
+  test('reports the superseded-gold regrades when there are any', () => {
+    const md = renderReport(audit, { scenarios: 1, dropped: [], humanReview: { labels, fixedProbeIds: [], regradedGold: 19 } });
+    expect(md).toMatch(/19 gold references.*superseded.*SUPERSEDED_REVIEW\.md/);
+    expect(renderReport(audit, { scenarios: 1, dropped: [], humanReview: { labels, fixedProbeIds: [] } })).not.toMatch(/SUPERSEDED_REVIEW/);
+  });
+
   test('omits the section when there is no human review', () => {
     expect(renderReport(audit, { scenarios: 1, dropped: [] })).not.toContain('Human review');
   });

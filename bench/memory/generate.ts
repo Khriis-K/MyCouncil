@@ -299,7 +299,11 @@ async function main() {
   const readData = (file: string) => JSON.parse(readFileSync(path.join(DATA_DIR, file), 'utf8'));
   const edits: HandEdit[] = readData('hand-edits.json');
   const labels: HumanReview['labels'] = readData('human-labels.json').probes;
-  const humanReview: HumanReview = { labels, fixedProbeIds: [...new Set(edits.map(e => e.probe))] };
+  const humanReview: HumanReview = {
+    labels,
+    fixedProbeIds: [...new Set(edits.filter(e => !('regrade' in e)).map(e => e.probe))],
+    regradedGold: edits.filter(e => 'regrade' in e).length,
+  };
   const base = { llm: generateText, model: config.model, date: new Date().toISOString().slice(0, 10), humanReview };
   const onlyFlag = process.argv.indexOf('--only');
   // Validate, but keep the file's own key order so a re-freeze only diffs what actually changed.

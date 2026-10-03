@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { datasetSchema, type Probe, type Scenario, type TimelineEvent } from './schema';
@@ -57,7 +57,10 @@ export function renderSupersededReview(items: SupersededItem[]): string {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const dir = path.join(import.meta.dirname, 'data');
   const dataset = datasetSchema.parse(JSON.parse(readFileSync(path.join(dir, 'scenarios.v1.json'), 'utf8')));
+  const file = path.join(dir, 'SUPERSEDED_REVIEW.md');
+  // The committed file holds a person's stale/fine marks; never overwrite it.
+  if (existsSync(file)) throw new Error(`${file} exists and holds human review marks; move it aside first`);
   const items = findSupersededGold(dataset.scenarios);
-  writeFileSync(path.join(dir, 'SUPERSEDED_REVIEW.md'), renderSupersededReview(items));
+  writeFileSync(file, renderSupersededReview(items));
   console.log(`wrote ${items.length} items to SUPERSEDED_REVIEW.md`);
 }

@@ -36,3 +36,36 @@ describe('applyHandEdits', () => {
     expect(() => applyHandEdits(dataset, [edit(probe.id, probe.text, 'x'.repeat(400))])).toThrow(/career-1/);
   });
 });
+
+describe('applyHandEdits regrade', () => {
+  const update = scenario.timeline.find(e => e.kind === 'update')!;
+  const userTurns = scenario.timeline.filter(e => e.speaker === 'user');
+  // A dataset where a non-update probe requires the fact that `update` later replaced.
+  const stale = (): Dataset => {
+    const d = structuredClone(dataset);
+    d.scenarios[0].probes[0].gold = [{ sourceId: update.supersedes!, grade: 2, distance: 0 }];
+    return d;
+  };
+  const regrade = { probe: probe.id, regrade: { superseded: update.supersedes!, update: update.id }, reason: 'stale' };
+
+  test('demotes the superseded fact to grade 1 and adds the update as required gold with its distance', () => {
+    const gold = applyHandEdits(stale(), [regrade]).scenarios[0].probes[0].gold;
+    expect(gold).toEqual([
+      { sourceId: update.supersedes, grade: 1, distance: 0 },
+      { sourceId: update.id, grade: 2, distance: userTurns.length - 1 - userTurns.indexOf(update) },
+    ]);
+  });
+
+  test('is idempotent', () => {
+    const once = applyHandEdits(stale(), [regrade]);
+    expect(applyHandEdits(once, [regrade])).toEqual(once);
+  });
+
+  test('refuses when the fact is not required gold of the probe, or the update does not supersede it', () => {
+    expect(() => applyHandEdits(dataset, [{ ...regrade, regrade: { ...regrade.regrade, superseded: 'career-1-f99' } }])).toThrow(probe.id);
+    const other = scenario.timeline.find(e => e.kind === 'fact' && e.id !== update.supersedes)!;
+    const d = stale();
+    d.scenarios[0].probes[0].gold.push({ sourceId: other.id, grade: 2 });
+    expect(() => applyHandEdits(d, [{ ...regrade, regrade: { superseded: other.id, update: update.id } }])).toThrow(/supersede/);
+  });
+});
