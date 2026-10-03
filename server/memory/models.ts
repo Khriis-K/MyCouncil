@@ -14,7 +14,7 @@ export const EMBEDDER_MODEL = {
 
 export const OFFLINE = process.env.MEMORY_OFFLINE === '1';
 
-// Cross-encoders for stage 2. MiniLM is the default; bge-reranker-base (283 MB) is for the ablation.
+// Optional cross-encoders for stage 2 (off by default, see config.ts); bge-reranker-base (283 MB) is for the ablation.
 export const RERANKER_MODELS = {
   minilm: { id: 'Xenova/ms-marco-MiniLM-L-6-v2', revision: 'a09144355adeed5f58c8ed011d209bf8ee5a1fec', dtype: 'q8' as const },
   'bge-base': { id: 'Xenova/bge-reranker-base', revision: '280bcc27a84e0b898c251e06fddb25171bd9b101', dtype: 'q8' as const },

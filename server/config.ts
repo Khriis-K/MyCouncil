@@ -15,7 +15,8 @@ export const config = {
     k: 5,
     candidatePool: 30,
     recentWindow: 6,
-    reranker: 'minilm' as RerankerName,
+    // 'none': both cross-encoders lowered dev contextRecall, mostly on implicit probes (bench/memory/results/latest-dev.md).
+    reranker: 'none' as RerankerName,
     // MEMORY_DEBUG=1: trace in the chat response, candidate table in the console, JSONL in logs/.
     debug: process.env.MEMORY_DEBUG === '1',
   },
