@@ -36,7 +36,7 @@
       "health-and-wellbeing-6-p3"
     ],
     "dropped": [],
-    "sha256": "51e4751fd69c8e6b599482b16db0c9d7e76d95532938a99be6d04ea6ae19daab"
+    "sha256": "a556a3ca032cc6eae859e11ab9fd58f317a4b34a91fe9dfbf109d9466a7a07b8"
   },
   "scenarios": [
     {
@@ -6830,7 +6830,7 @@
       "probes": [
         {
           "id": "relocation-2-p1",
-          "text": "I'm trying to figure out the financial comparison. The Austin offer is $185k base versus my current $142k. Even with the higher cost of living there, it seems like a significant increase. Does that kind of jump make this a no-brainer financially?",
+          "text": "Now that I've negotiated a higher base and a signing bonus for Austin, does the money make this a no-brainer, or am I letting the bonus cloud my judgment?",
           "channel": "refinement",
           "gold": [
             {
@@ -12117,7 +12117,7 @@
         },
         {
           "id": "romantic-relationship-2-p3",
-          "text": "If I'm already struggling to make ends meet most months, is it even realistic for me to consider sharing a more expensive place with Marcus?",
+          "text": "Now that things are a bit easier on my end financially, is it realistic for me to split a pricier apartment with Marcus, or am I getting ahead of myself?",
           "channel": "chat",
           "counselorId": "Seeker",
           "gold": [
@@ -12136,7 +12136,7 @@
         },
         {
           "id": "romantic-relationship-2-p4",
-          "text": "Does the fact that he wants a dedicated office space for me and works completely different hours mean we could actually make living together work despite my concerns?",
+          "text": "Marcus keeps such different hours from me that we'd barely overlap at home, but now there'd be a roommate in the mix too. Could living together still work given my concerns?",
           "channel": "chat",
           "counselorId": "Analyst",
           "gold": [
@@ -17441,7 +17441,7 @@
         },
         {
           "id": "family-and-caregiving-2-p4",
-          "text": "I'm trying to figure out if we can actually afford the home care agency. If they need 15 hours a week at $25 per hour, that's $375 weekly. With Karen offering $800 monthly, we'd still need to cover about $825 a month. Is that manageable?",
+          "text": "With Karen's bigger contribution now, could we actually cover the home care agency's minimum hours, or would we still come up short every month?",
           "channel": "debate",
           "debatePairId": "Diplomat|Guardian",
           "gold": [
@@ -37026,7 +37026,7 @@
         },
         {
           "id": "health-and-wellbeing-6-p3",
-          "text": "I'm wondering if the fact that I can barely afford next month's expenses is making my physical symptoms worse. Could financial stress actually cause chest pain?",
+          "text": "Money's still tighter than it used to be, even if it's improving a little. Could that kind of lingering stress be what's behind the chest pain?",
           "channel": "refinement",
           "gold": [
             {

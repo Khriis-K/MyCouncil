@@ -199,5 +199,40 @@
       "update": "health-and-wellbeing-6-u1"
     },
     "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 25: Two new clients improve the current income decline from about 60% to 35%, materially changing the claim that next month's expenses are barely affordable."
+  },
+  {
+    "probe": "relocation-2-p1",
+    "id": "relocation-2-p1",
+    "before": "I'm trying to figure out the financial comparison. The Austin offer is $185k base versus my current $142k. Even with the higher cost of living there, it seems like a significant increase. Does that kind of jump make this a no-brainer financially?",
+    "after": "Now that I've negotiated a higher base and a signing bonus for Austin, does the money make this a no-brainer, or am I letting the bonus cloud my judgment?",
+    "reason": "stated the superseded fact as current after its gold was regraded (SUPERSEDED_REVIEW.md item 5); rewritten to use the updated fact, approved by the reviewer"
+  },
+  {
+    "probe": "family-and-caregiving-2-p4",
+    "id": "family-and-caregiving-2-p4",
+    "before": "I'm trying to figure out if we can actually afford the home care agency. If they need 15 hours a week at $25 per hour, that's $375 weekly. With Karen offering $800 monthly, we'd still need to cover about $825 a month. Is that manageable?",
+    "after": "With Karen's bigger contribution now, could we actually cover the home care agency's minimum hours, or would we still come up short every month?",
+    "reason": "stated the superseded fact as current after its gold was regraded (SUPERSEDED_REVIEW.md item 14); rewritten to use the updated fact, approved by the reviewer"
+  },
+  {
+    "probe": "romantic-relationship-2-p3",
+    "id": "romantic-relationship-2-p3",
+    "before": "If I'm already struggling to make ends meet most months, is it even realistic for me to consider sharing a more expensive place with Marcus?",
+    "after": "Now that things are a bit easier on my end financially, is it realistic for me to split a pricier apartment with Marcus, or am I getting ahead of myself?",
+    "reason": "stated the superseded fact as current after its gold was regraded (SUPERSEDED_REVIEW.md item 8); rewritten to use the updated fact, approved by the reviewer"
+  },
+  {
+    "probe": "romantic-relationship-2-p4",
+    "id": "romantic-relationship-2-p4",
+    "before": "Does the fact that he wants a dedicated office space for me and works completely different hours mean we could actually make living together work despite my concerns?",
+    "after": "Marcus keeps such different hours from me that we'd barely overlap at home, but now there'd be a roommate in the mix too. Could living together still work given my concerns?",
+    "reason": "stated the superseded fact as current after its gold was regraded (SUPERSEDED_REVIEW.md item 9); rewritten to use the updated fact, approved by the reviewer"
+  },
+  {
+    "probe": "health-and-wellbeing-6-p3",
+    "id": "health-and-wellbeing-6-p3",
+    "before": "I'm wondering if the fact that I can barely afford next month's expenses is making my physical symptoms worse. Could financial stress actually cause chest pain?",
+    "after": "Money's still tighter than it used to be, even if it's improving a little. Could that kind of lingering stress be what's behind the chest pain?",
+    "reason": "stated the superseded fact as current after its gold was regraded (SUPERSEDED_REVIEW.md item 25); rewritten to use the updated fact, approved by the reviewer"
   }
 ]

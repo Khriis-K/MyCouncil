@@ -36,6 +36,11 @@ describe('renderReport human review section', () => {
     expect(renderReport(audit, { scenarios: 1, dropped: [], humanReview: { labels, fixedProbeIds: [] } })).not.toMatch(/SUPERSEDED_REVIEW/);
   });
 
+  test('reports how many regraded probes also had their text rewritten', () => {
+    const md = renderReport(audit, { scenarios: 1, dropped: [], humanReview: { labels, fixedProbeIds: [], regradedGold: 19, rewrittenStale: 5 } });
+    expect(md).toMatch(/5 of those probes.*rewritten/);
+  });
+
   test('omits the section when there is no human review', () => {
     expect(renderReport(audit, { scenarios: 1, dropped: [] })).not.toContain('Human review');
   });

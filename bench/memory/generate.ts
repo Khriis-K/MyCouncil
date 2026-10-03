@@ -299,10 +299,13 @@ async function main() {
   const readData = (file: string) => JSON.parse(readFileSync(path.join(DATA_DIR, file), 'utf8'));
   const edits: HandEdit[] = readData('hand-edits.json');
   const labels: HumanReview['labels'] = readData('human-labels.json').probes;
+  const regraded = edits.filter(e => 'regrade' in e);
+  const textFixed = [...new Set(edits.filter(e => !('regrade' in e)).map(e => e.probe))];
   const humanReview: HumanReview = {
     labels,
-    fixedProbeIds: [...new Set(edits.filter(e => !('regrade' in e)).map(e => e.probe))],
-    regradedGold: edits.filter(e => 'regrade' in e).length,
+    fixedProbeIds: textFixed.filter(id => id in labels),
+    regradedGold: regraded.length,
+    rewrittenStale: textFixed.filter(id => regraded.some(e => e.probe === id)).length,
   };
   const base = { llm: generateText, model: config.model, date: new Date().toISOString().slice(0, 10), humanReview };
   const onlyFlag = process.argv.indexOf('--only');

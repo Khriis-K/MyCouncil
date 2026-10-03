@@ -168,11 +168,13 @@ export interface HumanReview {
   fixedProbeIds: string[];
   /** Gold references regraded after a person marked them stale in SUPERSEDED_REVIEW.md. */
   regradedGold?: number;
+  /** Regraded probes whose text was also rewritten because it stated the old fact as current. */
+  rewrittenStale?: number;
 }
 
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 
-function renderHumanReview({ labels, fixedProbeIds, regradedGold }: HumanReview, totalProbes: number): string[] {
+function renderHumanReview({ labels, fixedProbeIds, regradedGold, rewrittenStale }: HumanReview, totalProbes: number): string[] {
   const ids = Object.keys(labels);
   const failedOn = (check: 'gold' | 'unique') => ids.filter(id => labels[id] === check);
   const gold = failedOn('gold');
@@ -192,6 +194,9 @@ function renderHumanReview({ labels, fixedProbeIds, regradedGold }: HumanReview,
       ? [
           `- superseded gold: ${regradedGold} gold references pointed at a fact a later update superseded and were marked stale by a person in SUPERSEDED_REVIEW.md (which lists every such reference on non-update probes); they were regraded so the update is required gold and the old fact grade 1`,
         ]
+      : []),
+    ...(rewrittenStale
+      ? [`- ${rewrittenStale} of those probes stated the old fact as current, so their text was rewritten by hand to use the updated fact`]
       : []),
     '',
     `The other ${totalProbes - ids.length} probes were not reviewed, and nothing automated checks these two failure kinds: the validator checks structure and word overlap, not whether the gold turn semantically suffices or a distractor also answers. Expect a similar share of the unreviewed probes to have the same defects. An LLM judge (bench/memory/judge.ts) was tried as an automatic check and did not agree with these labels well enough to gate regeneration.`,
