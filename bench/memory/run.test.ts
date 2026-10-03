@@ -4,7 +4,7 @@ import path from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { HashingEmbedder } from '../../server/memory/testHelpers';
 import { datasetSchema } from './schema';
-import { loadDataset, parseArgs, renderMarkdown, runBenchmark, writeResults } from './run';
+import { defaultDataPath, loadDataset, parseArgs, renderMarkdown, runBenchmark, writeResults } from './run';
 
 const fixturePath = path.join(import.meta.dirname, 'data', 'fixture.json');
 const options = { split: 'fixture', k: 5, window: 6, candidatePool: 30 };
@@ -24,6 +24,14 @@ describe('parseArgs', () => {
   test('rejects an unknown flag and a non-numeric --k', () => {
     expect(() => parseArgs(['--nope', '1'])).toThrow(/unknown/i);
     expect(() => parseArgs(['--k', 'abc'])).toThrow(/--k/);
+  });
+});
+
+describe('defaultDataPath', () => {
+  test('uses the fixture for the fixture split and the frozen v1 dataset for dev and test', () => {
+    expect(path.basename(defaultDataPath('fixture'))).toBe('fixture.json');
+    expect(path.basename(defaultDataPath('dev'))).toBe('scenarios.v1.json');
+    expect(path.basename(defaultDataPath('test'))).toBe('scenarios.v1.json');
   });
 });
 

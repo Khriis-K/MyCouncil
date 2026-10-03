@@ -24,7 +24,14 @@ export const probeSchema = z
     counselorId: z.string().optional(),
     debatePairId: z.string().optional(),
     // 2 = required, 1 = partially relevant (e.g. a superseded fact)
-    gold: z.array(z.object({ sourceId: z.string(), grade: z.number().int().min(1).max(2) })),
+    gold: z.array(
+      z.object({
+        sourceId: z.string(),
+        grade: z.number().int().min(1).max(2),
+        // user turns between this gold turn and the end of the timeline
+        distance: z.number().int().min(0).optional(),
+      }),
+    ),
     category: z.enum(['explicit', 'implicit', 'multi', 'update']),
   })
   .refine(p => p.gold.some(g => g.grade === 2), { message: 'probe needs at least one required (grade 2) gold' })

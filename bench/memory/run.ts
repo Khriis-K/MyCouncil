@@ -39,6 +39,10 @@ export function parseArgs(argv: string[]): CliArgs {
   return args;
 }
 
+export function defaultDataPath(split: string): string {
+  return path.join(BENCH_DIR, 'data', split === 'fixture' ? 'fixture.json' : 'scenarios.v1.json');
+}
+
 export function loadDataset(file: string, split: string): Dataset {
   const dataset = datasetSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
   const scenarios = dataset.scenarios.filter(s => s.split === split);
@@ -223,7 +227,7 @@ export function writeResults(results: BenchResults, dir: string): { jsonPath: st
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const dataPath = args.data ?? path.join(BENCH_DIR, 'data', `${args.split}.json`);
+  const dataPath = args.data ?? defaultDataPath(args.split);
   const dataset = loadDataset(dataPath, args.split);
   const results = await runBenchmark({
     dataset,
