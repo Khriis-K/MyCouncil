@@ -2,16 +2,17 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { config } from '../../server/config';
-import { CachedEmbedder } from '../../server/memory/embedder';
+import { CachedEmbedder, type Embedder } from '../../server/memory/embedder';
 import { FEATURE_NAMES } from '../../server/memory/features';
 import { EPOCHS, LEARNING_RATE, predict, trainLogReg, type LogRegModel, type TrainOptions } from '../../server/memory/logreg';
 import { LTR_WEIGHTS_FILE, LtrRanker, type LtrWeights } from '../../server/memory/ltr';
 import { retrieveMemories } from '../../server/memory/pipeline';
-import { createReranker } from '../../server/memory/reranker';
+import { createReranker, type Reranker } from '../../server/memory/reranker';
 import { TransformersEmbedder } from '../../server/memory/transformersEmbedder';
 import type { RetrievalTrace } from '../../server/memory/types';
 import { mrr, ndcgAtK, recallAtK, type Gold } from './metrics';
 import { gitInfo, sha256File } from './provenance';
+import type { Scenario } from './schema';
 import { rngFor, shuffle } from './rng';
 import { defaultDataPath, loadDataset } from './run';
 import { probeOrigin, probeQuery } from './systems';
@@ -170,14 +171,19 @@ function assertScored(trace: RetrievalTrace) {
   if (trace.fallback) throw new Error(`${trace.config.rerankerId}: ${trace.fallback}`);
 }
 
-async function main() {
-  const dataPath = defaultDataPath('dev');
-  const dataset = loadDataset(dataPath, 'dev');
-  assertDevOnly(dataset.scenarios);
+export interface CollectDeps {
+  embedder: Embedder;
+  crossEncoder: Reranker;
+  k: number;
+  candidatePool: number;
+}
 
-  const { k, candidatePool } = config.memory;
-  const embedder = new CachedEmbedder(new TransformersEmbedder());
-  const crossEncoder = createReranker('minilm')!;
+/**
+ * Per probe: the LTR pool's feature rows, read from the product pipeline's own trace, and the
+ * dense+rerank baseline's metrics. Refuses anything that isn't dev before touching it.
+ */
+export async function collectProbes(scenarios: Scenario[], { embedder, crossEncoder, k, candidatePool }: CollectDeps) {
+  assertDevOnly(scenarios);
   // A zero model: its scores are ignored, it is only here to read the product's own feature vectors from the trace.
   const collector = new LtrRanker(crossEncoder, {
     means: FEATURE_NAMES.map(() => 0), stds: FEATURE_NAMES.map(() => 1), weights: FEATURE_NAMES.map(() => 0), bias: 0,
@@ -185,22 +191,32 @@ async function main() {
 
   const probes: ProbeRows[] = [];
   const baseline = new Map<string, CvMetrics>();
-  for (const scenario of dataset.scenarios) {
+  for (const scenario of scenarios) {
     for (const probe of scenario.probes) {
       const common = {
         query: probeQuery({ scenario, probe }), sources: scenario.timeline, excludeSourceIds: [], k, candidatePool, embedder, endpoint: 'bench' as const,
       };
       const { trace } = await retrieveMemories({ ...common, reranker: collector, origin: probeOrigin(probe) });
       assertScored(trace);
-      const rows = { scenarioId: scenario.id, probeId: probe.id, gold: probe.gold };
-      probes.push({ ...rows, candidates: trace.candidates.map(c => ({ sourceId: c.sourceId, stage1Rank: c.stage1Rank, features: c.ltrFeatures! })) });
+      const id = { scenarioId: scenario.id, probeId: probe.id };
+      probes.push({ ...id, gold: probe.gold, candidates: trace.candidates.map(c => ({ sourceId: c.sourceId, stage1Rank: c.stage1Rank, features: c.ltrFeatures! })) });
 
       const dense = await retrieveMemories({ ...common, stage1: 'dense', reranker: crossEncoder });
       assertScored(dense.trace);
-      baseline.set(probeKey(rows), probeMetrics([...new Set(dense.trace.candidates.map(c => c.sourceId))], probe.gold));
+      baseline.set(probeKey(id), probeMetrics([...new Set(dense.trace.candidates.map(c => c.sourceId))], probe.gold));
     }
     console.log(`features: ${scenario.id}`);
   }
+  return { probes, baseline };
+}
+
+async function main() {
+  const dataPath = defaultDataPath('dev');
+  const dataset = loadDataset(dataPath, 'dev');
+  const { k, candidatePool } = config.memory;
+  const embedder = new CachedEmbedder(new TransformersEmbedder());
+  const crossEncoder = createReranker('minilm')!;
+  const { probes, baseline } = await collectProbes(dataset.scenarios, { embedder, crossEncoder, k, candidatePool });
 
   const folds = groupedFolds(dataset.scenarios.map(s => s.id), N_FOLDS, CV_SEED);
   const cv = LAMBDAS.map(lambda => ({ lambda, folds: crossValidate(probes, folds, lambda) }));

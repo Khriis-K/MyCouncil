@@ -31,7 +31,7 @@ describe('the ltr benchmark system', async () => {
 
   test('the report lists the standardized weights and warns that dev is in-sample', () => {
     const section = md.slice(md.indexOf('## LTR weights'));
-    expect(section).toContain('| sameChannel | +0.600 |');
+    expect(section).toContain('| sameChannel | +0.500 |');
     expect(section).toContain('bias: -0.500');
     expect(section).toMatch(/in-sample/);
   });

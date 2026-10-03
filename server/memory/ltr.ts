@@ -9,16 +9,40 @@ import { RERANKER_MODELS } from './models';
 /** Written by `npm run bench:memory:train-ltr`; trained on the dev split only. */
 export const LTR_WEIGHTS_FILE = path.join(import.meta.dirname, 'ltrWeights.json');
 
+/** Provenance of a trained model, written by the training script. */
+export interface LtrTraining {
+  split: 'dev';
+  datasetPath: string;
+  datasetSha256: string;
+  gitSha: string;
+  gitDirty: boolean;
+  date: string;
+  nScenarios: number;
+  nProbes: number;
+  nPositives: number;
+  nNegatives: number;
+  embedderId: string;
+  crossEncoderId: string;
+  candidatePool: number;
+  learningRate: number;
+  epochs: number;
+  folds: number;
+  cvSeed: string;
+}
+
 export interface LtrWeights extends LogRegModel {
   featureNames: string[];
   lambda: number;
-  training: Record<string, unknown>;
+  training: LtrTraining;
 }
 
 /** Everything a feature needs except the cross-encoder score, which the ranker computes. */
 export type LtrCandidate = Omit<CandidateSignals, 'ceScore'> & { text: string };
 
-/** Stage 2 by learned score fusion: logistic regression over both stage-1 signals, the cross-encoder and context. */
+/**
+ * Stage 2 by learned score fusion: logistic regression over both stage-1 signals, the cross-encoder and context.
+ * Its pool is the dense top n plus the BM25 top n, so the cross-encoder scores up to 2n candidates per query.
+ */
 export class LtrRanker {
   readonly id: string;
 

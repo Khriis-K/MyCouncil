@@ -59,10 +59,10 @@ type Pool = ReturnType<typeof unionSearch>;
 // Stage 2 scores, one per hit. Throws if the model does.
 async function stage2Scores(
   reranker: Reranker | LtrRanker, query: string, hits: Stage1Hit[], unitById: Map<string, MemoryUnit>,
-  ltr?: { pool: Pool; origin: QueryOrigin; sources: MemorySource[] },
+  ltr?: { pool: Pool; origin: QueryOrigin },
 ): Promise<{ scores: number[]; features?: number[][] }> {
   if (reranker instanceof LtrRanker) {
-    const { pool, origin, sources } = ltr!;
+    const { pool, origin } = ltr!;
     return reranker.score(query, hits.map(h => {
       const unit = unitById.get(h.unitId)!;
       return {
@@ -72,7 +72,7 @@ async function stage2Scores(
         bm25Score: pool.bm25Score.get(h.unitId) ?? 0,
         bm25Rank: h.bm25Rank,
         maxBm25: pool.maxBm25,
-        ...contextSignals(unit, origin, sources),
+        ...contextSignals(unit, origin),
       };
     }));
   }
@@ -127,7 +127,7 @@ export async function retrieveMemories(params: RetrieveParams): Promise<{ used: 
   let fallback: string | undefined;
   if (reranker && hits.length) {
     try {
-      const { scores, features } = await stage2Scores(reranker, query, hits, unitById, pool && { pool, origin: origin!, sources });
+      const { scores, features } = await stage2Scores(reranker, query, hits, unitById, pool && { pool, origin: origin! });
       ({ order, scoreById } = byScore(hits, scores));
       if (features) featuresById = new Map(hits.map((h, i) => [h.unitId, features[i]]));
     } catch (error) {

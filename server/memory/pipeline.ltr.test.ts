@@ -70,7 +70,7 @@ describe("retrieveMemories with the 'ltr' ranker", () => {
     expect(featureOf(s4, 'ceScore')).toBe(2);
     expect(featureOf(s4, 'sameCounselorOrPair')).toBe(0);
     const s1 = trace.candidates.find(c => c.sourceId === 's1')!;
-    expect([featureOf(s1, 'denseRecipRank'), featureOf(s1, 'bm25Norm'), featureOf(s1, 'logUserTurnsSince')]).toEqual([1, 0, Math.log1p(3)]);
+    expect([featureOf(s1, 'denseRecipRank'), featureOf(s1, 'bm25Norm'), featureOf(s1, 'sameCounselorOrPair')]).toEqual([1, 0, 1]);
   });
 
   test('degrades to stage-1 order when the cross-encoder fails', async () => {

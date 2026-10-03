@@ -314,7 +314,7 @@ export function renderMarkdown(results: BenchResults): string {
     '- token counts are approximate (context chars / 4)',
     '- existing-context is an upper bound on today\'s prompts: debate resets when the overlay closes, and refinement really carries only a <=50-char label, not the full previous text',
     '- the embedding cache is shared across probes, so timings reflect a warm cache',
-    `- poolRecall@${meta.candidatePool}: required gold in the stage-1 candidate pool or the prompt; the ceiling any reordering of the pool could reach`,
+    `- poolRecall@${meta.candidatePool}: required gold in the stage-1 candidate pool or the prompt; the ceiling any reordering of the pool could reach (for ltr the pool is the dense top n plus the BM25 top n, up to twice as many candidates)`,
     '- every metric at every cutoff is in the JSON; these tables show a subset',
     '',
     '## Headline (mean over probes)',

@@ -34,7 +34,7 @@ describe("candidateRows for the 'ltr' ranker", () => {
   test('adds one column per feature, named by FEATURE_NAMES', () => {
     const features = FEATURE_NAMES.map((_, i) => i + 0.12345);
     const [row] = candidateRows({ ...trace, config: { ...trace.config, stage1: 'union' }, candidates: [{ ...trace.candidates[0], ltrFeatures: features }] });
-    expect(row).toMatchObject({ denseScore: 0.123, logTextLength: 9.123 });
+    expect(row).toMatchObject({ denseScore: 0.123, isShortReply: 7.123 });
   });
 
   test('adds no feature columns for other rankers', () => {

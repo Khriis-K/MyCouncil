@@ -11,8 +11,6 @@ export interface LogRegModel {
 
 export interface TrainOptions {
   lambda: number;
-  learningRate?: number;
-  epochs?: number;
 }
 
 export const LEARNING_RATE = 0.1;
@@ -45,7 +43,7 @@ export function predict(model: LogRegModel, row: number[]): number {
  * Minimizes the class-weighted mean log loss + (lambda / 2)·‖w‖² (the bias is not penalized).
  * Positives weigh neg/pos, so both classes count equally in total. Zero init, fixed steps.
  */
-export function trainLogReg(x: number[][], y: number[], { lambda, learningRate = LEARNING_RATE, epochs = EPOCHS }: TrainOptions): LogRegModel {
+export function trainLogReg(x: number[][], y: number[], { lambda }: TrainOptions): LogRegModel {
   const nPos = y.filter(v => v === 1).length;
   const nNeg = y.length - nPos;
   if (nPos === 0 || nNeg === 0) throw new Error(`need both classes to train, got ${nPos} positives and ${nNeg} negatives`);
@@ -56,7 +54,7 @@ export function trainLogReg(x: number[][], y: number[], { lambda, learningRate =
   const totalWeight = sampleWeight.reduce((a, b) => a + b, 0);
   const model: LogRegModel = { ...stats, weights: new Array(x[0].length).fill(0), bias: 0 };
 
-  for (let epoch = 0; epoch < epochs; epoch++) {
+  for (let epoch = 0; epoch < EPOCHS; epoch++) {
     const gradW = model.weights.map(w => lambda * w);
     let gradB = 0;
     z.forEach((row, i) => {
@@ -64,8 +62,8 @@ export function trainLogReg(x: number[][], y: number[], { lambda, learningRate =
       row.forEach((v, j) => { gradW[j] += err * v; });
       gradB += err;
     });
-    model.weights = model.weights.map((w, j) => w - learningRate * gradW[j]);
-    model.bias -= learningRate * gradB;
+    model.weights = model.weights.map((w, j) => w - LEARNING_RATE * gradW[j]);
+    model.bias -= LEARNING_RATE * gradB;
   }
   return model;
 }

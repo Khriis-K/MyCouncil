@@ -1,9 +1,14 @@
-import type { MemoryChannel, MemorySource, MemoryUnit } from './types';
+import type { MemoryChannel, MemoryUnit } from './types';
 
-/** The single source of feature order: vectors, weights and means all follow it. */
+/**
+ * The single source of feature order: vectors, weights and means all follow it.
+ * Left out on purpose: the source's age and text length. In the generated benchmark, gold turns
+ * are planted earlier and written longer than filler, so those weights learned the generator,
+ * not relevance, and no split of that data can tell the two apart.
+ */
 export const FEATURE_NAMES = [
   'denseScore', 'denseRecipRank', 'bm25Norm', 'bm25RecipRank', 'ceScore',
-  'logUserTurnsSince', 'sameChannel', 'sameCounselorOrPair', 'isShortReply', 'logTextLength',
+  'sameChannel', 'sameCounselorOrPair', 'isShortReply',
 ] as const;
 
 /** The thread the new message arrives on. */
@@ -25,14 +30,11 @@ export interface CandidateSignals {
   maxBm25: number;
   /** cross-encoder logit */
   ceScore: number;
-  /** user turns after this unit's source */
-  userTurnsSince: number;
   sameChannel: boolean;
   /** same counselor (chat) or same pair (debate) as the origin */
   sameCounselorOrPair: boolean;
   /** the embedText carries the counselor's question */
   isShortReply: boolean;
-  textLength: number;
 }
 
 const recip = (rank: number | undefined) => (rank === undefined ? 0 : 1 / rank);
@@ -45,11 +47,9 @@ export function featureVector(s: CandidateSignals): number[] {
     s.maxBm25 > 0 ? s.bm25Score / s.maxBm25 : 0,
     recip(s.bm25Rank),
     s.ceScore,
-    Math.log1p(s.userTurnsSince),
     flag(s.sameChannel),
     flag(s.sameCounselorOrPair),
     flag(s.isShortReply),
-    Math.log(Math.max(1, s.textLength)),
   ];
 }
 
@@ -64,16 +64,10 @@ function isSameThread(unit: MemoryUnit, origin: QueryOrigin): boolean {
 }
 
 /** The query-independent signals of one candidate, given where the query comes from. */
-export function contextSignals(
-  unit: MemoryUnit,
-  origin: QueryOrigin,
-  sources: MemorySource[],
-): Pick<CandidateSignals, 'userTurnsSince' | 'sameChannel' | 'sameCounselorOrPair' | 'isShortReply' | 'textLength'> {
+export function contextSignals(unit: MemoryUnit, origin: QueryOrigin): Pick<CandidateSignals, 'sameChannel' | 'sameCounselorOrPair' | 'isShortReply'> {
   return {
-    userTurnsSince: sources.filter(s => s.speaker === 'user' && s.timestamp > unit.timestamp).length,
     sameChannel: unit.channel === origin.channel,
     sameCounselorOrPair: isSameThread(unit, origin),
     isShortReply: unit.embedText !== unit.text,
-    textLength: unit.text.length,
   };
 }
