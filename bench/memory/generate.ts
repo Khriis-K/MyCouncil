@@ -135,25 +135,45 @@ const withFeedback = (seed: ScenarioSeed, previous?: Attempt): Message[] => {
 
 export async function generateScenario(seed: ScenarioSeed, llm: Llm, judge?: JudgeLlm, judgeSamples = 1): Promise<GenerationResult> {
   const attempts: Attempt[] = [];
+  const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
+  // The last rejection of the generator's own output; judge failures are not the generator's fault.
+  let feedback: Attempt | undefined;
+  // A valid scenario whose judging failed: judge it again rather than regenerating it.
+  let unjudged: { raw: string; scenario: Scenario } | undefined;
   for (let n = 0; n < MAX_ATTEMPTS; n++) {
     let raw = '';
-    try {
-      raw = await llm(withFeedback(seed, attempts[n - 1]));
-      const checked = validateContent(extractJson(raw));
-      if ('errors' in checked) {
-        attempts.push({ raw, errors: checked.errors });
+    let scenario: Scenario | undefined;
+    let errors: string[] = [];
+    if (unjudged) {
+      ({ raw, scenario } = unjudged);
+      unjudged = undefined;
+    } else {
+      try {
+        raw = await llm(withFeedback(seed, feedback));
+        const checked = validateContent(extractJson(raw));
+        if ('errors' in checked) errors = checked.errors;
+        else errors = validateScenario((scenario = assemble(checked.content, seed)));
+      } catch (error) {
+        errors = [message(error)];
+      }
+      if (errors.length > 0 || !scenario) {
+        feedback = { raw, errors };
+        attempts.push(feedback);
         continue;
       }
-      const scenario = assemble(checked.content, seed);
-      const errors = validateScenario(scenario);
-      if (errors.length === 0 && judge) {
-        errors.push(...(await judgeScenario(scenario, judge, judgeSamples)).map(issue => `${issue.probeId}: ${issue.detail}`));
-      }
-      attempts.push({ raw, errors });
-      if (errors.length === 0) return { scenario, attempts };
-    } catch (error) {
-      attempts.push({ raw, errors: [error instanceof Error ? error.message : String(error)] });
     }
+    if (judge) {
+      try {
+        errors = (await judgeScenario(scenario, judge, judgeSamples)).map(issue => `${issue.probeId}: ${issue.detail}`);
+      } catch (error) {
+        attempts.push({ raw, errors: [`judge failed: ${message(error)}`] });
+        unjudged = { raw, scenario };
+        continue;
+      }
+    }
+    attempts.push({ raw, errors });
+    if (errors.length === 0) return { scenario, attempts };
+    feedback = attempts[attempts.length - 1];
   }
   return { attempts, dropReason: attempts[attempts.length - 1].errors.slice(0, 3).join('; ') };
 }
@@ -333,19 +353,6 @@ async function main() {
   }
   if (process.argv.includes('--apply-edits')) {
     out = applyEdits(loadExisting(), edits, humanReview);
-  } else if (process.argv.includes('--judge')) {
-    // Audit the frozen dataset, then regenerate only the scenarios the judge rejects (the replacements are judged too).
-    const existing = loadExisting();
-    const issues = await judgeDataset(existing, judge, DEFAULT_CONCURRENCY, JUDGE_SAMPLES);
-    mkdirSync(DATA_DIR, { recursive: true });
-    writeFileSync(
-      path.join(DATA_DIR, 'judge-findings.json'),
-      JSON.stringify({ judgeModel: JUDGE_MODEL, samples: JUDGE_SAMPLES, date: base.date, issues }, null, 2),
-    );
-    const ids = Object.keys(issues);
-    console.log(`judge flagged ${ids.length} of ${existing.scenarios.length} scenarios: ${ids.join(', ') || 'none'}`);
-    if (ids.length === 0) return;
-    out = await regenerateScenarios(existing, { ...base, ids, judge, judgeSamples: JUDGE_SAMPLES });
   } else if (onlyFlag === -1) {
     out = await buildDataset(base);
   } else {

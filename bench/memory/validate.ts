@@ -199,7 +199,7 @@ function renderHumanReview({ labels, fixedProbeIds, regradedGold, rewrittenStale
       ? [`- ${rewrittenStale} of those probes stated the old fact as current, so their text was rewritten by hand to use the updated fact`]
       : []),
     '',
-    `The other ${totalProbes - ids.length} probes were not reviewed, and nothing automated checks these two failure kinds: the validator checks structure and word overlap, not whether the gold turn semantically suffices or a distractor also answers. Expect a similar share of the unreviewed probes to have the same defects. An LLM judge (bench/memory/judge.ts) was tried as an automatic check and did not agree with these labels well enough to gate regeneration.`,
+    `The other ${totalProbes - ids.length} probes were not reviewed for these checks, and nothing automated checks these two failure kinds: the validator checks structure and word overlap, not whether the gold turn semantically suffices or a distractor also answers. Expect a similar share of the unreviewed probes to have the same defects. An LLM judge (bench/memory/judge.ts) exists as an opt-in check, and \`--judge-check\` scores it against data/human-labels.json, but no committed measurement shows it agrees with these labels, so it gates nothing.`,
     '',
   ];
 }

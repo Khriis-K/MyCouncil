@@ -50,6 +50,39 @@ describe('generateScenario with a judge', () => {
     expect(result.scenario?.id).toBe('career-1');
     expect(result.attempts[0].errors[0]).toMatch(/judge 503/);
   });
+
+  test('a judge failure re-judges the same scenario instead of regenerating it', async () => {
+    let generated = 0;
+    let judged = 0;
+    const result = await generateScenario(
+      seed,
+      async () => (generated++, JSON.stringify(syntheticContent())),
+      async () => {
+        if (++judged === 1) throw new Error('judge 503');
+        return verdict(false);
+      },
+    );
+    expect(result.scenario?.id).toBe('career-1');
+    expect(generated).toBe(1);
+    expect(judged).toBe(2);
+  });
+
+  test('a judge failure is never fed back to the generator as a rejection', async () => {
+    const seen: Parameters<Llm>[0][] = [];
+    let judged = 0;
+    const llm: Llm = async messages => (seen.push(messages), JSON.stringify(syntheticContent()));
+    // Fails, then rejects with a real issue, then accepts: the regeneration must carry only the real issue.
+    const judge = async () => {
+      if (++judged === 1) throw new Error('judge 503');
+      return verdict(judged === 2);
+    };
+    const result = await generateScenario(seed, llm, judge);
+    expect(result.scenario?.id).toBe('career-1');
+    expect(seen).toHaveLength(2);
+    const retry = seen[1].map(m => m.content).join('\n');
+    expect(retry).toMatch(/made-up claim/);
+    expect(retry).not.toMatch(/judge 503/);
+  });
 });
 
 describe('judge in the dataset flow', () => {
