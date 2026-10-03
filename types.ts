@@ -71,6 +71,7 @@ export interface CouncilResponse {
       text: string;
     }[];
   }[];
+  memory?: { used: RecalledMemory[]; fallback?: string }; // Set on refinements only
 }
 
 export type MemoryChannel = 'refinement' | 'chat' | 'debate';
@@ -82,6 +83,14 @@ export interface MemorySource {
   counselorId?: string;
   debatePairId?: string;
   text: string;
+  timestamp: number;
+}
+
+// A user utterance in a council debate, kept so later chats, refinements and debates can recall it.
+export interface DebateInterjection {
+  pairId: string; // "<counselor1>-<counselor2>" from the TensionPair
+  userText: string;
+  precedingCounselorText?: string;
   timestamp: number;
 }
 

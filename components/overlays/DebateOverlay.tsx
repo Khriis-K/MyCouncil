@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { TensionPair, Counselor, CouncilResponse } from '../../types';
+import { TensionPair, Counselor, CouncilResponse, DebateInterjection, MemorySource } from '../../types';
 import { injectIntoDebate } from '../../services/CouncilService';
+import { debateInjectionText, interjectionFrom, DebateRequest } from '../../utils/debateInterjection';
 
 interface DebateOverlayProps {
    pair: TensionPair;
@@ -9,6 +10,8 @@ interface DebateOverlayProps {
    dynamicData?: CouncilResponse['tensions'][0]; // Optional dynamic data
    onClose: () => void;
    dilemma: string; // Needed for context
+   memorySources: MemorySource[]; // Earlier session turns the counselors can recall
+   onInterjection: (interjection: DebateInterjection) => void; // Called after a user's own words reach the council
 }
 
 // Helper to map counselor colors to Tailwind classes
@@ -63,7 +66,7 @@ const getColorClasses = (color: string) => {
    return map[color] || map['blue'];
 };
 
-const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamicData, onClose, dilemma }) => {
+const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamicData, onClose, dilemma, memorySources, onInterjection }) => {
    const [showMatrix, setShowMatrix] = useState(false);
    const [dialogue, setDialogue] = useState<{speaker: string, text: string}[]>(dynamicData?.dialogue || []);
    
@@ -163,7 +166,8 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
    const handleAddCriterion = async () => {
       if (!newCriterion.trim() || isAddingCriterion || !dynamicData) return;
 
-      const criterionLabel = newCriterion;
+      // Not recorded as a memory: the instruction is synthetic, not the user's words.
+      const request: DebateRequest = { kind: 'criterion', label: newCriterion };
       setNewCriterion('');
       setIsAddingCriterion(true);
 
@@ -177,7 +181,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                matrix: matrixState
             },
             dialogue, // Pass existing dialogue
-            `Please add the criterion "${criterionLabel}" to the decision matrix and score it for both counselors (1-10) with reasoning.`,
+            debateInjectionText(request),
             [c1, c2]
          );
 
@@ -207,12 +211,13 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
    const handleSend = async () => {
       if (!userInput.trim() || isSending || !dynamicData) return;
 
-      const currentInput = userInput;
+      const request: DebateRequest = { kind: 'interjection', text: userInput };
+      const sentAt = Date.now();
       setUserInput('');
       setIsSending(true);
 
       // Optimistically add user message
-      const newHistory = [...dialogue, { speaker: 'user', text: currentInput }];
+      const newHistory = [...dialogue, { speaker: 'user', text: request.text }];
       setDialogue(newHistory);
 
       try {
@@ -226,8 +231,9 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                matrix: matrixState
             },
             newHistory,
-            currentInput,
-            [c1, c2]
+            debateInjectionText(request),
+            [c1, c2],
+            memorySources
          );
          console.log("Received response from council:", response);
 
@@ -236,6 +242,8 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
          }
 
          setDialogue([...newHistory, ...response.dialogue]);
+         const interjection = interjectionFrom(request, pair, dialogue, sentAt);
+         if (interjection) onInterjection(interjection);
          
          // Update matrix state if provided
          if (response.mapState && response.mapState.matrix) {

@@ -2,7 +2,7 @@ import { lastCounselorTurn, recallForChat, windowSourceIds } from '../../server/
 import type { Embedder } from '../../server/memory/embedder';
 import { retrieveMemories } from '../../server/memory/pipeline';
 import type { CrossEncoderName, RerankerName } from '../../server/memory/models';
-import { buildChatQuery } from '../../server/memory/queries';
+import { buildChatQuery, buildDebateQuery, buildRefinementQuery } from '../../server/memory/queries';
 import type { Reranker } from '../../server/memory/reranker';
 import type { MemoryUnit, RetrievalTrace, Stage1Mode } from '../../server/memory/types';
 import type { Probe, Scenario, TimelineEvent } from './schema';
@@ -78,10 +78,13 @@ function threadOf(timeline: TimelineEvent[], probe: Probe): TimelineEvent[] {
     .sort(byTime);
 }
 
-function chatQuery({ scenario, probe }: ProbeContext): string {
-  return probe.channel === 'chat'
-    ? buildChatQuery(probe.text, lastCounselorTurn(scenario.timeline, probe.counselorId!))
-    : probe.text;
+// The product's query builder for the path the probe arrives on, so the benchmark measures what ships.
+export function probeQuery({ scenario, probe }: ProbeContext): string {
+  switch (probe.channel) {
+    case 'chat': return buildChatQuery(probe.text, lastCounselorTurn(scenario.timeline, probe.counselorId!));
+    case 'debate': return buildDebateQuery(probe.text);
+    case 'refinement': return buildRefinementQuery(probe.text);
+  }
 }
 
 function rankedFromTrace(trace: RetrievalTrace): string[] {
@@ -116,7 +119,7 @@ const retrieval = (name: string, stage1: Stage1Mode, reranker: Reranker | null, 
   name,
   async run(ctx) {
     const { used, trace } = await retrieveMemories({
-      query: chatQuery(ctx), sources: ctx.scenario.timeline, excludeSourceIds: [], k, candidatePool, stage1, embedder, reranker, endpoint: 'bench',
+      query: probeQuery(ctx), sources: ctx.scenario.timeline, excludeSourceIds: [], k, candidatePool, stage1, embedder, reranker, endpoint: 'bench',
     });
     assertReranked(trace);
     return {
@@ -137,6 +140,8 @@ const memoryProduction = (options: SystemOptions): System => ({
     const reranker = productionRerankerOf(options);
     const { scenario, probe } = ctx;
     const sources = scenario.timeline;
+    // Debate and refinement exclude the thread window here; the product excludes the open debate
+    // transcript or nothing. Only the query is shared with the product (probeQuery).
     const windowIds =
       probe.channel === 'chat'
         ? windowSourceIds(sources, probe.counselorId!, window)
@@ -148,7 +153,7 @@ const memoryProduction = (options: SystemOptions): System => ({
             counselorId: probe.counselorId!, message: probe.text, sources,
             settings: { enabled: true, k, candidatePool, recentWindow: window, stage1 }, embedder, reranker,
           })
-        : await retrieveMemories({ query: probe.text, sources, excludeSourceIds: windowIds, k, candidatePool, stage1, embedder, reranker, endpoint: 'bench' });
+        : await retrieveMemories({ query: probeQuery(ctx), sources, excludeSourceIds: windowIds, k, candidatePool, stage1, embedder, reranker, endpoint: 'bench' });
     if (!recall.trace) throw new Error(`memory-production retrieval fell back: ${recall.fallback ?? 'no trace'}`);
     assertReranked(recall.trace);
 

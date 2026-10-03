@@ -8,7 +8,8 @@ export const fetchCouncilAnalysis = async (
   councilSize: number = 4,
   previousSummary?: string,  // Optional: AI-generated summary of previous refinements
   additionalContext?: string,  // Optional: New context for refinement
-  reflectionFocus?: ReflectionFocus  // Optional: Reflection focus lens
+  reflectionFocus?: ReflectionFocus,  // Optional: Reflection focus lens
+  memorySources?: MemorySource[]  // Optional: earlier session turns the refinement can recall
 ): Promise<CouncilResponse> => {
   try {
     const requestBody = { 
@@ -17,7 +18,8 @@ export const fetchCouncilAnalysis = async (
       councilSize,
       ...(previousSummary && { previousSummary }),
       ...(additionalContext && { additionalContext }),
-      ...(reflectionFocus && { reflectionFocus })
+      ...(reflectionFocus && { reflectionFocus }),
+      ...(memorySources && { memorySources })
     };
     console.log('🚀 Sending request to backend:', requestBody);
 
@@ -90,7 +92,8 @@ export const injectIntoDebate = async (
   },
   history: { speaker: string; text: string }[],
   userInput: string,
-  counselors: { id: string; name: string; role: string; description: string }[]
+  counselors: { id: string; name: string; role: string; description: string }[],
+  memorySources?: MemorySource[]
 ): Promise<{ 
   dialogue: { speaker: string; text: string }[], 
   mapState: { 
@@ -115,7 +118,8 @@ export const injectIntoDebate = async (
         tension,
         history,
         user_input: userInput,
-        counselors
+        counselors,
+        memorySources
       })
     });
 
