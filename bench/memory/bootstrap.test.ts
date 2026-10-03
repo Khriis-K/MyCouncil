@@ -69,6 +69,15 @@ describe('pairedDiffs', () => {
   test('a probe missing for one system is an error, not a silent drop', () => {
     expect(() => pairedDiffs([row('a', 's1', 'p1', 1)], 'a', 'b', 'recall@5')).toThrow(/p1/);
   });
+
+  test('the same probe id in two scenarios pairs within its own scenario', () => {
+    const rows = [row('a', 's1', 'p1', 1), row('a', 's2', 'p1', 1), row('b', 's1', 'p1', 0), row('b', 's2', 'p1', 1)];
+    expect(pairedDiffs(rows, 'a', 'b', 'recall@5')).toEqual([{ cluster: 's1', value: 1 }, { cluster: 's2', value: 0 }]);
+  });
+
+  test('a missing metric is an error, not NaN', () => {
+    expect(() => pairedDiffs([row('a', 's1', 'p1', 1), row('b', 's1', 'p1', 1)], 'a', 'b', 'mrr')).toThrow(/mrr/);
+  });
 });
 
 describe('comparisonPairs', () => {

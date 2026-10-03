@@ -75,13 +75,19 @@ export interface PairRow {
 
 /** Per-probe A − B on one metric, clustered by scenario. */
 export function pairedDiffs(rows: PairRow[], a: string, b: string, metric: string): ClusterValue[] {
-  const baseline = new Map(rows.filter(r => r.system === b).map(r => [r.probeId, r.metrics[metric]]));
+  const key = (r: PairRow) => `${r.scenarioId}\0${r.probeId}`;
+  const value = (r: PairRow) => {
+    const v = r.metrics[metric];
+    if (v === undefined) throw new Error(`pairedDiffs: ${r.system} has no ${metric} for probe ${r.probeId}`);
+    return v;
+  };
+  const baseline = new Map(rows.filter(r => r.system === b).map(r => [key(r), r]));
   return rows
     .filter(r => r.system === a)
     .map(r => {
-      const other = baseline.get(r.probeId);
-      if (other === undefined) throw new Error(`pairedDiffs: probe ${r.probeId} has no ${b} row for ${metric}`);
-      return { cluster: r.scenarioId, value: r.metrics[metric] - other };
+      const other = baseline.get(key(r));
+      if (!other) throw new Error(`pairedDiffs: probe ${r.probeId} has no ${b} row for ${metric}`);
+      return { cluster: r.scenarioId, value: value(r) - value(other) };
     });
 }
 

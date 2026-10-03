@@ -47,9 +47,12 @@ export function parseArgs(argv: string[]): CliArgs {
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i];
     const value = argv[i + 1];
-    if (flag === '--trace' || flag === '--final') {
-      args[flag === '--trace' ? 'trace' : 'final'] = true;
+    if (flag === '--trace') {
+      args.trace = true;
       i--; // boolean flag: no value to skip
+    } else if (flag === '--final') {
+      args.final = true;
+      i--;
     } else if (flag === '--probe' && value) args.probe = value;
     else if (flag === '--split' && value) args.split = value;
     else if (flag === '--systems' && value) args.systems = value.split(',');
@@ -503,7 +506,11 @@ function logTestRun(args: CliArgs, dataPath: string) {
     const bar = '!'.repeat(78);
     console.warn(`${bar}\n! The held-out test split has already been run ${previous.length} time(s); see ${TEST_RUN_LOG}.\n! Every extra run spends the held-out data. Do not tune on these numbers.\n${bar}`);
   }
-  const hash = configHash({ memory: config.memory, k: args.k, window: args.window, systems: args.systems ?? 'all', probe: args.probe ?? null, dataset: sha256File(dataPath) });
+  const hash = configHash({
+    memory: config.memory, k: args.k, window: args.window, systems: args.systems ?? 'all', probe: args.probe ?? null,
+    // the LLM selector systems run only with a key, and use the chat model
+    llmModel: config.openRouterApiKey ? config.model : null, dataset: sha256File(dataPath),
+  });
   const { sha, dirty } = gitInfo();
   appendTestRun(TEST_RUN_LOG, { timestamp: new Date().toISOString(), gitSha: sha, dirty, configHash: hash });
 }
