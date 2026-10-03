@@ -1,6 +1,7 @@
 import { CachedEmbedder, type Embedder } from './embedder';
 import { retrieveMemories } from './pipeline';
 import type { RerankerName } from './models';
+import { createProductionSelector } from './productionSelector';
 import { buildChatQuery } from './queries';
 import { createReranker, type Reranker } from './reranker';
 import { TransformersEmbedder } from './transformersEmbedder';
@@ -13,6 +14,8 @@ export interface MemorySettings {
   recentWindow: number;
   /** stage-2 model; omitted means 'none' */
   reranker?: RerankerName;
+  /** 'llm-select' only: past this, ranking falls back to dense order */
+  selectorTimeoutMs?: number;
 }
 
 export interface ChatRecall {
@@ -25,8 +28,10 @@ let sharedEmbedder: CachedEmbedder | undefined;
 const defaultEmbedder = () => (sharedEmbedder ??= new CachedEmbedder(new TransformersEmbedder()));
 
 const sharedRerankers = new Map<RerankerName, Reranker | null>();
-function defaultReranker(name: RerankerName) {
-  if (!sharedRerankers.has(name)) sharedRerankers.set(name, createReranker(name));
+function defaultReranker({ reranker: name = 'none', k, selectorTimeoutMs }: MemorySettings) {
+  if (!sharedRerankers.has(name)) {
+    sharedRerankers.set(name, name === 'llm-select' ? createProductionSelector(k, selectorTimeoutMs) : createReranker(name));
+  }
   return sharedRerankers.get(name)!;
 }
 
@@ -67,7 +72,7 @@ export async function recallForChat(params: {
       k: settings.k,
       candidatePool: settings.candidatePool,
       embedder: params.embedder ?? defaultEmbedder(),
-      reranker: params.reranker !== undefined ? params.reranker : defaultReranker(settings.reranker ?? 'none'),
+      reranker: params.reranker !== undefined ? params.reranker : defaultReranker(settings),
       endpoint: 'chat',
     });
   } catch (error) {

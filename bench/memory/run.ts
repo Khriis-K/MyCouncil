@@ -6,6 +6,7 @@ import { config } from '../../server/config';
 import { generateText } from '../../server/llm';
 import { CachedEmbedder } from '../../server/memory/embedder';
 import { LlmSelector } from '../../server/memory/llmSelector';
+import { createProductionSelector } from '../../server/memory/productionSelector';
 import { createReranker } from '../../server/memory/reranker';
 import type { RetrievalTrace } from '../../server/memory/types';
 import { TransformersEmbedder } from '../../server/memory/transformersEmbedder';
@@ -382,7 +383,8 @@ async function main() {
     rerankers: { minilm: createReranker('minilm')!, 'bge-base': createReranker('bge-base')! },
     productionReranker: config.memory.reranker,
     llmSelector: llm ? new LlmSelector(complete, config.model, args.k) : undefined,
-    hybridSelector: llm ? new LlmSelector(complete, config.model, args.k, 2) : undefined,
+    // No timeout: the bench measures the full call; production caps it with config.memory.selectorTimeoutMs.
+    hybridSelector: llm ? createProductionSelector(args.k) : undefined,
     systems: args.systems,
   };
   if (args.probe) {

@@ -1,7 +1,7 @@
 import { lastCounselorTurn, recallForChat, windowSourceIds } from '../../server/memory/chatMemory';
 import type { Embedder } from '../../server/memory/embedder';
 import { retrieveMemories } from '../../server/memory/pipeline';
-import type { RerankerName } from '../../server/memory/models';
+import type { CrossEncoderName, RerankerName } from '../../server/memory/models';
 import { buildChatQuery } from '../../server/memory/queries';
 import type { Reranker } from '../../server/memory/reranker';
 import type { MemoryUnit, RetrievalTrace } from '../../server/memory/types';
@@ -36,7 +36,7 @@ export interface SystemOptions {
   /** verbatim recent turns kept in the prompt */
   window: number;
   candidatePool: number;
-  rerankers: Record<Exclude<RerankerName, 'none'>, Reranker>;
+  rerankers: Record<CrossEncoderName, Reranker>;
   /** what memory-production runs, i.e. config.memory.reranker */
   productionReranker: RerankerName;
   /** stage-2 LLM selector; adds the dense+llm-select system when set */
@@ -45,8 +45,13 @@ export interface SystemOptions {
   hybridSelector?: Reranker;
 }
 
-export function productionRerankerOf({ rerankers, productionReranker }: SystemOptions): Reranker | null {
-  return productionReranker === 'none' ? null : rerankers[productionReranker];
+export function productionRerankerOf({ rerankers, productionReranker, hybridSelector }: SystemOptions): Reranker | null {
+  if (productionReranker === 'none') return null;
+  if (productionReranker === 'llm-select') {
+    if (!hybridSelector) throw new Error("memory-production uses 'llm-select', but no selector is configured (set OPENROUTER_API_KEY)");
+    return hybridSelector;
+  }
+  return rerankers[productionReranker];
 }
 
 // The product degrades to stage-1 order when reranking fails; a benchmark row must not, or it

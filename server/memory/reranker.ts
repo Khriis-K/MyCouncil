@@ -1,4 +1,4 @@
-import { MODEL_CACHE_DIR, OFFLINE, RERANKER_MODELS, type RerankerName } from './models';
+import { MODEL_CACHE_DIR, OFFLINE, RERANKER_MODELS, type CrossEncoderName } from './models';
 
 export interface Reranker {
   readonly id: string;
@@ -45,6 +45,6 @@ export class CrossEncoderReranker implements Reranker {
   }
 }
 
-export function createReranker(name: RerankerName): Reranker | null {
+export function createReranker(name: 'none' | CrossEncoderName): Reranker | null {
   return name === 'none' ? null : new CrossEncoderReranker(RERANKER_MODELS[name]);
 }
