@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import type { RerankerName } from './memory/models';
 
 // Load environment variables from .env.local
 dotenv.config({ path: '.env.local' });
@@ -14,6 +15,12 @@ export const config = {
     k: 5,
     candidatePool: 30,
     recentWindow: 6,
+    // 'llm-select' won on the held-out test split; both cross-encoders lowered recall (bench/memory/results/latest-test.md).
+    // It sends the top dense candidates to the chat model on every message.
+    reranker: 'llm-select' as RerankerName,
+    selectorTimeoutMs: 5000,
+    // MEMORY_DEBUG=1: trace in the chat response, candidate table in the console, JSONL in logs/.
+    debug: process.env.MEMORY_DEBUG === '1',
   },
   rateLimit: {
     windowMs: 15 * 60 * 1000, // 15 minutes

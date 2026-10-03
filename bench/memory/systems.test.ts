@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
-import { HashingEmbedder } from '../../server/memory/testHelpers';
+import { HashingEmbedder, OverlapReranker } from '../../server/memory/testHelpers';
 import { datasetSchema, type Probe, type Scenario } from './schema';
 import { createSystems } from './systems';
 
@@ -8,7 +8,8 @@ const dataset = datasetSchema.parse(JSON.parse(readFileSync(new URL('./data/fixt
 const scenario = (id: string): Scenario => dataset.scenarios.find(s => s.id === id)!;
 const probe = (s: Scenario, id: string): Probe => s.probes.find(p => p.id === id)!;
 
-const systems = createSystems({ embedder: new HashingEmbedder(), k: 5, window: 6, candidatePool: 30 });
+const rerank = { rerankers: { minilm: new OverlapReranker(), 'bge-base': new OverlapReranker() }, productionReranker: 'minilm' as const };
+const systems = createSystems({ embedder: new HashingEmbedder(), k: 5, window: 6, candidatePool: 30, ...rerank });
 const system = (name: string) => systems.find(s => s.name === name)!;
 
 describe('fixture', () => {
@@ -112,7 +113,7 @@ describe('memory-production', () => {
   test('context is the last W turns of the probe thread plus retrieved memories', async () => {
     const s = scenario('job-offer');
     const windowOnly = (window: number) =>
-      createSystems({ embedder: new HashingEmbedder(), k: 0, window, candidatePool: 30 }).find(x => x.name === 'memory-production')!;
+      createSystems({ embedder: new HashingEmbedder(), k: 0, window, candidatePool: 30, ...rerank }).find(x => x.name === 'memory-production')!;
     // Advocate chat turns in order: v1 u, v2 c, v3 u, v4 c, v5 u. With k=0 only the window remains.
     const two = await windowOnly(2).run({ scenario: s, probe: probe(s, 'job-p1') });
     expect([...two.context]).toEqual(['job-v5']);

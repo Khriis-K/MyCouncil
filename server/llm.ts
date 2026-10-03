@@ -5,7 +5,11 @@ type Message = { role: 'system' | 'user' | 'assistant'; content: string };
 /**
  * Sends messages to OpenRouter's OpenAI-compatible chat endpoint and returns the reply text.
  */
-export async function generateText(messages: Message[], model = config.model): Promise<string> {
+export async function generateText(
+  messages: Message[],
+  model = config.model,
+  { signal, ...params }: { temperature?: number; signal?: AbortSignal } = {},
+): Promise<string> {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -13,7 +17,8 @@ export async function generateText(messages: Message[], model = config.model): P
       'Content-Type': 'application/json',
       'X-Title': 'MyCouncil',
     },
-    body: JSON.stringify({ model, messages }),
+    body: JSON.stringify({ model, messages, ...params }),
+    signal,
   });
 
   if (!response.ok) {

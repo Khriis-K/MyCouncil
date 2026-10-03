@@ -1,7 +1,9 @@
 import { lastCounselorTurn, recallForChat, windowSourceIds } from '../../server/memory/chatMemory';
 import type { Embedder } from '../../server/memory/embedder';
 import { retrieveMemories } from '../../server/memory/pipeline';
+import type { CrossEncoderName, RerankerName } from '../../server/memory/models';
 import { buildChatQuery } from '../../server/memory/queries';
+import type { Reranker } from '../../server/memory/reranker';
 import type { MemoryUnit, RetrievalTrace } from '../../server/memory/types';
 import type { Probe, Scenario, TimelineEvent } from './schema';
 
@@ -18,6 +20,8 @@ export interface SystemOutput {
   /** chars of memory/history text placed in the prompt (excl. dilemma and instructions) */
   contextChars: number;
   timingsMs?: Record<string, number>;
+  /** retrieval systems only */
+  trace?: RetrievalTrace;
 }
 
 export interface System {
@@ -32,6 +36,28 @@ export interface SystemOptions {
   /** verbatim recent turns kept in the prompt */
   window: number;
   candidatePool: number;
+  rerankers: Record<CrossEncoderName, Reranker>;
+  /** what memory-production runs, i.e. config.memory.reranker */
+  productionReranker: RerankerName;
+  /** stage-2 LLM selector; adds the dense+llm-select system when set */
+  llmSelector?: Reranker;
+  /** LLM selector that keeps the dense top 2; adds the dense-top2+llm-select system when set */
+  hybridSelector?: Reranker;
+}
+
+export function productionRerankerOf({ rerankers, productionReranker, hybridSelector }: SystemOptions): Reranker | null {
+  if (productionReranker === 'none') return null;
+  if (productionReranker === 'llm-select') {
+    if (!hybridSelector) throw new Error("memory-production uses 'llm-select', but no selector is configured (set OPENROUTER_API_KEY)");
+    return hybridSelector;
+  }
+  return rerankers[productionReranker];
+}
+
+// The product degrades to stage-1 order when reranking fails; a benchmark row must not, or it
+// would report stage-1 quality under a rerank system's name.
+function assertReranked(trace: RetrievalTrace) {
+  if (trace.fallback) throw new Error(`${trace.config.rerankerId}: ${trace.fallback}`);
 }
 
 const byTime = (a: TimelineEvent, b: TimelineEvent) => a.timestamp - b.timestamp;
@@ -84,25 +110,29 @@ const recency = (k: number): System => ({
   },
 });
 
-const dense = ({ embedder, k, candidatePool }: SystemOptions): System => ({
-  name: 'dense',
+const dense = (name: string, reranker: Reranker | null, { embedder, k, candidatePool }: SystemOptions): System => ({
+  name,
   async run(ctx) {
     const { used, trace } = await retrieveMemories({
-      query: chatQuery(ctx), sources: ctx.scenario.timeline, excludeSourceIds: [], k, candidatePool, embedder,
+      query: chatQuery(ctx), sources: ctx.scenario.timeline, excludeSourceIds: [], k, candidatePool, embedder, reranker, endpoint: 'bench',
     });
+    assertReranked(trace);
     return {
       ranked: rankedFromTrace(trace),
       context: new Set(used.map(u => u.sourceId)),
       contextChars: unitText(used),
       timingsMs: { ...trace.timingsMs },
+      trace,
     };
   },
 });
 
 // Shipped chat prompt: the thread's last `window` turns verbatim, plus retrieved memories that exclude them.
-const memoryProduction = ({ embedder, k, window, candidatePool }: SystemOptions): System => ({
+const memoryProduction = (options: SystemOptions): System => ({
   name: 'memory-production',
   async run(ctx) {
+    const { embedder, k, window, candidatePool } = options;
+    const reranker = productionRerankerOf(options);
     const { scenario, probe } = ctx;
     const sources = scenario.timeline;
     const windowIds =
@@ -114,10 +144,11 @@ const memoryProduction = ({ embedder, k, window, candidatePool }: SystemOptions)
       probe.channel === 'chat'
         ? await recallForChat({
             counselorId: probe.counselorId!, message: probe.text, sources,
-            settings: { enabled: true, k, candidatePool, recentWindow: window }, embedder,
+            settings: { enabled: true, k, candidatePool, recentWindow: window }, embedder, reranker,
           })
-        : await retrieveMemories({ query: probe.text, sources, excludeSourceIds: windowIds, k, candidatePool, embedder });
+        : await retrieveMemories({ query: probe.text, sources, excludeSourceIds: windowIds, k, candidatePool, embedder, reranker, endpoint: 'bench' });
     if (!recall.trace) throw new Error(`memory-production retrieval fell back: ${recall.fallback ?? 'no trace'}`);
+    assertReranked(recall.trace);
 
     const windowEvents = sources.filter(e => windowIds.includes(e.id));
     const windowUsers = windowEvents.filter(e => e.speaker === 'user').sort(newestFirst).map(e => e.id);
@@ -126,10 +157,20 @@ const memoryProduction = ({ embedder, k, window, candidatePool }: SystemOptions)
       context: new Set([...windowUsers, ...recall.used.map(u => u.sourceId)]),
       contextChars: charCount(windowEvents) + unitText(recall.used),
       timingsMs: { ...recall.trace.timingsMs },
+      trace: recall.trace,
     };
   },
 });
 
 export function createSystems(options: SystemOptions): System[] {
-  return [existingContext, recency(options.k), dense(options), memoryProduction(options)];
+  return [
+    existingContext,
+    recency(options.k),
+    dense('dense', null, options),
+    dense('dense+rerank', options.rerankers.minilm, options),
+    dense('dense+rerank-bge', options.rerankers['bge-base'], options),
+    ...(options.llmSelector ? [dense('dense+llm-select', options.llmSelector, options)] : []),
+    ...(options.hybridSelector ? [dense('dense-top2+llm-select', options.hybridSelector, options)] : []),
+    memoryProduction(options),
+  ];
 }

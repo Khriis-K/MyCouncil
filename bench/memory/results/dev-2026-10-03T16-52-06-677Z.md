@@ -1,0 +1,118 @@
+# Memory benchmark: dev
+
+- generated: 2026-10-03T16:52:06.677Z
+- dataset version: v1
+- embedder: Xenova/bge-small-en-v1.5@ea104dacec62c0de699686887e3f920caeb4f3e3:q8
+- memory-production reranker: none
+- dense+llm-select selector: llm-select:amazon/nova-lite-v1 (temperature 0, live API calls: rerank latency includes the network); dense-top2+llm-select keeps the dense top 2 and lets the selector fill the rest
+- settings: k=5, window=6, candidatePool=30
+- probes per system: 80
+- token counts are approximate (context chars / 4)
+- existing-context is an upper bound on today's prompts: debate resets when the overlay closes, and refinement really carries only a <=50-char label, not the full previous text
+- the embedding cache is shared across probes, so timings reflect a warm cache
+- poolRecall@30: required gold in the stage-1 candidate pool or the prompt; the ceiling any reordering of the pool could reach
+
+## Ranking quality (mean over probes)
+
+| system | recall@1 | recall@3 | recall@5 | recall@10 | MRR | nDCG@1 | nDCG@3 | nDCG@5 | nDCG@10 |
+|---|---|---|---|---|---|---|---|---|---|
+| existing-context | 0.063 | 0.100 | 0.219 | 0.300 | 0.118 | 0.063 | 0.071 | 0.122 | 0.150 |
+| recency | 0.000 | 0.037 | 0.069 | 0.106 | 0.060 | 0.000 | 0.018 | 0.029 | 0.039 |
+| dense | 0.438 | 0.706 | 0.775 | 0.819 | 0.635 | 0.521 | 0.618 | 0.648 | 0.666 |
+| dense+rerank | 0.531 | 0.637 | 0.688 | 0.744 | 0.664 | 0.604 | 0.605 | 0.630 | 0.652 |
+| dense+rerank-bge | 0.287 | 0.463 | 0.512 | 0.669 | 0.451 | 0.329 | 0.394 | 0.418 | 0.474 |
+| dense+llm-select | 0.494 | 0.694 | 0.744 | 0.912 | 0.677 | 0.583 | 0.642 | 0.665 | 0.726 |
+| dense-top2+llm-select | 0.438 | 0.775 | 0.844 | 0.931 | 0.653 | 0.521 | 0.654 | 0.684 | 0.718 |
+| memory-production | 0.063 | 0.125 | 0.575 | 0.819 | 0.240 | 0.063 | 0.083 | 0.286 | 0.374 |
+
+## All required gold found, and what lands in the prompt
+
+| system | allGold@1 | allGold@3 | allGold@5 | allGold@10 | contextRecall | context tokens (approx) |
+|---|---|---|---|---|---|---|
+| existing-context | 0.063 | 0.100 | 0.200 | 0.275 | 0.338 | 234.966 |
+| recency | 0.000 | 0.037 | 0.063 | 0.100 | 0.069 | 101.672 |
+| dense | 0.375 | 0.650 | 0.725 | 0.787 | 0.775 | 129.988 |
+| dense+rerank | 0.463 | 0.588 | 0.637 | 0.700 | 0.688 | 123.678 |
+| dense+rerank-bge | 0.250 | 0.425 | 0.487 | 0.637 | 0.512 | 111.956 |
+| dense+llm-select | 0.425 | 0.637 | 0.700 | 0.900 | 0.744 | 142.350 |
+| dense-top2+llm-select | 0.375 | 0.725 | 0.813 | 0.925 | 0.844 | 139.734 |
+| memory-production | 0.063 | 0.125 | 0.525 | 0.787 | 0.800 | 234.534 |
+
+## Category: explicit (n=16)
+
+| system | recall@5 | nDCG@5 | allGold@5 | contextRecall | poolRecall@30 |
+|---|---|---|---|---|---|
+| existing-context | 0.313 | 0.173 | 0.313 | 0.500 | - |
+| recency | 0.063 | 0.020 | 0.063 | 0.063 | - |
+| dense | 1.000 | 0.893 | 1.000 | 1.000 | 1.000 |
+| dense+rerank | 1.000 | 0.983 | 1.000 | 1.000 | 1.000 |
+| dense+rerank-bge | 0.938 | 0.773 | 0.938 | 0.938 | 1.000 |
+| dense+llm-select | 0.750 | 0.714 | 0.750 | 0.750 | 1.000 |
+| dense-top2+llm-select | 0.938 | 0.871 | 0.938 | 0.938 | 1.000 |
+| memory-production | 0.875 | 0.419 | 0.875 | 1.000 | 1.000 |
+
+## Category: implicit (n=32)
+
+| system | recall@5 | nDCG@5 | allGold@5 | contextRecall | poolRecall@30 |
+|---|---|---|---|---|---|
+| existing-context | 0.188 | 0.077 | 0.188 | 0.375 | - |
+| recency | 0.000 | 0.000 | 0.000 | 0.000 | - |
+| dense | 0.656 | 0.490 | 0.656 | 0.656 | 0.906 |
+| dense+rerank | 0.438 | 0.328 | 0.438 | 0.438 | 0.906 |
+| dense+rerank-bge | 0.219 | 0.155 | 0.219 | 0.219 | 0.906 |
+| dense+llm-select | 0.844 | 0.708 | 0.844 | 0.844 | 0.906 |
+| dense-top2+llm-select | 0.781 | 0.555 | 0.781 | 0.781 | 0.906 |
+| memory-production | 0.375 | 0.160 | 0.375 | 0.656 | 0.906 |
+
+## Category: multi (n=16)
+
+| system | recall@5 | nDCG@5 | allGold@5 | contextRecall | poolRecall@30 |
+|---|---|---|---|---|---|
+| existing-context | 0.094 | 0.043 | 0.000 | 0.125 | - |
+| recency | 0.031 | 0.013 | 0.000 | 0.031 | - |
+| dense | 0.688 | 0.624 | 0.438 | 0.688 | 1.000 |
+| dense+rerank | 0.625 | 0.610 | 0.375 | 0.625 | 1.000 |
+| dense+rerank-bge | 0.438 | 0.399 | 0.313 | 0.438 | 1.000 |
+| dense+llm-select | 0.781 | 0.720 | 0.563 | 0.781 | 1.000 |
+| dense-top2+llm-select | 0.844 | 0.714 | 0.688 | 0.844 | 1.000 |
+| memory-production | 0.438 | 0.228 | 0.188 | 0.688 | 1.000 |
+
+## Category: update (n=16)
+
+| system | recall@5 | nDCG@5 | allGold@5 | contextRecall | poolRecall@30 |
+|---|---|---|---|---|---|
+| existing-context | 0.313 | 0.239 | 0.313 | 0.313 | - |
+| recency | 0.250 | 0.111 | 0.250 | 0.250 | - |
+| dense | 0.875 | 0.742 | 0.875 | 0.875 | 1.000 |
+| dense+rerank | 0.938 | 0.899 | 0.938 | 0.938 | 1.000 |
+| dense+rerank-bge | 0.750 | 0.606 | 0.750 | 0.750 | 1.000 |
+| dense+llm-select | 0.500 | 0.474 | 0.500 | 0.500 | 1.000 |
+| dense-top2+llm-select | 0.875 | 0.728 | 0.875 | 0.875 | 1.000 |
+| memory-production | 0.813 | 0.461 | 0.813 | 1.000 | 1.000 |
+
+## Per-probe changes vs dense (contextRecall)
+
+| system | better | worse | probes better | probes worse |
+|---|---|---|---|---|
+| existing-context | 7 | 46 | career-2-p2, relocation-2-p2, relocation-2-p3, finances-6-p2, education-5-p2, health-and-wellbeing-4-p2, health-and-wellbeing-4-p5 | career-2-p1, career-2-p3, career-2-p4, career-2-p5, career-3-p3, relocation-2-p1, relocation-2-p4, relocation-2-p5, relocation-6-p4, relocation-6-p5, romantic-relationship-2-p3, romantic-relationship-3-p1, romantic-relationship-3-p4, romantic-relationship-3-p5, family-and-caregiving-2-p1, family-and-caregiving-2-p2, family-and-caregiving-2-p4, family-and-caregiving-2-p5, family-and-caregiving-6-p1, family-and-caregiving-6-p2, family-and-caregiving-6-p3, family-and-caregiving-6-p4, family-and-caregiving-6-p5, finances-5-p2, finances-5-p4, finances-5-p5, finances-6-p1, finances-6-p4, finances-6-p5, education-3-p1, education-3-p3, education-3-p4, education-5-p3, education-5-p5, health-and-wellbeing-2-p1, health-and-wellbeing-2-p2, health-and-wellbeing-2-p3, health-and-wellbeing-2-p5, health-and-wellbeing-4-p3, health-and-wellbeing-4-p4, friendship-and-social-life-1-p2, friendship-and-social-life-1-p3, friendship-and-social-life-1-p4, friendship-and-social-life-1-p5, friendship-and-social-life-3-p4, friendship-and-social-life-3-p5 |
+| recency | 1 | 61 | health-and-wellbeing-4-p5 | career-2-p1, career-2-p3, career-2-p4, career-2-p5, career-3-p1, career-3-p3, career-3-p4, career-3-p5, relocation-2-p1, relocation-2-p4, relocation-6-p1, relocation-6-p3, relocation-6-p4, relocation-6-p5, romantic-relationship-2-p1, romantic-relationship-2-p3, romantic-relationship-2-p4, romantic-relationship-2-p5, romantic-relationship-3-p3, family-and-caregiving-2-p1, family-and-caregiving-2-p2, family-and-caregiving-2-p3, family-and-caregiving-2-p4, family-and-caregiving-2-p5, family-and-caregiving-6-p1, family-and-caregiving-6-p2, family-and-caregiving-6-p3, family-and-caregiving-6-p4, family-and-caregiving-6-p5, finances-5-p1, finances-5-p2, finances-5-p4, finances-5-p5, finances-6-p1, finances-6-p3, finances-6-p4, finances-6-p5, education-3-p1, education-3-p2, education-3-p3, education-3-p4, education-5-p1, education-5-p3, education-5-p5, health-and-wellbeing-2-p1, health-and-wellbeing-2-p2, health-and-wellbeing-2-p3, health-and-wellbeing-2-p5, health-and-wellbeing-4-p1, health-and-wellbeing-4-p3, health-and-wellbeing-4-p4, friendship-and-social-life-1-p1, friendship-and-social-life-1-p2, friendship-and-social-life-1-p3, friendship-and-social-life-1-p4, friendship-and-social-life-1-p5, friendship-and-social-life-3-p1, friendship-and-social-life-3-p2, friendship-and-social-life-3-p3, friendship-and-social-life-3-p4, friendship-and-social-life-3-p5 |
+| dense+rerank | 3 | 11 | relocation-2-p3, romantic-relationship-2-p4, health-and-wellbeing-4-p5 | career-3-p3, romantic-relationship-2-p3, romantic-relationship-3-p4, family-and-caregiving-2-p3, family-and-caregiving-6-p3, finances-5-p2, education-3-p3, education-3-p4, health-and-wellbeing-2-p2, health-and-wellbeing-2-p3, friendship-and-social-life-3-p4 |
+| dense+rerank-bge | 0 | 24 | - | career-2-p4, career-3-p3, career-3-p4, romantic-relationship-2-p3, romantic-relationship-3-p3, romantic-relationship-3-p4, family-and-caregiving-2-p3, family-and-caregiving-6-p3, finances-5-p2, finances-5-p4, finances-5-p5, finances-6-p1, education-3-p2, education-3-p3, education-3-p4, education-5-p5, health-and-wellbeing-2-p2, health-and-wellbeing-2-p3, health-and-wellbeing-2-p5, health-and-wellbeing-4-p3, friendship-and-social-life-1-p2, friendship-and-social-life-1-p3, friendship-and-social-life-3-p2, friendship-and-social-life-3-p4 |
+| dense+llm-select | 14 | 15 | career-2-p4, career-3-p2, career-3-p4, relocation-2-p2, relocation-2-p3, romantic-relationship-2-p2, romantic-relationship-3-p4, finances-5-p3, finances-5-p5, education-5-p2, education-5-p5, health-and-wellbeing-2-p4, health-and-wellbeing-4-p2, health-and-wellbeing-4-p4 | career-2-p5, career-3-p5, relocation-2-p5, relocation-6-p4, romantic-relationship-2-p1, romantic-relationship-3-p1, romantic-relationship-3-p5, finances-5-p1, finances-6-p4, finances-6-p5, education-3-p1, education-3-p4, health-and-wellbeing-2-p5, friendship-and-social-life-3-p4, friendship-and-social-life-3-p5 |
+| dense-top2+llm-select | 12 | 4 | career-2-p4, relocation-2-p2, relocation-2-p3, relocation-2-p4, romantic-relationship-2-p2, romantic-relationship-3-p4, finances-5-p5, education-5-p2, education-5-p5, health-and-wellbeing-2-p4, health-and-wellbeing-4-p2, health-and-wellbeing-4-p4 | career-3-p5, relocation-6-p4, romantic-relationship-3-p1, finances-6-p4 |
+| memory-production | 2 | 0 | education-5-p2, health-and-wellbeing-4-p5 | - |
+
+## Latency per stage, ms (p50 / p95)
+
+- machine: AMD Ryzen AI 7 350 w/ Radeon 860M
+- warm-up excluded: each system runs one untimed probe first, so model loading is not counted
+- the embedding cache is shared, so embedding cost lands on whichever system embeds a text first; compare systems on the rerank column, not total
+
+| system | embedPassages | embedQuery | stage1 | rerank | total |
+|---|---|---|---|---|---|
+| dense | 0.2 / 216 | 11 / 31 | 0.1 / 0.4 | 0.0 / 0.0 | 12 / 227 |
+| dense+rerank | 0.3 / 0.4 | 0.0 / 0.0 | 0.1 / 0.3 | 189 / 251 | 190 / 251 |
+| dense+rerank-bge | 0.3 / 0.4 | 0.0 / 0.0 | 0.1 / 0.1 | 588 / 722 | 589 / 723 |
+| dense+llm-select | 0.3 / 0.4 | 0.0 / 0.0 | 0.1 / 0.1 | 624 / 962 | 625 / 962 |
+| dense-top2+llm-select | 0.3 / 0.5 | 0.0 / 0.0 | 0.1 / 0.1 | 639 / 1047 | 640 / 1048 |
+| memory-production | 0.3 / 0.4 | 0.0 / 0.0 | 0.1 / 0.1 | 0.0 / 0.0 | 0.6 / 0.9 |

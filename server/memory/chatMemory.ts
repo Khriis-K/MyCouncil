@@ -1,6 +1,9 @@
 import { CachedEmbedder, type Embedder } from './embedder';
 import { retrieveMemories } from './pipeline';
+import type { RerankerName } from './models';
+import { createProductionSelector } from './productionSelector';
 import { buildChatQuery } from './queries';
+import { createReranker, type Reranker } from './reranker';
 import { TransformersEmbedder } from './transformersEmbedder';
 import type { MemorySource, MemoryUnit, RetrievalTrace } from './types';
 
@@ -9,6 +12,10 @@ export interface MemorySettings {
   k: number;
   candidatePool: number;
   recentWindow: number;
+  /** stage-2 model; omitted means 'none' */
+  reranker?: RerankerName;
+  /** 'llm-select' only: past this, ranking falls back to dense order */
+  selectorTimeoutMs?: number;
 }
 
 export interface ChatRecall {
@@ -19,6 +26,14 @@ export interface ChatRecall {
 
 let sharedEmbedder: CachedEmbedder | undefined;
 const defaultEmbedder = () => (sharedEmbedder ??= new CachedEmbedder(new TransformersEmbedder()));
+
+const sharedRerankers = new Map<RerankerName, Reranker | null>();
+function defaultReranker({ reranker: name = 'none', k, selectorTimeoutMs }: MemorySettings) {
+  if (!sharedRerankers.has(name)) {
+    sharedRerankers.set(name, name === 'llm-select' ? createProductionSelector(k, selectorTimeoutMs) : createReranker(name));
+  }
+  return sharedRerankers.get(name)!;
+}
 
 // The client sends this counselor's whole chat as sources, so the verbatim window is its last N turns.
 export function windowSourceIds(sources: MemorySource[], counselorId: string, windowSize: number): string[] {
@@ -42,6 +57,8 @@ export async function recallForChat(params: {
   sources: MemorySource[] | undefined;
   settings: MemorySettings;
   embedder?: Embedder;
+  /** overrides settings.reranker */
+  reranker?: Reranker | null;
 }): Promise<ChatRecall> {
   const { counselorId, message, settings } = params;
   const sources = params.sources ?? [];
@@ -55,6 +72,8 @@ export async function recallForChat(params: {
       k: settings.k,
       candidatePool: settings.candidatePool,
       embedder: params.embedder ?? defaultEmbedder(),
+      reranker: params.reranker !== undefined ? params.reranker : defaultReranker(settings),
+      endpoint: 'chat',
     });
   } catch (error) {
     console.error('[memory] retrieval failed, continuing without memories:', error);
