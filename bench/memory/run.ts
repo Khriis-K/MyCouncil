@@ -144,6 +144,8 @@ export async function runBenchmark(options: RunOptions): Promise<BenchResults> {
           metrics[`allGold@${n}`] = allGoldAtK(out.ranked, probe.gold, n);
         }
         metrics.contextRecall = contextRecall(out.context, probe.gold);
+        // Gold the ranking stage could still have picked: in the candidate pool, or already in the prompt.
+        if (out.trace) metrics.poolRecall = contextRecall(new Set([...out.context, ...out.trace.candidates.map(c => c.sourceId)]), probe.gold);
         metrics.contextTokensApprox = contextTokens(out.contextChars);
         rows.push({
           scenarioId: scenario.id,
@@ -184,6 +186,38 @@ export async function runBenchmark(options: RunOptions): Promise<BenchResults> {
   };
 }
 
+/** Probes where `system` scored a higher or lower contextRecall than `baseline`. */
+export function transitions(rows: ResultRow[], baseline: string, system: string): { better: string[]; worse: string[] } {
+  const base = new Map(rows.filter(r => r.system === baseline).map(r => [r.probeId, r.metrics.contextRecall]));
+  const better: string[] = [];
+  const worse: string[] = [];
+  for (const r of rows.filter(r => r.system === system && base.has(r.probeId))) {
+    const before = base.get(r.probeId)!;
+    if (r.metrics.contextRecall > before) better.push(r.probeId);
+    else if (r.metrics.contextRecall < before) worse.push(r.probeId);
+  }
+  return { better, worse };
+}
+
+const BASELINE = 'dense';
+
+function transitionsSection({ systems, rows }: BenchResults): string[] {
+  if (!systems.includes(BASELINE)) return [];
+  const others = systems.filter(s => s !== BASELINE);
+  return [
+    `## Per-probe changes vs ${BASELINE} (contextRecall)`,
+    '',
+    table(
+      ['system', 'better', 'worse', 'probes better', 'probes worse'],
+      others.map(s => {
+        const { better, worse } = transitions(rows, BASELINE, s);
+        return [s, String(better.length), String(worse.length), better.join(', ') || '-', worse.join(', ') || '-'];
+      }),
+    ),
+    '',
+  ];
+}
+
 const f = (n: number | undefined) => (n === undefined ? '-' : n.toFixed(3));
 const table = (headers: string[], body: string[][]) =>
   [`| ${headers.join(' | ')} |`, `|${headers.map(() => '---').join('|')}|`, ...body.map(r => `| ${r.join(' | ')} |`)].join('\n');
@@ -210,6 +244,7 @@ export function renderMarkdown(results: BenchResults): string {
     '- token counts are approximate (context chars / 4)',
     '- existing-context is an upper bound on today\'s prompts: debate resets when the overlay closes, and refinement really carries only a <=50-char label, not the full previous text',
     '- the embedding cache is shared across probes, so timings reflect a warm cache',
+    `- poolRecall@${meta.candidatePool}: required gold in the stage-1 candidate pool or the prompt; the ceiling any reordering of the pool could reach`,
     '',
     '## Ranking quality (mean over probes)',
     '',
@@ -232,12 +267,12 @@ export function renderMarkdown(results: BenchResults): string {
     lines.push(
       '', `## Category: ${cat} (n=${n})`, '',
       table(
-        ['system', 'recall@5', 'nDCG@5', 'allGold@5', 'contextRecall'],
-        systems.map(s => [s, metric(s, 'recall@5', cat), metric(s, 'ndcg@5', cat), metric(s, 'allGold@5', cat), metric(s, 'contextRecall', cat)]),
+        ['system', 'recall@5', 'nDCG@5', 'allGold@5', 'contextRecall', `poolRecall@${meta.candidatePool}`],
+        systems.map(s => [s, metric(s, 'recall@5', cat), metric(s, 'ndcg@5', cat), metric(s, 'allGold@5', cat), metric(s, 'contextRecall', cat), metric(s, 'poolRecall', cat)]),
       ),
     );
   }
-  lines.push('', ...latencySection(results));
+  lines.push('', ...transitionsSection(results), ...latencySection(results));
   return lines.join('\n') + '\n';
 }
 
