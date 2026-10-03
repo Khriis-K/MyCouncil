@@ -76,7 +76,10 @@ MyCouncil.code-workspace
 coverage/
 
 # Docs, repomixes, mockups, etc
-/docs
+/docs/*
+!/docs/agents/
+/docs/agents/*
+!/docs/agents/issue-tracker.md
 /repomixes
 /mocks
 /mockups
