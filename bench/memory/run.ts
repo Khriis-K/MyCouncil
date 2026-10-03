@@ -3,7 +3,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { config } from '../../server/config';
+import { generateText } from '../../server/llm';
 import { CachedEmbedder } from '../../server/memory/embedder';
+import { LlmSelector } from '../../server/memory/llmSelector';
 import { createReranker } from '../../server/memory/reranker';
 import type { RetrievalTrace } from '../../server/memory/types';
 import { TransformersEmbedder } from '../../server/memory/transformersEmbedder';
@@ -88,7 +90,7 @@ export interface Aggregate {
 
 export interface BenchResults {
   meta: {
-    split: string; timestamp: string; datasetVersion: string; embedderId: string; rerankerId: string | null;
+    split: string; timestamp: string; datasetVersion: string; embedderId: string; rerankerId: string | null; llmSelectorId?: string;
     k: number; window: number; candidatePool: number; machine: string;
   };
   systems: string[];
@@ -178,6 +180,7 @@ export async function runBenchmark(options: RunOptions): Promise<BenchResults> {
     meta: {
       split, timestamp: new Date().toISOString(), datasetVersion: dataset.version, embedderId: embedder.id,
       rerankerId: productionRerankerOf(options)?.id ?? null,
+      llmSelectorId: options.llmSelector?.id,
       k, window, candidatePool, machine: os.cpus()[0]?.model ?? 'unknown',
     },
     systems: systems.map(s => s.name),
@@ -239,6 +242,7 @@ export function renderMarkdown(results: BenchResults): string {
     `- dataset version: ${meta.datasetVersion}`,
     `- embedder: ${meta.embedderId}`,
     `- memory-production reranker: ${meta.rerankerId ?? 'none'}`,
+    ...(meta.llmSelectorId ? [`- dense+llm-select selector: ${meta.llmSelectorId} (temperature 0, live API calls: rerank latency includes the network)`] : []),
     `- settings: k=${meta.k}, window=${meta.window}, candidatePool=${meta.candidatePool}`,
     `- probes per system: ${aggregates[systems[0]]?.overall.n ?? 0}`,
     '- token counts are approximate (context chars / 4)',
@@ -374,6 +378,10 @@ async function main() {
     candidatePool: config.memory.candidatePool,
     rerankers: { minilm: createReranker('minilm')!, 'bge-base': createReranker('bge-base')! },
     productionReranker: config.memory.reranker,
+    // Needs the OpenRouter key; without it the dense+llm-select system is simply not offered.
+    llmSelector: config.openRouterApiKey
+      ? new LlmSelector(messages => generateText(messages, config.model, { temperature: 0 }), config.model, args.k)
+      : undefined,
     systems: args.systems,
   };
   if (args.probe) {

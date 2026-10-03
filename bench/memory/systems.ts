@@ -39,6 +39,8 @@ export interface SystemOptions {
   rerankers: Record<Exclude<RerankerName, 'none'>, Reranker>;
   /** what memory-production runs, i.e. config.memory.reranker */
   productionReranker: RerankerName;
+  /** stage-2 LLM selector; adds the dense+llm-select system when set */
+  llmSelector?: Reranker;
 }
 
 export function productionRerankerOf({ rerankers, productionReranker }: SystemOptions): Reranker | null {
@@ -160,6 +162,7 @@ export function createSystems(options: SystemOptions): System[] {
     dense('dense', null, options),
     dense('dense+rerank', options.rerankers.minilm, options),
     dense('dense+rerank-bge', options.rerankers['bge-base'], options),
+    ...(options.llmSelector ? [dense('dense+llm-select', options.llmSelector, options)] : []),
     memoryProduction(options),
   ];
 }
