@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { FEATURE_NAMES } from './features';
 import { candidateRows } from './observability';
 import type { RetrievalTrace } from './types';
 
@@ -26,5 +27,17 @@ describe('candidateRows for a lexical stage 1', () => {
 
   test('a dense trace has no lexical columns', () => {
     expect(candidateRows({ ...trace, config: { ...trace.config, stage1: 'dense' } })[0]).not.toHaveProperty('bm25Rank');
+  });
+});
+
+describe("candidateRows for the 'ltr' ranker", () => {
+  test('adds one column per feature, named by FEATURE_NAMES', () => {
+    const features = FEATURE_NAMES.map((_, i) => i + 0.12345);
+    const [row] = candidateRows({ ...trace, config: { ...trace.config, stage1: 'union' }, candidates: [{ ...trace.candidates[0], ltrFeatures: features }] });
+    expect(row).toMatchObject({ denseScore: 0.123, isShortReply: 7.123 });
+  });
+
+  test('adds no feature columns for other rankers', () => {
+    expect(candidateRows(trace)[0]).not.toHaveProperty('ceScore');
   });
 });

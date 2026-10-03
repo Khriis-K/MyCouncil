@@ -12,7 +12,8 @@
     "test": "vitest run",
     "models:download": "tsx scripts/models-download.ts",
     "bench:memory": "tsx bench/memory/run.ts",
-    "bench:memory:generate": "tsx bench/memory/generate.ts"
+    "bench:memory:generate": "tsx bench/memory/generate.ts",
+    "bench:memory:train-ltr": "tsx bench/memory/train-ltr.ts"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.0",

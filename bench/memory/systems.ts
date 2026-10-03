@@ -1,5 +1,7 @@
 import { lastCounselorTurn, recallForChat, windowSourceIds } from '../../server/memory/chatMemory';
 import type { Embedder } from '../../server/memory/embedder';
+import type { QueryOrigin } from '../../server/memory/features';
+import type { LtrRanker } from '../../server/memory/ltr';
 import { retrieveMemories } from '../../server/memory/pipeline';
 import type { CrossEncoderName, RerankerName } from '../../server/memory/models';
 import { buildChatQuery, buildDebateQuery, buildRefinementQuery } from '../../server/memory/queries';
@@ -45,10 +47,16 @@ export interface SystemOptions {
   llmSelector?: Reranker;
   /** LLM selector that keeps the dense top 2; adds the dense-top2+llm-select system when set */
   hybridSelector?: Reranker;
+  /** trained learned-score-fusion ranker; adds the ltr system when set */
+  ltr?: LtrRanker;
 }
 
-export function productionRerankerOf({ rerankers, productionReranker, hybridSelector }: SystemOptions): Reranker | null {
+export function productionRerankerOf({ rerankers, productionReranker, hybridSelector, ltr }: SystemOptions): Reranker | LtrRanker | null {
   if (productionReranker === 'none') return null;
+  if (productionReranker === 'ltr') {
+    if (!ltr) throw new Error("memory-production uses 'ltr', but no trained ranker is configured (run npm run bench:memory:train-ltr)");
+    return ltr;
+  }
   if (productionReranker === 'llm-select') {
     if (!hybridSelector) throw new Error("memory-production uses 'llm-select', but no selector is configured (set OPENROUTER_API_KEY)");
     return hybridSelector;
@@ -87,6 +95,10 @@ export function probeQuery({ scenario, probe }: ProbeContext): string {
   }
 }
 
+export function probeOrigin(probe: Probe): QueryOrigin {
+  return { channel: probe.channel, counselorId: probe.counselorId, debatePairId: probe.debatePairId };
+}
+
 function rankedFromTrace(trace: RetrievalTrace): string[] {
   return dedupe(trace.candidates.map(c => c.sourceId));
 }
@@ -115,11 +127,12 @@ const recency = (k: number): System => ({
   },
 });
 
-const retrieval = (name: string, stage1: Stage1Mode, reranker: Reranker | null, { embedder, k, candidatePool }: SystemOptions): System => ({
+const retrieval = (name: string, stage1: Stage1Mode, reranker: Reranker | LtrRanker | null, { embedder, k, candidatePool }: SystemOptions): System => ({
   name,
   async run(ctx) {
     const { used, trace } = await retrieveMemories({
-      query: probeQuery(ctx), sources: ctx.scenario.timeline, excludeSourceIds: [], k, candidatePool, stage1, embedder, reranker, endpoint: 'bench',
+      query: probeQuery(ctx), sources: ctx.scenario.timeline, excludeSourceIds: [], k, candidatePool, stage1, embedder, reranker,
+      origin: probeOrigin(ctx.probe), endpoint: 'bench',
     });
     assertReranked(trace);
     return {
@@ -153,7 +166,9 @@ const memoryProduction = (options: SystemOptions): System => ({
             counselorId: probe.counselorId!, message: probe.text, sources,
             settings: { enabled: true, k, candidatePool, recentWindow: window, stage1 }, embedder, reranker,
           })
-        : await retrieveMemories({ query: probeQuery(ctx), sources, excludeSourceIds: windowIds, k, candidatePool, stage1, embedder, reranker, endpoint: 'bench' });
+        : await retrieveMemories({
+            query: probeQuery(ctx), sources, excludeSourceIds: windowIds, k, candidatePool, stage1, embedder, reranker, origin: probeOrigin(probe), endpoint: 'bench',
+          });
     if (!recall.trace) throw new Error(`memory-production retrieval fell back: ${recall.fallback ?? 'no trace'}`);
     assertReranked(recall.trace);
 
@@ -181,6 +196,8 @@ export function createSystems(options: SystemOptions): System[] {
     retrieval('dense+rerank-bge', 'dense', options.rerankers['bge-base'], options),
     ...(options.llmSelector ? [retrieval('dense+llm-select', 'dense', options.llmSelector, options)] : []),
     ...(options.hybridSelector ? [retrieval('dense-top2+llm-select', 'dense', options.hybridSelector, options)] : []),
+    // stage1 is ignored: ltr ranks its own pool, the dense top n ∪ the BM25 top n
+    ...(options.ltr ? [retrieval('ltr', 'dense', options.ltr, options)] : []),
     memoryProduction(options),
   ];
 }
