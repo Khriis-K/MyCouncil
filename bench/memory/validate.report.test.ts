@@ -41,6 +41,11 @@ describe('renderReport human review section', () => {
     expect(md).toMatch(/5 of those probes.*rewritten/);
   });
 
+  test('warns that regraded probes put update recall into the other category slices', () => {
+    const md = renderReport(audit, { scenarios: 1, dropped: [], humanReview: { labels, fixedProbeIds: [], regradedGold: 19 } });
+    expect(md).toMatch(/explicit, implicit and multi slices also measure update recall/);
+  });
+
   test('omits the section when there is no human review', () => {
     expect(renderReport(audit, { scenarios: 1, dropped: [] })).not.toContain('Human review');
   });

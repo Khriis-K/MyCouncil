@@ -34,7 +34,7 @@ Seeded sample from REVIEW.md, checked by a person: is the gold sufficient, is th
 - gold not sufficient: 3 (finances-1-p1, family-and-caregiving-1-p2, finances-4-p4)
 - another turn also answers: 3 (family-and-caregiving-6-p3, career-2-p3, friendship-and-social-life-1-p4)
 - fixed by hand (data/hand-edits.json): finances-1-p1, family-and-caregiving-1-p2, finances-4-p4, family-and-caregiving-6-p3, career-2-p3, friendship-and-social-life-1-p4
-- superseded gold: 19 gold references pointed at a fact a later update superseded and were marked stale by a person in SUPERSEDED_REVIEW.md (which lists every such reference on non-update probes); they were regraded so the update is required gold and the old fact grade 1
+- superseded gold: 19 gold references pointed at a fact a later update superseded and were marked stale by a person in SUPERSEDED_REVIEW.md (which lists every such reference on non-update probes); they were regraded so the update is required gold and the old fact grade 1. So the explicit, implicit and multi slices also measure update recall for these probes; do not read an update-vs-explicit comparison as a clean split
 - 5 of those probes stated the old fact as current, so their text was rewritten by hand to use the updated fact
 
 The other 220 probes were not reviewed for these checks, and nothing automated checks these two failure kinds: the validator checks structure and word overlap, not whether the gold turn semantically suffices or a distractor also answers. Expect a similar share of the unreviewed probes to have the same defects. An LLM judge (bench/memory/judge.ts) exists as an opt-in check, and `--judge-check` scores it against data/human-labels.json, but no committed measurement shows it agrees with these labels, so it gates nothing.

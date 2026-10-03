@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { assemble } from './assemble';
-import { buildDataset, generateScenario, judgeDataset, type Llm } from './generate';
+import { buildDataset, judgeDataset, type Llm } from './generate';
 import { judgeScenario, scoreAgreement, type JudgeIssue } from './judge';
 import { syntheticContent } from './testContent';
 
@@ -85,19 +85,6 @@ describe('scoreAgreement', () => {
 describe('judge samples in the dataset flow', () => {
   const opts = { model: 'test/model', date: '2026-10-02', concurrency: 8 };
   const good: Llm = async () => JSON.stringify(syntheticContent());
-
-  test('generateScenario accepts when only a minority of samples reject', async () => {
-    const result = await generateScenario(seed, good, sequence(sample([p1.id]), sample(), sample()), 3);
-    expect(result.scenario?.id).toBe('career-1');
-    expect(result.attempts).toHaveLength(1);
-  });
-
-  test('buildDataset passes judgeSamples through', async () => {
-    let calls = 0;
-    const idOf = (m: Parameters<Llm>[0]) => m.map(x => x.content).join().match(/SCENARIO (\S+) /)![1];
-    await buildDataset({ ...opts, llm: good, judgeSamples: 3, judge: async m => (calls++, sample([], [], idOf(m))) });
-    expect(calls).toBe(48 * 3);
-  });
 
   test('judgeDataset votes over samples', async () => {
     const { dataset } = await buildDataset({ ...opts, llm: good });

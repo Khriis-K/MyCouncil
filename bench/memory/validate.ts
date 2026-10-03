@@ -192,7 +192,7 @@ function renderHumanReview({ labels, fixedProbeIds, regradedGold, rewrittenStale
     `- fixed by hand (data/hand-edits.json): ${fixedProbeIds.length ? fixedProbeIds.join(', ') : 'none'}`,
     ...(regradedGold
       ? [
-          `- superseded gold: ${regradedGold} gold references pointed at a fact a later update superseded and were marked stale by a person in SUPERSEDED_REVIEW.md (which lists every such reference on non-update probes); they were regraded so the update is required gold and the old fact grade 1`,
+          `- superseded gold: ${regradedGold} gold references pointed at a fact a later update superseded and were marked stale by a person in SUPERSEDED_REVIEW.md (which lists every such reference on non-update probes); they were regraded so the update is required gold and the old fact grade 1. So the explicit, implicit and multi slices also measure update recall for these probes; do not read an update-vs-explicit comparison as a clean split`,
         ]
       : []),
     ...(rewrittenStale

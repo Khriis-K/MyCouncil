@@ -133,47 +133,24 @@ const withFeedback = (seed: ScenarioSeed, previous?: Attempt): Message[] => {
   return [...base, { role: 'assistant', content: previous.raw }, { role: 'user', content: feedback }];
 };
 
-export async function generateScenario(seed: ScenarioSeed, llm: Llm, judge?: JudgeLlm, judgeSamples = 1): Promise<GenerationResult> {
+export async function generateScenario(seed: ScenarioSeed, llm: Llm): Promise<GenerationResult> {
   const attempts: Attempt[] = [];
-  const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
-  // The last rejection of the generator's own output; judge failures are not the generator's fault.
-  let feedback: Attempt | undefined;
-  // A valid scenario whose judging failed: judge it again rather than regenerating it.
-  let unjudged: { raw: string; scenario: Scenario } | undefined;
   for (let n = 0; n < MAX_ATTEMPTS; n++) {
     let raw = '';
-    let scenario: Scenario | undefined;
-    let errors: string[] = [];
-    if (unjudged) {
-      ({ raw, scenario } = unjudged);
-      unjudged = undefined;
-    } else {
-      try {
-        raw = await llm(withFeedback(seed, feedback));
-        const checked = validateContent(extractJson(raw));
-        if ('errors' in checked) errors = checked.errors;
-        else errors = validateScenario((scenario = assemble(checked.content, seed)));
-      } catch (error) {
-        errors = [message(error)];
-      }
-      if (errors.length > 0 || !scenario) {
-        feedback = { raw, errors };
-        attempts.push(feedback);
+    try {
+      raw = await llm(withFeedback(seed, attempts[n - 1]));
+      const checked = validateContent(extractJson(raw));
+      if ('errors' in checked) {
+        attempts.push({ raw, errors: checked.errors });
         continue;
       }
+      const scenario = assemble(checked.content, seed);
+      const errors = validateScenario(scenario);
+      attempts.push({ raw, errors });
+      if (errors.length === 0) return { scenario, attempts };
+    } catch (error) {
+      attempts.push({ raw, errors: [error instanceof Error ? error.message : String(error)] });
     }
-    if (judge) {
-      try {
-        errors = (await judgeScenario(scenario, judge, judgeSamples)).map(issue => `${issue.probeId}: ${issue.detail}`);
-      } catch (error) {
-        attempts.push({ raw, errors: [`judge failed: ${message(error)}`] });
-        unjudged = { raw, scenario };
-        continue;
-      }
-    }
-    attempts.push({ raw, errors });
-    if (errors.length === 0) return { scenario, attempts };
-    feedback = attempts[attempts.length - 1];
   }
   return { attempts, dropReason: attempts[attempts.length - 1].errors.slice(0, 3).join('; ') };
 }
@@ -184,8 +161,6 @@ export interface BuildOptions {
   date: string;
   concurrency?: number;
   seeds?: ScenarioSeed[];
-  judge?: JudgeLlm;
-  judgeSamples?: number;
   humanReview?: HumanReview;
 }
 
@@ -217,9 +192,7 @@ interface Generated {
 }
 
 async function generateAll(seeds: ScenarioSeed[], options: BuildOptions): Promise<Generated> {
-  const results = await mapPool(seeds, options.concurrency ?? DEFAULT_CONCURRENCY, seed =>
-    generateScenario(seed, options.llm, options.judge, options.judgeSamples),
-  );
+  const results = await mapPool(seeds, options.concurrency ?? DEFAULT_CONCURRENCY, seed => generateScenario(seed, options.llm));
   const out: Generated = { scenarios: [], dropped: [], raw: {} };
   seeds.forEach((seed, i) => {
     out.raw[seed.id] = { scenarioId: seed.id, promptVersion: PROMPT_VERSION, model: options.model, attempts: results[i].attempts };
