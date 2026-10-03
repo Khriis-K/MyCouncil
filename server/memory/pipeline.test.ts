@@ -15,7 +15,7 @@ const sources: MemorySource[] = [
   user('s4', 'my lease ends in March so timing matters here', 4, 'Architect'),
 ];
 
-const base = { query: 'should I renew my lease in March', excludeSourceIds: [] as string[], k: 3, candidatePool: 10 };
+const base = { query: 'should I renew my lease in March', excludeSourceIds: [] as string[], k: 3, candidatePool: 10, endpoint: 'chat' as const };
 
 describe('retrieveMemories', () => {
   test('ranks relevant units above unrelated ones', async () => {

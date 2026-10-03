@@ -1,12 +1,16 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { config } from '../../server/config';
 import { CachedEmbedder, type Embedder } from '../../server/memory/embedder';
+import type { RerankerName } from '../../server/memory/models';
+import { createReranker, type Reranker } from '../../server/memory/reranker';
+import type { RetrievalTrace } from '../../server/memory/types';
 import { TransformersEmbedder } from '../../server/memory/transformersEmbedder';
 import { allGoldAtK, contextRecall, contextTokens, METRIC_KS, mrr, ndcgAtK, recallAtK } from './metrics';
 import { datasetSchema, type Dataset } from './schema';
-import { createSystems } from './systems';
+import { createSystems, type System } from './systems';
 
 const BENCH_DIR = import.meta.dirname;
 const CATEGORIES = ['explicit', 'implicit', 'multi', 'update'] as const;
@@ -17,6 +21,9 @@ export interface CliArgs {
   k: number;
   window: number;
   data?: string;
+  /** with trace: print this probe's retrieval traces instead of running the benchmark */
+  probe?: string;
+  trace?: boolean;
 }
 
 export function parseArgs(argv: string[]): CliArgs {
@@ -29,13 +36,19 @@ export function parseArgs(argv: string[]): CliArgs {
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i];
     const value = argv[i + 1];
-    if (flag === '--split' && value) args.split = value;
+    if (flag === '--trace') {
+      args.trace = true;
+      i--; // boolean flag: no value to skip
+    } else if (flag === '--probe' && value) args.probe = value;
+    else if (flag === '--split' && value) args.split = value;
     else if (flag === '--systems' && value) args.systems = value.split(',');
     else if (flag === '--k') args.k = number(flag, value);
     else if (flag === '--window') args.window = number(flag, value);
     else if (flag === '--data' && value) args.data = value;
     else throw new Error(`unknown or incomplete flag: ${flag}`);
   }
+  if (args.trace && !args.probe) throw new Error('--trace needs --probe <probeId>');
+  if (args.probe && !args.trace) throw new Error('--probe is only used with --trace');
   return args;
 }
 
@@ -75,7 +88,10 @@ export interface Aggregate {
 }
 
 export interface BenchResults {
-  meta: { split: string; timestamp: string; datasetVersion: string; embedderId: string; k: number; window: number; candidatePool: number };
+  meta: {
+    split: string; timestamp: string; datasetVersion: string; embedderId: string; rerankerId: string | null;
+    k: number; window: number; candidatePool: number; machine: string;
+  };
   systems: string[];
   rows: ResultRow[];
   aggregates: Record<string, { overall: Aggregate; byCategory: Record<string, Aggregate> }>;
@@ -88,7 +104,23 @@ export interface RunOptions {
   k: number;
   window: number;
   candidatePool: number;
+  rerankers: Record<Exclude<RerankerName, 'none'>, Reranker>;
+  productionReranker: RerankerName;
   systems?: string[];
+}
+
+function selectSystems(options: RunOptions): System[] {
+  const all = createSystems(options);
+  const unknown = (options.systems ?? []).filter(name => !all.some(s => s.name === name));
+  if (unknown.length) throw new Error(`unknown system(s): ${unknown.join(', ')} (available: ${all.map(s => s.name).join(', ')})`);
+  return options.systems ? all.filter(s => options.systems!.includes(s.name)) : all;
+}
+
+/** Nearest-rank percentile; undefined for no values. */
+export function percentile(values: number[], p: number): number | undefined {
+  if (values.length === 0) return undefined;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.max(0, Math.ceil((p / 100) * sorted.length) - 1)];
 }
 
 function mean(rows: ResultRow[]): Aggregate {
@@ -101,14 +133,11 @@ function mean(rows: ResultRow[]): Aggregate {
 
 export async function runBenchmark(options: RunOptions): Promise<BenchResults> {
   const { dataset, split, embedder, k, window, candidatePool } = options;
-  const all = createSystems({ embedder, k, window, candidatePool });
-  const unknown = (options.systems ?? []).filter(name => !all.some(s => s.name === name));
-  if (unknown.length) throw new Error(`unknown system(s): ${unknown.join(', ')} (available: ${all.map(s => s.name).join(', ')})`);
-  const systems = options.systems ? all.filter(s => options.systems!.includes(s.name)) : all;
+  const systems = selectSystems(options);
 
-  // Load models before anything is timed.
-  await embedder.embedPassages(['warm up']);
-  await embedder.embedQueries(['warm up']);
+  // Warm-up: one untimed run per system loads every model it needs before anything is recorded.
+  const first = dataset.scenarios[0];
+  if (first?.probes[0]) for (const system of systems) await system.run({ scenario: first, probe: first.probes[0] });
 
   const rows: ResultRow[] = [];
   for (const scenario of dataset.scenarios) {
@@ -151,7 +180,11 @@ export async function runBenchmark(options: RunOptions): Promise<BenchResults> {
   }
 
   return {
-    meta: { split, timestamp: new Date().toISOString(), datasetVersion: dataset.version, embedderId: embedder.id, k, window, candidatePool },
+    meta: {
+      split, timestamp: new Date().toISOString(), datasetVersion: dataset.version, embedderId: embedder.id,
+      rerankerId: options.productionReranker === 'none' ? null : options.rerankers[options.productionReranker].id,
+      k, window, candidatePool, machine: os.cpus()[0]?.model ?? 'unknown',
+    },
     systems: systems.map(s => s.name),
     rows,
     aggregates,
@@ -178,6 +211,7 @@ export function renderMarkdown(results: BenchResults): string {
     `- generated: ${meta.timestamp}`,
     `- dataset version: ${meta.datasetVersion}`,
     `- embedder: ${meta.embedderId}`,
+    `- memory-production reranker: ${meta.rerankerId ?? 'none'}`,
     `- settings: k=${meta.k}, window=${meta.window}, candidatePool=${meta.candidatePool}`,
     `- probes per system: ${aggregates[systems[0]]?.overall.n ?? 0}`,
     '- token counts are approximate (context chars / 4)',
@@ -210,7 +244,80 @@ export function renderMarkdown(results: BenchResults): string {
       ),
     );
   }
+  lines.push('', ...latencySection(results));
   return lines.join('\n') + '\n';
+}
+
+const STAGES = ['embedPassages', 'embedQuery', 'stage1', 'rerank', 'total'] as const;
+
+function latencySection({ meta, systems, rows }: BenchResults): string[] {
+  const ms = (n: number | undefined) => (n === undefined ? '-' : n < 10 ? n.toFixed(1) : String(Math.round(n)));
+  const timed = systems.filter(s => rows.some(r => r.system === s && r.timingsMs));
+  return [
+    '## Latency per stage, ms (p50 / p95)',
+    '',
+    `- machine: ${meta.machine}`,
+    '- warm-up excluded: each system runs one untimed probe first, so model loading is not counted',
+    '- the embedding cache is shared, so embedding cost lands on whichever system embeds a text first; compare systems on the rerank column, not total',
+    '',
+    table(
+      ['system', ...STAGES],
+      timed.map(s => {
+        const own = rows.filter(r => r.system === s && r.timingsMs);
+        return [s, ...STAGES.map(stage => {
+          const values = own.map(r => r.timingsMs![stage]).filter(v => v !== undefined);
+          return `${ms(percentile(values, 50))} / ${ms(percentile(values, 95))}`;
+        })];
+      }),
+    ),
+  ];
+}
+
+const fixed = (n: number | undefined, digits: number) => (n === undefined ? '' : n.toFixed(digits));
+const pad = (cells: string[], widths: number[]) => cells.map((c, i) => c.padEnd(widths[i])).join('  ');
+
+/** Debug view of one retrieval: final order, gold marked with ★, plus gold that never reached the pool. */
+export function renderTrace(trace: RetrievalTrace, probe: { gold: string[]; context: Set<string> }): string {
+  const gold = new Set(probe.gold);
+  const header = ['', 'final', 's1', 'Δ', 's1 score', 'rerank', 'sel', 'source', 'preview'];
+  const body = trace.candidates.map(c => [
+    gold.has(c.sourceId) ? '★' : '',
+    String(c.finalRank ?? ''),
+    String(c.stage1Rank),
+    c.rankDelta === undefined ? '' : c.rankDelta > 0 ? `+${c.rankDelta}` : String(c.rankDelta),
+    fixed(c.stage1Score, 3),
+    fixed(c.rerankScore, 3),
+    c.selected ? '✓' : '',
+    c.sourceId,
+    c.textPreview,
+  ]);
+  const widths = header.map((h, i) => Math.max(h.length, ...body.map(r => r[i].length)));
+  const pooled = new Set(trace.candidates.map(c => c.sourceId));
+  const outside = probe.gold.filter(id => !pooled.has(id)).map(id => `${id} (${probe.context.has(id) ? 'in window' : 'missed'})`);
+  return [
+    `query: ${trace.query}`,
+    `reranker: ${trace.config.rerankerId ?? 'none'}  index=${trace.indexSize} excluded=${trace.excludedCount} pool=${trace.candidates.length} k=${trace.config.k}`,
+    ...(trace.fallback ? [`fallback: ${trace.fallback}`] : []),
+    pad(header, widths),
+    ...body.map(r => pad(r, widths)),
+    ...(outside.length ? [`gold outside the candidate pool: ${outside.join(', ')}`] : []),
+  ].join('\n');
+}
+
+export async function traceProbe(options: RunOptions & { probeId: string }): Promise<string> {
+  const scenario = options.dataset.scenarios.find(s => s.probes.some(p => p.id === options.probeId));
+  if (!scenario) throw new Error(`no probe "${options.probeId}" in the ${options.split} split`);
+  const probe = scenario.probes.find(p => p.id === options.probeId)!;
+  const gold = probe.gold.map(g => g.sourceId);
+
+  const sections = [`probe ${probe.id} (${probe.category}, ${probe.channel}): ${probe.text}`];
+  for (const system of selectSystems(options)) {
+    const out = await system.run({ scenario, probe });
+    sections.push(out.trace
+      ? `== ${system.name} (${out.ranked.length} sources ranked) ==\n${renderTrace(out.trace, { gold, context: out.context })}`
+      : `== ${system.name}: no retrieval trace ==`);
+  }
+  return sections.join('\n\n');
 }
 
 export function writeResults(results: BenchResults, dir: string): { jsonPath: string; mdPath: string; latestPath: string } {
@@ -229,15 +336,23 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const dataPath = args.data ?? defaultDataPath(args.split);
   const dataset = loadDataset(dataPath, args.split);
-  const results = await runBenchmark({
+  // Cross-encoders load lazily, so an unselected system never loads its model.
+  const options: RunOptions = {
     dataset,
     split: args.split,
     embedder: new CachedEmbedder(new TransformersEmbedder()),
     k: args.k,
     window: args.window,
     candidatePool: config.memory.candidatePool,
+    rerankers: { minilm: createReranker('minilm')!, 'bge-base': createReranker('bge-base')! },
+    productionReranker: config.memory.reranker,
     systems: args.systems,
-  });
+  };
+  if (args.probe) {
+    console.log(await traceProbe({ ...options, probeId: args.probe }));
+    return;
+  }
+  const results = await runBenchmark(options);
   const written = writeResults(results, path.join(BENCH_DIR, 'results'));
   console.log(`wrote ${written.jsonPath}\nwrote ${written.mdPath}\nwrote ${written.latestPath}`);
 }

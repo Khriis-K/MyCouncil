@@ -2,12 +2,15 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { HashingEmbedder } from '../../server/memory/testHelpers';
+import { HashingEmbedder, OverlapReranker } from '../../server/memory/testHelpers';
 import { datasetSchema } from './schema';
 import { defaultDataPath, loadDataset, parseArgs, renderMarkdown, runBenchmark, writeResults } from './run';
 
 const fixturePath = path.join(import.meta.dirname, 'data', 'fixture.json');
-const options = { split: 'fixture', k: 5, window: 6, candidatePool: 30 };
+const options = {
+  split: 'fixture', k: 5, window: 6, candidatePool: 30,
+  rerankers: { minilm: new OverlapReranker(), 'bge-base': new OverlapReranker() }, productionReranker: 'minilm' as const,
+};
 
 describe('parseArgs', () => {
   test('defaults to the fixture split and all systems', () => {
@@ -50,7 +53,7 @@ describe('runBenchmark on the fixture', async () => {
 
   test('has one row per probe per system with the documented structure', () => {
     expect(results.meta).toMatchObject({ split: 'fixture', k: 5, window: 6, candidatePool: 30, embedderId: 'hashing-256' });
-    expect(results.systems).toEqual(['existing-context', 'recency', 'dense', 'memory-production']);
+    expect(results.systems).toEqual(['existing-context', 'recency', 'dense', 'dense+rerank', 'dense+rerank-bge', 'memory-production']);
     expect(results.rows).toHaveLength(probeCount * results.systems.length);
     for (const r of results.rows) {
       expect(r.goldRanks.length).toBeGreaterThan(0);

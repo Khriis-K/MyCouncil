@@ -9,6 +9,7 @@ import { config } from './config';
 import { generateText } from './llm';
 import { recallForChat } from './memory/chatMemory';
 import { formatMemoriesForPrompt } from './memory/format';
+import { reportRetrieval, TRACE_FILE } from './memory/observability';
 
 const app = express();
 
@@ -190,8 +191,7 @@ app.post('/api/chat', async (req, res) => {
     const prompt = buildChatPrompt(dilemma, promptHistory, message, counselor, mbtiKey, formatMemoriesForPrompt(recall.used, {}));
 
     if (recall.trace) {
-      const { timingsMs, cache } = recall.trace;
-      console.log(`[memory] chat idx=${recall.trace.indexSize} used=${recall.used.length} total=${Math.round(timingsMs.total)}ms cache=${cache.hits}/${cache.misses}`);
+      reportRetrieval(recall.trace, { debug: config.memory.debug, traceFile: TRACE_FILE });
     } else {
       console.log(`[memory] chat skipped (${recall.fallback})`);
     }
@@ -207,6 +207,7 @@ app.post('/api/chat', async (req, res) => {
       memory: {
         used: recall.used.map(u => ({ id: u.id, sourceId: u.sourceId, text: u.text, channel: u.channel, counselorId: u.counselorId })),
         fallback: recall.fallback,
+        ...(config.memory.debug && recall.trace && { trace: recall.trace }),
       },
     });
 
