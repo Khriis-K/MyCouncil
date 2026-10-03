@@ -10,11 +10,18 @@ import { createProductionSelector } from '../../server/memory/productionSelector
 import { createReranker } from '../../server/memory/reranker';
 import type { RetrievalTrace } from '../../server/memory/types';
 import { TransformersEmbedder } from '../../server/memory/transformersEmbedder';
+import { BOOTSTRAP, clusterBootstrap, comparisonPairs, pairedDiffs, percentile, type Interval } from './bootstrap';
 import { allGoldAtK, contextRecall, contextTokens, METRIC_KS, mrr, ndcgAtK, recallAtK } from './metrics';
+import { appendTestRun, configHash, gitInfo, readTestRuns, sha256File } from './provenance';
 import { datasetSchema, type Dataset } from './schema';
+import { DISTANCE_BUCKETS, goldAttributes, meanAggregate, sliceAggregates, type Aggregate, type Slices } from './slices';
 import { createSystems, productionRerankerOf, type System, type SystemOptions } from './systems';
 
+export { percentile };
+export type { Aggregate };
+
 const BENCH_DIR = import.meta.dirname;
+const REPO_ROOT = path.resolve(BENCH_DIR, '../..');
 const CATEGORIES = ['explicit', 'implicit', 'multi', 'update'] as const;
 
 export interface CliArgs {
@@ -26,6 +33,8 @@ export interface CliArgs {
   /** with trace: print this probe's retrieval traces instead of running the benchmark */
   probe?: string;
   trace?: boolean;
+  /** required for the held-out test split */
+  final?: boolean;
 }
 
 export function parseArgs(argv: string[]): CliArgs {
@@ -38,8 +47,8 @@ export function parseArgs(argv: string[]): CliArgs {
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i];
     const value = argv[i + 1];
-    if (flag === '--trace') {
-      args.trace = true;
+    if (flag === '--trace' || flag === '--final') {
+      args[flag === '--trace' ? 'trace' : 'final'] = true;
       i--; // boolean flag: no value to skip
     } else if (flag === '--probe' && value) args.probe = value;
     else if (flag === '--split' && value) args.split = value;
@@ -51,6 +60,9 @@ export function parseArgs(argv: string[]): CliArgs {
   }
   if (args.trace && !args.probe) throw new Error('--trace needs --probe <probeId>');
   if (args.probe && !args.trace) throw new Error('--probe is only used with --trace');
+  if (args.split === 'test' && !args.final) {
+    throw new Error('the test split is held out: tune on dev, and run test once with --final (it is logged in results/test-runs.log)');
+  }
   return args;
 }
 
@@ -70,6 +82,10 @@ export interface GoldRank {
   grade: number;
   rank: number | null;
   inContext: boolean;
+  /** the gold turn's channel and counselor/pair match the probe's */
+  sameChannel: boolean;
+  /** user turns after the gold turn */
+  distance: number;
 }
 
 export interface ResultRow {
@@ -84,23 +100,42 @@ export interface ResultRow {
   timingsMs?: Record<string, number>;
 }
 
-export interface Aggregate {
-  n: number;
-  metrics: Record<string, number>;
+export interface Provenance {
+  datasetPath: string | null;
+  datasetSha256: string | null;
+  embedderId: string;
+  rerankerIds: Record<string, string>;
+  llmSelectorId: string | null;
+  memoryConfig: typeof config.memory;
+  git: { sha: string; dirty: boolean };
+  node: string;
+  cpu: string;
+  timestamp: string;
+}
+
+export interface Comparison extends Interval {
+  a: string;
+  b: string;
+  metric: string;
 }
 
 export interface BenchResults {
   meta: {
     split: string; timestamp: string; datasetVersion: string; embedderId: string; rerankerId: string | null; llmSelectorId?: string;
     k: number; window: number; candidatePool: number; machine: string;
+    provenance: Provenance;
   };
   systems: string[];
   rows: ResultRow[];
-  aggregates: Record<string, { overall: Aggregate; byCategory: Record<string, Aggregate> }>;
+  aggregates: Record<string, { overall: Aggregate; byCategory: Record<string, Aggregate>; slices: Slices }>;
+  /** paired cluster bootstrap of A − B, resampling scenarios */
+  bootstrap: { iterations: number; seed: number; comparisons: Comparison[] };
 }
 
 export interface RunOptions extends SystemOptions {
   dataset: Dataset;
+  /** recorded with its sha256 in the provenance */
+  datasetPath?: string;
   split: string;
   systems?: string[];
 }
@@ -112,18 +147,25 @@ function selectSystems(options: RunOptions): System[] {
   return options.systems ? all.filter(s => options.systems!.includes(s.name)) : all;
 }
 
-/** Nearest-rank percentile; undefined for no values. */
-export function percentile(values: number[], p: number): number | undefined {
-  if (values.length === 0) return undefined;
-  const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.max(0, Math.ceil((p / 100) * sorted.length) - 1)];
+const BOOTSTRAP_METRICS = ['recall@5', 'mrr', 'ndcg@5', 'allGold@5', 'contextRecall'] as const;
+
+export function bootstrapComparisons(rows: ResultRow[], systems: string[]): Comparison[] {
+  return comparisonPairs(systems).flatMap(([a, b]) =>
+    BOOTSTRAP_METRICS.map(metric => ({ a, b, metric, ...clusterBootstrap(pairedDiffs(rows, a, b, metric), BOOTSTRAP) })));
 }
 
-function mean(rows: ResultRow[]): Aggregate {
-  const keys = rows.length ? Object.keys(rows[0].metrics) : [];
+function collectProvenance(options: RunOptions, timestamp: string): Provenance {
   return {
-    n: rows.length,
-    metrics: Object.fromEntries(keys.map(key => [key, rows.reduce((sum, r) => sum + r.metrics[key], 0) / rows.length])),
+    datasetPath: options.datasetPath ? path.relative(REPO_ROOT, options.datasetPath).split(path.sep).join('/') : null,
+    datasetSha256: options.datasetPath ? sha256File(options.datasetPath) : null,
+    embedderId: options.embedder.id,
+    rerankerIds: Object.fromEntries(Object.entries(options.rerankers).map(([name, r]) => [name, r.id])),
+    llmSelectorId: options.llmSelector?.id ?? null,
+    memoryConfig: config.memory,
+    git: gitInfo(),
+    node: process.version,
+    cpu: os.cpus()[0]?.model ?? 'unknown',
+    timestamp,
   };
 }
 
@@ -138,6 +180,7 @@ export async function runBenchmark(options: RunOptions): Promise<BenchResults> {
   const rows: ResultRow[] = [];
   for (const scenario of dataset.scenarios) {
     for (const probe of scenario.probes) {
+      const attributes = goldAttributes(scenario, probe);
       for (const system of systems) {
         const out = await system.run({ scenario, probe });
         const metrics: Record<string, number> = { mrr: mrr(out.ranked, probe.gold) };
@@ -156,9 +199,10 @@ export async function runBenchmark(options: RunOptions): Promise<BenchResults> {
           category: probe.category,
           channel: probe.channel,
           system: system.name,
-          goldRanks: probe.gold.map(g => {
+          goldRanks: probe.gold.map((g, i) => {
             const index = out.ranked.indexOf(g.sourceId);
-            return { ...g, rank: index === -1 ? null : index + 1, inContext: out.context.has(g.sourceId) };
+            const { sameChannel, distance } = attributes[i];
+            return { ...g, rank: index === -1 ? null : index + 1, inContext: out.context.has(g.sourceId), sameChannel, distance };
           }),
           metrics,
           contextChars: out.contextChars,
@@ -172,21 +216,26 @@ export async function runBenchmark(options: RunOptions): Promise<BenchResults> {
   for (const { name } of systems) {
     const own = rows.filter(r => r.system === name);
     aggregates[name] = {
-      overall: mean(own),
-      byCategory: Object.fromEntries(CATEGORIES.map(c => [c, mean(own.filter(r => r.category === c))])),
+      overall: meanAggregate(own),
+      byCategory: Object.fromEntries(CATEGORIES.map(c => [c, meanAggregate(own.filter(r => r.category === c))])),
+      slices: sliceAggregates(own),
     };
   }
 
+  const timestamp = new Date().toISOString();
+  const names = systems.map(s => s.name);
   return {
     meta: {
-      split, timestamp: new Date().toISOString(), datasetVersion: dataset.version, embedderId: embedder.id,
+      split, timestamp, datasetVersion: dataset.version, embedderId: embedder.id,
       rerankerId: productionRerankerOf(options)?.id ?? null,
       llmSelectorId: options.llmSelector?.id,
       k, window, candidatePool, machine: os.cpus()[0]?.model ?? 'unknown',
+      provenance: collectProvenance(options, timestamp),
     },
-    systems: systems.map(s => s.name),
+    systems: names,
     rows,
     aggregates,
+    bootstrap: { ...BOOTSTRAP, comparisons: bootstrapComparisons(rows, names) },
   };
 }
 
@@ -209,7 +258,7 @@ function transitionsSection({ systems, rows }: BenchResults): string[] {
   if (!systems.includes(BASELINE)) return [];
   const others = systems.filter(s => s !== BASELINE);
   return [
-    `## Per-probe changes vs ${BASELINE} (contextRecall)`,
+    `### Per-probe changes vs ${BASELINE} (contextRecall)`,
     '',
     table(
       ['system', 'better', 'worse', 'probes better', 'probes worse'],
@@ -223,16 +272,15 @@ function transitionsSection({ systems, rows }: BenchResults): string[] {
 }
 
 const f = (n: number | undefined) => (n === undefined ? '-' : n.toFixed(3));
+const signed = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(3)}`;
+const cell = (agg: Aggregate, key: string) => (agg.n ? f(agg.metrics[key]) : '-');
 const table = (headers: string[], body: string[][]) =>
   [`| ${headers.join(' | ')} |`, `|${headers.map(() => '---').join('|')}|`, ...body.map(r => `| ${r.join(' | ')} |`)].join('\n');
 
 export function renderMarkdown(results: BenchResults): string {
   const { meta, systems, aggregates } = results;
   const ks = METRIC_KS;
-  const metric = (name: string, key: string, cat?: string) => {
-    const agg = cat ? aggregates[name].byCategory[cat] : aggregates[name].overall;
-    return agg.n ? f(agg.metrics[key]) : '-';
-  };
+  const metric = (name: string, key: string) => cell(aggregates[name].overall, key);
 
   const lines = [`# Memory benchmark: ${meta.split}`, ''];
   if (meta.split === 'fixture') {
@@ -250,35 +298,96 @@ export function renderMarkdown(results: BenchResults): string {
     '- existing-context is an upper bound on today\'s prompts: debate resets when the overlay closes, and refinement really carries only a <=50-char label, not the full previous text',
     '- the embedding cache is shared across probes, so timings reflect a warm cache',
     `- poolRecall@${meta.candidatePool}: required gold in the stage-1 candidate pool or the prompt; the ceiling any reordering of the pool could reach`,
+    '- every metric at every cutoff is in the JSON; these tables show a subset',
     '',
-    '## Ranking quality (mean over probes)',
-    '',
-    table(
-      ['system', ...ks.map(k => `recall@${k}`), 'MRR', ...ks.map(k => `nDCG@${k}`)],
-      systems.map(s => [s, ...ks.map(k => metric(s, `recall@${k}`)), metric(s, 'mrr'), ...ks.map(k => metric(s, `ndcg@${k}`))]),
-    ),
-    '',
-    '## All required gold found, and what lands in the prompt',
+    '## Headline (mean over probes)',
     '',
     table(
-      ['system', ...ks.map(k => `allGold@${k}`), 'contextRecall', 'context tokens (approx)'],
-      systems.map(s => [s, ...ks.map(k => metric(s, `allGold@${k}`)), metric(s, 'contextRecall'), metric(s, 'contextTokensApprox')]),
+      ['system', ...ks.map(k => `recall@${k}`), 'MRR', 'nDCG@5', 'allGold@5', 'contextRecall', 'context tokens (approx)'],
+      systems.map(s => [s, ...ks.map(k => metric(s, `recall@${k}`)), metric(s, 'mrr'), metric(s, 'ndcg@5'), metric(s, 'allGold@5'), metric(s, 'contextRecall'), metric(s, 'contextTokensApprox')]),
     ),
+    '',
+    '## Slices',
+    '',
   );
 
   for (const cat of CATEGORIES) {
     const n = aggregates[systems[0]].byCategory[cat].n;
     if (!n) continue;
     lines.push(
-      '', `## Category: ${cat} (n=${n})`, '',
+      `### Category: ${cat} (n=${n})`, '',
       table(
         ['system', 'recall@5', 'nDCG@5', 'allGold@5', 'contextRecall', `poolRecall@${meta.candidatePool}`],
-        systems.map(s => [s, metric(s, 'recall@5', cat), metric(s, 'ndcg@5', cat), metric(s, 'allGold@5', cat), metric(s, 'contextRecall', cat), metric(s, 'poolRecall', cat)]),
+        systems.map(s => [s, ...['recall@5', 'ndcg@5', 'allGold@5', 'contextRecall', 'poolRecall'].map(key => cell(aggregates[s].byCategory[cat], key))]),
       ),
+      '',
     );
   }
-  lines.push('', ...transitionsSection(results), ...latencySection(results));
+  lines.push(
+    ...channelSection(results), ...distanceSection(results), ...transitionsSection(results),
+    ...bootstrapSection(results), ...latencySection(results), '', ...provenanceSection(results),
+  );
   return lines.join('\n') + '\n';
+}
+
+function channelSection({ systems, aggregates }: BenchResults): string[] {
+  return [
+    '### Same-channel vs cross-channel',
+    '',
+    '- same-channel: the gold turn has the probe\'s channel and counselor (chat) or pair (debate)',
+    '- recall@5 and contextRecall count each required gold once; MRR, nDCG@5 and allGold@5 count probes, a probe being cross-channel if any of its required gold is',
+    '',
+    table(
+      ['system', 'slice', 'gold', 'recall@5', 'contextRecall', 'probes', 'MRR', 'nDCG@5', 'allGold@5'],
+      systems.flatMap(s => (['same', 'cross'] as const).map(slice => {
+        const { gold, probe } = aggregates[s].slices.channel[slice];
+        return [s, slice, String(gold.n), cell(gold, 'recall@5'), cell(gold, 'contextRecall'), String(probe.n), cell(probe, 'mrr'), cell(probe, 'ndcg@5'), cell(probe, 'allGold@5')];
+      })),
+    ),
+    '',
+  ];
+}
+
+function distanceSection({ systems, aggregates }: BenchResults): string[] {
+  const first = aggregates[systems[0]].slices.distance;
+  return [
+    '### Distance: user turns since the gold turn',
+    '',
+    '- per required gold; each cell is recall@5 / contextRecall',
+    '',
+    table(
+      ['system', ...DISTANCE_BUCKETS.map(b => `${b} (n=${first[b].n})`)],
+      systems.map(s => [s, ...DISTANCE_BUCKETS.map(b => {
+        const agg = aggregates[s].slices.distance[b];
+        return agg.n ? `${f(agg.metrics['recall@5'])} / ${f(agg.metrics.contextRecall)}` : '-';
+      })]),
+    ),
+    '',
+  ];
+}
+
+const BOOTSTRAP_LABELS: Record<(typeof BOOTSTRAP_METRICS)[number], string> = {
+  'recall@5': 'recall@5', mrr: 'MRR', 'ndcg@5': 'nDCG@5', 'allGold@5': 'allGold@5', contextRecall: 'contextRecall',
+};
+
+function bootstrapSection({ systems, bootstrap }: BenchResults): string[] {
+  const { comparisons } = bootstrap;
+  if (comparisons.length === 0) return [];
+  return [
+    '## Paired bootstrap: A − B, 95% CI',
+    '',
+    `- scenarios are resampled with replacement (probes in one scenario share a timeline, so they are not independent); B=${bootstrap.iterations}, seed=${bootstrap.seed}`,
+    `- each cell: mean over probes of A − B [2.5th, 97.5th percentile]; * marks a CI that excludes 0; ${comparisons[0].nScenarios} scenarios, ${comparisons[0].nProbes} probes`,
+    '',
+    table(
+      ['A', 'B', ...BOOTSTRAP_METRICS.map(m => BOOTSTRAP_LABELS[m])],
+      comparisonPairs(systems).map(([a, b]) => [a, b, ...BOOTSTRAP_METRICS.map(m => {
+        const c = comparisons.find(x => x.a === a && x.b === b && x.metric === m)!;
+        return `${signed(c.meanDiff)} [${signed(c.lo)}, ${signed(c.hi)}]${c.lo > 0 || c.hi < 0 ? '*' : ''}`;
+      })]),
+    ),
+    '',
+  ];
 }
 
 const STAGES = ['embedPassages', 'embedQuery', 'stage1', 'rerank', 'total'] as const;
@@ -303,6 +412,23 @@ function latencySection({ meta, systems, rows }: BenchResults): string[] {
         })];
       }),
     ),
+  ];
+}
+
+function provenanceSection({ meta, bootstrap }: BenchResults): string[] {
+  const p = meta.provenance;
+  return [
+    '## Provenance',
+    '',
+    `- dataset: ${p.datasetPath ?? 'unknown'} (sha256 ${p.datasetSha256 ?? 'unknown'})`,
+    `- embedder: ${p.embedderId}`,
+    `- rerankers: ${Object.entries(p.rerankerIds).map(([name, id]) => `${name}=${id}`).join(', ')}`,
+    `- llm selector: ${p.llmSelectorId ?? 'none'}`,
+    `- memory config: \`${JSON.stringify(p.memoryConfig)}\``,
+    `- git: ${p.git.sha}${p.git.dirty ? ' (uncommitted changes)' : ''}`,
+    `- node ${p.node}, cpu: ${p.cpu}`,
+    `- timestamp: ${p.timestamp}`,
+    `- bootstrap: B=${bootstrap.iterations}, seed=${bootstrap.seed}`,
   ];
 }
 
@@ -368,6 +494,20 @@ export function writeResults(results: BenchResults, dir: string): { jsonPath: st
   return { jsonPath: `${base}.json`, mdPath: `${base}.md`, latestPath };
 }
 
+const TEST_RUN_LOG = path.join(BENCH_DIR, 'results', 'test-runs.log');
+
+/** Logged before the run starts, so a crashed or abandoned test run still counts. */
+function logTestRun(args: CliArgs, dataPath: string) {
+  const previous = readTestRuns(TEST_RUN_LOG);
+  if (previous.length) {
+    const bar = '!'.repeat(78);
+    console.warn(`${bar}\n! The held-out test split has already been run ${previous.length} time(s); see ${TEST_RUN_LOG}.\n! Every extra run spends the held-out data. Do not tune on these numbers.\n${bar}`);
+  }
+  const hash = configHash({ memory: config.memory, k: args.k, window: args.window, systems: args.systems ?? 'all', probe: args.probe ?? null, dataset: sha256File(dataPath) });
+  const { sha, dirty } = gitInfo();
+  appendTestRun(TEST_RUN_LOG, { timestamp: new Date().toISOString(), gitSha: sha, dirty, configHash: hash });
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const dataPath = args.data ?? defaultDataPath(args.split);
@@ -390,7 +530,9 @@ async function main() {
     // No timeout: the bench measures the full call; production caps it with config.memory.selectorTimeoutMs.
     hybridSelector: llm ? createProductionSelector(args.k) : undefined,
     systems: args.systems,
+    datasetPath: dataPath,
   };
+  if (args.split === 'test') logTestRun(args, dataPath);
   if (args.probe) {
     console.log(await traceProbe({ ...options, probeId: args.probe }));
     return;

@@ -1,0 +1,7 @@
+# Held-out test-split runs, appended by `npm run bench:memory -- --split test --final` before each run starts.
+# One line per run: <timestamp> <git SHA>[+dirty] <config hash>. Lines starting with # are notes.
+#
+# Backfilled: the run below predates this log. Its results are test-2026-10-03T16-59-48-658Z.json (committed in 397c87d).
+# The SHA is the last commit before that one, so most likely the HEAD it ran on; the dirty state and config hash were not recorded.
+# Any earlier uncommitted test runs are unknown.
+2026-10-03T16:59:48.658Z 8a9d18bbf3b71cad4cadee6a7b2e8e7772b4987b unrecorded
