@@ -1,0 +1,89 @@
+{
+  "version": "fixture-1",
+  "meta": {
+    "purpose": "Harness testing only. Three tiny hand-written scenarios used to prove the benchmark runs end to end. Results on this fixture say nothing about retrieval quality and must not be quoted."
+  },
+  "scenarios": [
+    {
+      "id": "job-offer",
+      "split": "fixture",
+      "domain": "career",
+      "dilemma": "Should I accept a job offer in Denver and leave Seattle?",
+      "counselors": ["Architect", "Advocate"],
+      "timeline": [
+        { "id": "job-r1", "channel": "refinement", "speaker": "user", "kind": "fact", "factId": "offer", "timestamp": 1000, "text": "I got a job offer in Denver paying $140k, but my partner Sam works remotely and would have to move with me." },
+        { "id": "job-c1", "channel": "chat", "counselorId": "Architect", "speaker": "user", "kind": "fact", "factId": "equity", "timestamp": 2000, "text": "The offer needs an answer by Friday and the equity vests over four years with a one year cliff." },
+        { "id": "job-c2", "channel": "chat", "counselorId": "Architect", "speaker": "counselor", "kind": "counselor", "timestamp": 3000, "text": "A cliff means you could leave with nothing if it ends early. How stable is the company?" },
+        { "id": "job-c3", "channel": "chat", "counselorId": "Architect", "speaker": "user", "kind": "filler", "timestamp": 4000, "text": "They raised a big round last spring, so I think it is stable enough." },
+        { "id": "job-c4", "channel": "chat", "counselorId": "Architect", "speaker": "counselor", "kind": "counselor", "timestamp": 5000, "text": "Good. Then the question is what the move costs you outside of money." },
+        { "id": "job-v1", "channel": "chat", "counselorId": "Advocate", "speaker": "user", "kind": "fact", "factId": "mom", "timestamp": 6000, "text": "Honestly I am scared of leaving my mom, she had surgery last winter and lives twenty minutes from me." },
+        { "id": "job-v2", "channel": "chat", "counselorId": "Advocate", "speaker": "counselor", "kind": "counselor", "timestamp": 7000, "text": "That sounds heavy. What does she say about it?" },
+        { "id": "job-v3", "channel": "chat", "counselorId": "Advocate", "speaker": "user", "kind": "filler", "timestamp": 8000, "text": "She says go, but she always says that, so I do not trust it." },
+        { "id": "job-v4", "channel": "chat", "counselorId": "Advocate", "speaker": "counselor", "kind": "counselor", "timestamp": 9000, "text": "It may be worth asking her what she would need to feel supported either way." },
+        { "id": "job-c5", "channel": "chat", "counselorId": "Architect", "speaker": "user", "kind": "distractor", "timestamp": 10000, "text": "I have been meaning to repaint my kitchen, it keeps distracting me from all this." },
+        { "id": "job-r2", "channel": "refinement", "speaker": "user", "kind": "update", "supersedes": "job-r1", "timestamp": 11000, "text": "Update: the salary offer was raised to $155k after I negotiated." },
+        { "id": "job-c6", "channel": "chat", "counselorId": "Architect", "speaker": "user", "kind": "fact", "factId": "lease", "timestamp": 12000, "text": "My lease in Seattle ends in August which gives me a natural exit point." },
+        { "id": "job-v5", "channel": "chat", "counselorId": "Advocate", "speaker": "user", "kind": "fact", "factId": "sam", "timestamp": 13000, "text": "Sam says they are fine either way but I can tell they are nervous about leaving their friends." }
+      ],
+      "probes": [
+        { "id": "job-p1", "category": "explicit", "channel": "chat", "counselorId": "Advocate", "text": "Does the vesting schedule make this riskier than I thought?", "gold": [{ "sourceId": "job-c1", "grade": 2 }] },
+        { "id": "job-p2", "category": "implicit", "channel": "chat", "counselorId": "Advocate", "text": "Who else is affected by this move besides my mom?", "gold": [{ "sourceId": "job-v5", "grade": 2 }, { "sourceId": "job-r1", "grade": 1 }] },
+        { "id": "job-p3", "category": "update", "channel": "chat", "counselorId": "Architect", "text": "What salary are we weighing against staying in Seattle?", "gold": [{ "sourceId": "job-r2", "grade": 2 }, { "sourceId": "job-r1", "grade": 1 }] }
+      ]
+    },
+    {
+      "id": "grad-school",
+      "split": "fixture",
+      "domain": "education",
+      "dilemma": "Should I leave my data engineering job for a funded PhD?",
+      "counselors": ["Debater", "Logician"],
+      "timeline": [
+        { "id": "grad-r1", "channel": "refinement", "speaker": "user", "kind": "fact", "timestamp": 1000, "text": "I am deciding between a funded PhD in Pittsburgh and staying in my data engineer job at a logistics company." },
+        { "id": "grad-c1", "channel": "chat", "counselorId": "Debater", "speaker": "user", "kind": "fact", "factId": "stipend", "timestamp": 2000, "text": "The PhD stipend is only $38k and I still owe $22k in student loans." },
+        { "id": "grad-c2", "channel": "chat", "counselorId": "Debater", "speaker": "counselor", "kind": "counselor", "timestamp": 3000, "text": "That is tight but not impossible. What is the real draw of the program?" },
+        { "id": "grad-c3", "channel": "chat", "counselorId": "Debater", "speaker": "user", "kind": "fact", "factId": "advisor", "timestamp": 4000, "text": "My advisor candidate, Dr. Okafor, studies robotics, which is what I actually care about." },
+        { "id": "grad-c4", "channel": "chat", "counselorId": "Debater", "speaker": "counselor", "kind": "counselor", "timestamp": 5000, "text": "Then the advisor matters more than the school name." },
+        { "id": "grad-l1", "channel": "chat", "counselorId": "Logician", "speaker": "user", "kind": "fact", "factId": "promotion", "timestamp": 6000, "text": "At work they hinted at a promotion to team lead if I stay through the reorg in spring." },
+        { "id": "grad-l2", "channel": "chat", "counselorId": "Logician", "speaker": "counselor", "kind": "counselor", "timestamp": 7000, "text": "Hints are not offers. Has anything been put in writing?" },
+        { "id": "grad-l3", "channel": "chat", "counselorId": "Logician", "speaker": "user", "kind": "distractor", "timestamp": 8000, "text": "I play bass in a band on weekends and would hate to lose that." },
+        { "id": "grad-d1", "channel": "debate", "debatePairId": "Debater|Logician", "speaker": "user", "kind": "fact", "factId": "regret", "timestamp": 9000, "text": "I think the thing I fear most is regretting never trying the PhD." },
+        { "id": "grad-d2", "channel": "debate", "debatePairId": "Debater|Logician", "speaker": "counselor", "kind": "counselor", "timestamp": 10000, "text": "Regret is real, but it is not evidence about which path is better." },
+        { "id": "grad-d3", "channel": "debate", "debatePairId": "Debater|Logician", "speaker": "user", "kind": "filler", "timestamp": 11000, "text": "Fine, but a promotion is concrete and the PhD is not." },
+        { "id": "grad-r2", "channel": "refinement", "speaker": "user", "kind": "update", "supersedes": "grad-c3", "timestamp": 12000, "text": "Update: Dr. Okafor said she is moving to a university in Texas next year, so the Pittsburgh lab may lose its robotics focus." },
+        { "id": "grad-l4", "channel": "chat", "counselorId": "Logician", "speaker": "user", "kind": "filler", "timestamp": 13000, "text": "My manager asked me to decide by the end of the month." }
+      ],
+      "probes": [
+        { "id": "grad-p1", "category": "implicit", "channel": "chat", "counselorId": "Logician", "text": "Is the money even workable on a grad student income?", "gold": [{ "sourceId": "grad-c1", "grade": 2 }] },
+        { "id": "grad-p2", "category": "explicit", "channel": "debate", "debatePairId": "Debater|Logician", "text": "What was my worry about regret again?", "gold": [{ "sourceId": "grad-d1", "grade": 2 }] },
+        { "id": "grad-p3", "category": "update", "channel": "refinement", "text": "Update: I am now leaning toward the PhD as long as the robotics lab stays.", "gold": [{ "sourceId": "grad-r2", "grade": 2 }, { "sourceId": "grad-c3", "grade": 1 }] }
+      ]
+    },
+    {
+      "id": "bakery",
+      "split": "fixture",
+      "domain": "business",
+      "dilemma": "Should I quit teaching to open a bakery with my friend Lena?",
+      "counselors": ["Commander", "Mediator"],
+      "timeline": [
+        { "id": "bake-r1", "channel": "refinement", "speaker": "user", "kind": "fact", "timestamp": 1000, "text": "I want to quit my teaching job to open a small bakery with my friend Lena." },
+        { "id": "bake-c1", "channel": "chat", "counselorId": "Commander", "speaker": "user", "kind": "fact", "factId": "rent", "timestamp": 2000, "text": "We have $60k saved and the lease on the Maple Street space is $3,200 a month." },
+        { "id": "bake-c2", "channel": "chat", "counselorId": "Commander", "speaker": "counselor", "kind": "counselor", "timestamp": 3000, "text": "Who is putting in how much of that $60k?" },
+        { "id": "bake-c3", "channel": "chat", "counselorId": "Commander", "speaker": "user", "kind": "fact", "factId": "split", "timestamp": 4000, "text": "Lena wants to put in only $10k though, so most of the risk is on me." },
+        { "id": "bake-c4", "channel": "chat", "counselorId": "Commander", "speaker": "counselor", "kind": "counselor", "timestamp": 5000, "text": "How many months of runway would you have if the bakery earned nothing?" },
+        { "id": "bake-c5", "channel": "chat", "counselorId": "Commander", "speaker": "user", "kind": "fact", "factId": "runway", "timestamp": 6000, "text": "About six months." },
+        { "id": "bake-m1", "channel": "chat", "counselorId": "Mediator", "speaker": "user", "kind": "fact", "factId": "raj", "timestamp": 7000, "text": "My husband Raj is supportive but his hours at the hospital are unpredictable." },
+        { "id": "bake-m2", "channel": "chat", "counselorId": "Mediator", "speaker": "counselor", "kind": "counselor", "timestamp": 8000, "text": "How does that sit with you when you picture opening day?" },
+        { "id": "bake-m3", "channel": "chat", "counselorId": "Mediator", "speaker": "user", "kind": "distractor", "timestamp": 9000, "text": "I keep having this dream where the oven breaks on opening day." },
+        { "id": "bake-m4", "channel": "chat", "counselorId": "Mediator", "speaker": "counselor", "kind": "counselor", "timestamp": 10000, "text": "Dreams like that often point at what feels out of your control." },
+        { "id": "bake-m5", "channel": "chat", "counselorId": "Mediator", "speaker": "user", "kind": "fact", "factId": "contract", "timestamp": 11000, "text": "Plus my teaching contract renews on May 1st, so I have to tell the school soon." },
+        { "id": "bake-m6", "channel": "chat", "counselorId": "Mediator", "speaker": "user", "kind": "filler", "timestamp": 12000, "text": "I told my sister about it over the weekend and she was thrilled." },
+        { "id": "bake-r2", "channel": "refinement", "speaker": "user", "kind": "update", "supersedes": "bake-c3", "timestamp": 13000, "text": "Update: Lena agreed to put in $25k instead of $10k." }
+      ],
+      "probes": [
+        { "id": "bake-p1", "category": "update", "channel": "chat", "counselorId": "Mediator", "text": "How much of the investment is Lena covering?", "gold": [{ "sourceId": "bake-r2", "grade": 2 }, { "sourceId": "bake-c3", "grade": 1 }] },
+        { "id": "bake-p2", "category": "implicit", "channel": "chat", "counselorId": "Commander", "text": "Is there a deadline with my school I should plan around?", "gold": [{ "sourceId": "bake-m5", "grade": 2 }] },
+        { "id": "bake-p3", "category": "multi", "channel": "chat", "counselorId": "Commander", "text": "Given my monthly rent and how long I could last, can I even afford this?", "gold": [{ "sourceId": "bake-c1", "grade": 2 }, { "sourceId": "bake-c5", "grade": 2 }] }
+      ]
+    }
+  ]
+}
