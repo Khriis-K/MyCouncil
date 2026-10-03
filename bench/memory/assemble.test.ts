@@ -115,3 +115,16 @@ describe('assemble', () => {
     expect(counts.chat / total).toBeCloseTo(0.65, 1);
   });
 });
+
+describe('assemble: multi probe with an update gold', () => {
+  test('adds the superseded fact at grade 1 next to the required grades', () => {
+    const content = syntheticContent();
+    content.probes[3].goldFactIds = ['f6', 'u2'];
+    const multi = assemble(content, meta).probes.find(p => p.category === 'multi')!;
+    expect(multi.gold.map(g => [g.sourceId, g.grade])).toEqual([
+      ['career-1-f6', 2],
+      ['career-1-u2', 2],
+      ['career-1-f2', 1],
+    ]);
+  });
+});

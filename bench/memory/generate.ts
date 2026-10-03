@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { config } from '../../server/config';
@@ -8,7 +8,7 @@ import { assemble } from './assemble';
 import { PROMPT_VERSION } from './content';
 import { pick, rngFor } from './rng';
 import { renderReview, sampleReviewProbes } from './review';
-import type { Dataset, Scenario } from './schema';
+import { datasetSchema, type Dataset, type Scenario } from './schema';
 import { assignSplits, DOMAINS, SCENARIOS_PER_DOMAIN } from './split';
 import { auditBias, renderReport, validateContent, validateScenario } from './validate';
 
@@ -175,26 +175,31 @@ async function mapPool<T, R>(items: T[], size: number, fn: (item: T) => Promise<
   return out;
 }
 
-export async function buildDataset(options: BuildOptions): Promise<BuildOutput> {
-  const seeds = options.seeds ?? planScenarios();
+interface Generated {
+  scenarios: Scenario[];
+  dropped: { id: string; reason: string }[];
+  raw: BuildOutput['raw'];
+}
+
+async function generateAll(seeds: ScenarioSeed[], options: BuildOptions): Promise<Generated> {
   const results = await mapPool(seeds, options.concurrency ?? DEFAULT_CONCURRENCY, seed => generateScenario(seed, options.llm));
-
-  const raw: BuildOutput['raw'] = {};
-  const scenarios: Scenario[] = [];
-  const dropped: { id: string; reason: string }[] = [];
+  const out: Generated = { scenarios: [], dropped: [], raw: {} };
   seeds.forEach((seed, i) => {
-    raw[seed.id] = { scenarioId: seed.id, promptVersion: PROMPT_VERSION, model: options.model, attempts: results[i].attempts };
-    if (results[i].scenario) scenarios.push(results[i].scenario!);
-    else dropped.push({ id: seed.id, reason: results[i].dropReason ?? 'unknown' });
+    out.raw[seed.id] = { scenarioId: seed.id, promptVersion: PROMPT_VERSION, model: options.model, attempts: results[i].attempts };
+    if (results[i].scenario) out.scenarios.push(results[i].scenario!);
+    else out.dropped.push({ id: seed.id, reason: results[i].dropReason ?? 'unknown' });
   });
+  return out;
+}
 
+function freeze(generated: Generated, meta: Record<string, unknown>): BuildOutput {
+  const { scenarios, dropped, raw } = generated;
   const dataset: Dataset = {
     version: 'v1',
     meta: {
-      generatorModel: options.model,
       promptVersion: PROMPT_VERSION,
-      generatedAt: options.date,
       seedScheme: `splits: ${SEED}:split:<domain> (stratified, scenario-level); assembly: sha256("assemble:<scenarioId>") -> mulberry32; personas: ${SEED}:persona:<scenarioId>`,
+      ...meta,
       dropped,
       sha256: createHash('sha256').update(JSON.stringify(scenarios)).digest('hex'),
     },
@@ -208,13 +213,47 @@ export async function buildDataset(options: BuildOptions): Promise<BuildOutput> 
   };
 }
 
+export async function buildDataset(options: BuildOptions): Promise<BuildOutput> {
+  const generated = await generateAll(options.seeds ?? planScenarios(), options);
+  return freeze(generated, { generatorModel: options.model, generatedAt: options.date });
+}
+
+/** Re-run only `ids` against an existing frozen dataset; everything else is kept byte-for-byte. */
+export async function regenerateScenarios(existing: Dataset, options: BuildOptions & { ids: string[] }): Promise<BuildOutput> {
+  if (existing.meta.generatorModel !== options.model) {
+    throw new Error(`model mismatch: dataset was generated with ${existing.meta.generatorModel}, not ${options.model}`);
+  }
+  const plan = planScenarios();
+  const seeds = options.ids.map(id => {
+    const seed = plan.find(p => p.id === id);
+    if (!seed) throw new Error(`unknown scenario id: ${id}`);
+    return seed;
+  });
+  const fresh = await generateAll(seeds, options);
+  const order = new Map(plan.map((p, i) => [p.id, i]));
+  const scenarios = [...existing.scenarios.filter(s => !options.ids.includes(s.id)), ...fresh.scenarios].sort(
+    (a, b) => order.get(a.id)! - order.get(b.id)!,
+  );
+  const previousDrops = (existing.meta.dropped as { id: string; reason: string }[]).filter(d => !options.ids.includes(d.id));
+  const regeneratedAt = { ...(existing.meta.regeneratedAt as Record<string, string> | undefined) };
+  for (const id of options.ids) regeneratedAt[id] = options.date;
+  return freeze(
+    { scenarios, dropped: [...previousDrops, ...fresh.dropped], raw: fresh.raw },
+    { generatorModel: existing.meta.generatorModel, generatedAt: existing.meta.generatedAt, regeneratedAt },
+  );
+}
+
 async function main() {
   if (!config.openRouterApiKey) throw new Error('OPENROUTER_API_KEY is missing: put it in .env.local');
-  const out = await buildDataset({
-    llm: generateText,
-    model: config.model,
-    date: new Date().toISOString().slice(0, 10),
-  });
+  const base = { llm: generateText, model: config.model, date: new Date().toISOString().slice(0, 10) };
+  const onlyFlag = process.argv.indexOf('--only');
+  const out =
+    onlyFlag === -1
+      ? await buildDataset(base)
+      : await regenerateScenarios(datasetSchema.parse(JSON.parse(readFileSync(path.join(DATA_DIR, 'scenarios.v1.json'), 'utf8'))), {
+          ...base,
+          ids: (process.argv[onlyFlag + 1] ?? '').split(',').filter(Boolean),
+        });
   mkdirSync(path.join(DATA_DIR, 'raw'), { recursive: true });
   for (const [id, record] of Object.entries(out.raw)) writeFileSync(path.join(DATA_DIR, 'raw', `${id}.json`), JSON.stringify(record, null, 2));
   writeFileSync(path.join(DATA_DIR, 'scenarios.v1.json'), JSON.stringify(out.dataset, null, 2));

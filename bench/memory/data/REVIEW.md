@@ -34,7 +34,23 @@
 - [ ] probe is realistic for MyCouncil
 - [ ] no other turn also answers it
 
-## 3. career-4 / career-4-p1 (explicit, test)
+## 3. finances-1 / finances-1-p1 (explicit, test)
+
+**Probe** (chat with Seeker): I'm trying to understand our cash flow - so for the past four months, we've been spending more than Jordan brings home each month, right? That's why our emergency fund has dropped so much?
+
+**Gold**
+- grade 2, chat with Diplomat, distance 49: My maternity leave is unpaid, so we've been living entirely on Jordan's $4,100 monthly take-home pay since October.
+
+**Closest distractors** (by content-word overlap with the probe)
+- chat with Guardian, overlap 0.04: Jordan and I got married in February last year at a venue in the Hill Country.
+- chat with Diplomat, overlap 0.04: The tech startup Jordan works for is focused on educational software for schools.
+- chat with Diplomat, overlap 0.04: Our apartment is a two-bedroom in South Austin, which we moved into about eighteen months ago.
+
+- [ ] gold is correct and sufficient
+- [ ] probe is realistic for MyCouncil
+- [ ] no other turn also answers it
+
+## 4. career-4 / career-4-p1 (explicit, test)
 
 **Probe** (chat with Analyst): I keep thinking about what Emily said about the grandkids. If I moved to Denver to be near my daughter and her two kids, would that give me the daily purpose I'm missing, or would I just be running away from the real problem?
 
@@ -50,33 +66,17 @@
 - [ ] probe is realistic for MyCouncil
 - [ ] no other turn also answers it
 
-## 4. career-1 / career-1-p1 (explicit, test)
+## 5. family-and-caregiving-5 / family-and-caregiving-5-p1 (explicit, test)
 
-**Probe** (debate Seeker|Analyst): I've been thinking about the salary difference—I'm making $95,000 while my roommate got $110,000 at Google. Is that gap significant enough that I should consider it a real mark against staying at Nexus Labs?
-
-**Gold**
-- grade 2, refinement, distance 26: I'm making $95,000 a year, which is about $15,000 less than what my roommate got at Google.
-
-**Closest distractors** (by content-word overlap with the probe)
-- chat with Seeker, overlap 0.07: My roommate at Google actually seems kind of bored with his work, to be honest, even though the pay is better.
-- chat with Diplomat, overlap 0.07: The CTO, who's named David, went to Stanford and worked at Facebook before starting Nexus Labs three years ago.
-- refinement, overlap 0.00: Amazon actually reached out again last month to see if I'd reconsider, but I didn't respond because I felt weird about it.
-
-- [ ] gold is correct and sufficient
-- [ ] probe is realistic for MyCouncil
-- [ ] no other turn also answers it
-
-## 5. relocation-1 / relocation-1-p1 (explicit, test)
-
-**Probe** (chat with Guardian): I'm realizing that if we move to Denver, I'll lose the three-times-a-week help from my mom, which is honestly the main thing keeping me afloat right now with Emma. That's a huge factor I need to weigh.
+**Probe** (chat with Seeker): I've been running the numbers again, and with my $52,000 salary, it feels like I'd barely be breaking even after childcare costs. Is it even worth it financially?
 
 **Gold**
-- grade 2, chat with Seeker, distance 24: My mom lives twenty minutes away and she's been coming over three times a week to help with Emma while I try to catch up on sleep.
+- grade 2, chat with Seeker, distance 34: I'm only making $52,000 a year at the firm, and after taxes that doesn't leave much once we pay for full-time care.
 
 **Closest distractors** (by content-word overlap with the probe)
-- chat with Guardian, overlap 0.11: My mom keeps asking when we're going to decide, which honestly just adds to the pressure I'm already feeling about this whole thing.
-- chat with Seeker, overlap 0.06: Emma's been sleeping a bit better this week, maybe three-hour stretches, which makes me feel slightly more human.
-- refinement, overlap 0.06: Liam and I had a long talk last night after Emma went down, and he said he'd turn down the job if I really couldn't handle moving right now.
+- debate Seeker|Analyst, overlap 0.00: Derek grew up with both parents working full-time, so he doesn't understand why I'm so conflicted about this.
+- debate Seeker|Analyst, overlap 0.00: My best friend Rachel has three kids and keeps telling me it gets easier, but I don't see how.
+- chat with Analyst, overlap 0.00: Derek did take a week off when Emma was born, but he used up all his PTO and can't take more time right now.
 
 - [ ] gold is correct and sufficient
 - [ ] probe is realistic for MyCouncil
@@ -114,49 +114,49 @@
 - [ ] probe is realistic for MyCouncil
 - [ ] no other turn also answers it
 
-## 8. romantic-relationship-6 / romantic-relationship-6-p2 (implicit, test)
+## 8. career-1 / career-1-p2 (implicit, test)
 
-**Probe** (chat with Diplomat): I keep thinking about how this decision might echo for my kids - do I want them to see relationships as something that requires careful building over time, or as leaps of faith?
+**Probe** (chat with Guardian): Do you think I have enough exposure to senior technical decision-making at this stage of my career, or should I be in a more structured learning environment?
 
 **Gold**
-- grade 2, chat with Diplomat, distance 39: When I mentioned my concerns about moving, Marcus said that if I really loved him I would find a way to make it work, which honestly made me feel guilty and pressured.
+- grade 2, chat with Guardian, distance 28: The team is only twelve people total, so I get to work directly with the CTO on architecture decisions pretty regularly.
 
 **Closest distractors** (by content-word overlap with the probe)
-- refinement, overlap 0.04: My ex-husband still lives in the area and sees the kids every other weekend, so moving would complicate that custody arrangement.
-- refinement, overlap 0.04: The nursing assistant program I completed was here in town at the community college, and I have good relationships with people who could help me find work.
-- debate Diplomat|Guardian, overlap 0.00: My son keeps asking if we're going to move away from Grandma, and I haven't known what to tell him yet.
+- refinement, overlap 0.00: Amazon actually reached out again last month to see if I'd reconsider, but I didn't respond because I felt weird about it.
+- chat with Diplomat, overlap 0.00: The CTO, who's named David, went to Stanford and worked at Facebook before starting Nexus Labs three years ago.
+- chat with Analyst, overlap 0.00: Sarah just got back from a conference in Austin and seemed really energized about some new product ideas she heard about there.
 
 - [ ] gold is correct and sufficient
 - [ ] probe is realistic for MyCouncil
 - [ ] no other turn also answers it
 
-## 9. career-6 / career-6-p2 (implicit, test)
+## 9. family-and-caregiving-1 / family-and-caregiving-1-p2 (implicit, test)
 
-**Probe** (chat with Guardian): If I take the job, would I even be able to fulfill the commitments I've already made to my art? I feel like I'd be letting people down and damaging my reputation.
+**Probe** (chat with Seeker): I'm worried that if I take dad in, I'll end up having another breakdown like I did during my divorce. Is it wrong to choose my own stability over family obligation?
 
 **Gold**
-- grade 2, chat with Guardian, distance 41: I currently have three mural projects lined up through April that would pay about $8,000 total.
+- grade 2, chat with Seeker, distance 36: I had my own apartment for the first time just two years ago, after my divorce, and it's been really important for my mental health.
 
 **Closest distractors** (by content-word overlap with the probe)
-- chat with Seeker, overlap 0.05: The creative director seemed really impressed with my portfolio, especially my street art series.
-- chat with Guardian, overlap 0.05: Last year I made most of my income from commission portraits and smaller commercial projects.
-- chat with Guardian, overlap 0.00: The Bushwick Gallery space is this beautiful converted warehouse with amazing natural light.
+- refinement, overlap 0.06: Michael called me yesterday just to complain about his job, didn't even ask about dad.
+- chat with Seeker, overlap 0.05: Dad was a machinist for 35 years and always prided himself on being independent and providing for us.
+- chat with Diplomat, overlap 0.00: St. Mary's ICU is one of the busiest in Portland, we're always understaffed on weekends.
 
 - [ ] gold is correct and sufficient
 - [ ] probe is realistic for MyCouncil
 - [ ] no other turn also answers it
 
-## 10. family-and-caregiving-3 / family-and-caregiving-3-p2 (implicit, test)
+## 10. romantic-relationship-4 / romantic-relationship-4-p2 (implicit, test)
 
-**Probe** (chat with Seeker): If I go help my mom multiple days a week, I'm worried I'll completely burn out and won't be able to function at work at all. Is that a legitimate concern or am I just making excuses?
+**Probe** (debate Seeker|Analyst): I'm worried that even if I try to make it work in Seattle, I'll end up feeling completely disconnected and alone, which would probably poison the relationship anyway. Is that a legitimate concern or am I catastrophizing?
 
 **Gold**
-- grade 2, debate Diplomat|Guardian, distance 39: I tried talking to my manager last Monday about reducing my hours temporarily, but she said we're already understaffed in our unit.
+- grade 2, chat with Diplomat, distance 34: I visited Seattle with him last month and honestly felt completely isolated – I didn't know anyone and the art scene seemed really cliquish.
 
 **Closest distractors** (by content-word overlap with the probe)
-- refinement, overlap 0.04: My mom has a neighbor who checks on her occasionally, a woman named Patricia who's very sweet.
-- chat with Seeker, overlap 0.00: The drive from Chicago to Milwaukee takes me about 90 minutes each way with traffic.
-- chat with Seeker, overlap 0.00: My mom's apartment is on the second floor with no elevator, which makes it harder for her to get around.
+- chat with Analyst, overlap 0.08: I actually grew up in Seattle until I was ten, so it's not completely foreign to me, though everything's changed since then.
+- chat with Diplomat, overlap 0.04: The gallery that's showing my work is in Williamsburg and it's a pretty well-respected space for emerging artists.
+- refinement, overlap 0.04: I've been painting seriously for about six years now, mostly abstract work with some figurative elements.
 
 - [ ] gold is correct and sufficient
 - [ ] probe is realistic for MyCouncil
@@ -196,52 +196,52 @@
 - [ ] probe is realistic for MyCouncil
 - [ ] no other turn also answers it
 
-## 13. romantic-relationship-6 / romantic-relationship-6-p4 (multi, test)
+## 13. friendship-and-social-life-2 / friendship-and-social-life-2-p4 (multi, test)
 
-**Probe** (debate Seeker|Analyst): The logistics feel impossible - I'd have to find new jobs with flexible scheduling in a city where I have no connections, all while dealing with the fact that Marcus's daughter and my son clash constantly.
+**Probe** (chat with Analyst): Given that Marcus moved away for work and we used to see each other regularly for coffee, do you think distance is the main reason our whole group fell apart, or is it deeper than that?
 
 **Gold**
-- grade 2, debate Diplomat|Guardian, distance 29: I work as a nursing assistant at Memorial Hospital and also do weekend shifts at a pharmacy, and both jobs have amazing flexibility that lets me handle school pickups and emergencies.
-- grade 2, refinement, distance 32: Marcus has a seven-year-old daughter from his previous marriage who lives with him full-time, and she doesn't get along with my son at all.
+- grade 2, chat with Analyst, distance 29: Marcus and I used to grab coffee every other week when we both worked downtown, but he moved to Oakland in March for a new job.
+- grade 2, chat with Seeker, distance 30: Jenna has been dealing with a really demanding consulting job since last fall and barely has time for anything social anymore.
 
 **Closest distractors** (by content-word overlap with the probe)
-- chat with Analyst, overlap 0.11: Denver's cost of living is higher than where we are now, and Marcus says his salary increase would cover it but I'd need to find new jobs there.
-- chat with Diplomat, overlap 0.09: Marcus's new position would be as a regional sales director, which is a significant step up from what he does now.
-- chat with Guardian, overlap 0.07: Marcus's ex-wife lives in Portland, so if we moved to Denver his daughter would be pretty far from her mom, which I know worries him.
+- chat with Analyst, overlap 0.12: The coffee shop where Marcus and I used to meet closed down, which somehow feels symbolic of everything.
+- chat with Analyst, overlap 0.07: Our group chat is called 'The Core Four' which now feels ironic given how little we actually talk.
+- chat with Guardian, overlap 0.04: For Sarah's engagement, I'm not even sure if I'll be invited to the wedding given how distant we've become.
 
 - [ ] gold is correct and sufficient
 - [ ] probe is realistic for MyCouncil
 - [ ] no other turn also answers it
 
-## 14. romantic-relationship-5 / romantic-relationship-5-p4 (multi, test)
+## 14. finances-4 / finances-4-p4 (multi, test)
 
-**Probe** (debate Diplomat|Guardian): Between the extra commitments at school and my sister living with us, I feel like there's no space in my life—or my home—for Marcus and me to reconnect. Where do I even start?
+**Probe** (chat with Seeker): If we moved to Dallas where housing is cheaper, and I got the salary increase, would that actually put us in a better position to hit our retirement savings target, or would we still fall short?
 
 **Gold**
-- grade 2, debate Seeker|Analyst, distance 37: I teach ninth grade English, and this semester I took on advising the drama club too because no one else would do it.
-- grade 2, chat with Analyst, distance 30: My sister Rachel moved in with us in August after her husband left, and she's been sleeping in our guest room ever since.
+- grade 2, chat with Guardian, distance 37: Housing costs in Dallas are actually about 15% lower than Charlotte, so we could probably sell our house here and buy something comparable there with money left over.
+- grade 2, debate Diplomat|Guardian, distance 28: We have $340,000 saved in our retirement accounts right now, and our financial advisor says we need at least $1.2 million to retire comfortably.
 
 **Closest distractors** (by content-word overlap with the probe)
-- chat with Analyst, overlap 0.09: Marcus used to plan surprise date nights for us, but he stopped doing that maybe a year ago.
-- debate Diplomat|Guardian, overlap 0.05: Marcus has been working long hours too, so it's not like I'm the only one who's been busy lately.
-- chat with Diplomat, overlap 0.05: Marcus works in software development, and his company just launched a new product, so he's been stressed too.
+- refinement, overlap 0.04: The Dallas office is about twice the size of what I manage now, so I'd go from supervising 12 people to around 25.
+- chat with Seeker, overlap 0.00: I've worked my way up from assistant manager to regional manager, and there were definitely some tough years early on when I wasn't sure I'd make it.
+- chat with Analyst, overlap 0.00: The health insurance continuation would bridge the gap until Medicare kicks in, which gives me some peace of mind about that piece at least.
 
 - [ ] gold is correct and sufficient
 - [ ] probe is realistic for MyCouncil
 - [ ] no other turn also answers it
 
-## 15. education-6 / education-6-p4 (multi, test)
+## 15. relocation-5 / relocation-5-p4 (multi, test)
 
-**Probe** (debate Seeker|Analyst): Given what my mom can do and the gaps that would leave, could I actually piece together a workable childcare plan without paying for full-time care?
+**Probe** (refinement): If the extra money would help us afford childcare, and we'd have family help within a reasonable distance, does that change the isolation risk I'm worried about?
 
 **Gold**
-- grade 2, debate Diplomat|Guardian, distance 30: My take-home pay after taxes and health insurance is around $2,300 per month.
-- grade 2, chat with Analyst, distance 43: My mom offered to watch Emma two days a week, but she has her own part-time job at the library on Mondays, Wednesdays, and Fridays.
+- grade 2, chat with Guardian, distance 29: My partner's new salary would be $95,000, which is $20,000 more than what they make now.
+- grade 2, chat with Guardian, distance 37: My sister lives in Seattle, about three hours north of Portland, and she's been begging us to move closer so she can help with Emma.
 
 **Closest distractors** (by content-word overlap with the probe)
-- chat with Analyst, overlap 0.04: I teach fourth grade and I had such a great class last year before I went on leave.
-- chat with Seeker, overlap 0.04: My student loan payment is $340 per month on the income-based repayment plan.
-- chat with Diplomat, overlap 0.00: The pediatrician is Dr. Saunders at Westview Pediatrics, and we see her every month.
+- chat with Seeker, overlap 0.00: When we went to that wedding in Portland, we stayed in this cute Airbnb in the Alberta Arts District.
+- chat with Seeker, overlap 0.00: My brother in Phoenix just had his second kid, so my mom is pretty tied up with helping him out right now.
+- chat with Diplomat, overlap 0.00: The rain in Portland seems relentless from what I've heard, and I'm already struggling with my mood in general.
 
 - [ ] gold is correct and sufficient
 - [ ] probe is realistic for MyCouncil
@@ -281,18 +281,18 @@
 - [ ] probe is realistic for MyCouncil
 - [ ] no other turn also answers it
 
-## 18. education-1 / education-1-p5 (update, test)
+## 18. career-5 / career-5-p5 (update, test)
 
-**Probe** (chat with Diplomat): Now that I know my original research direction might be scooped anyway, does that change the calculus? Should I be more willing to pivot if that work won't be publishable?
+**Probe** (refinement): Now that I have until March 1st instead of mid-February, should I use the extra time to explore the decision more deeply, or will that just make me more anxious and confused?
 
 **Gold**
-- grade 2, chat with Guardian, distance 8: Actually, I just found out that another lab published findings very similar to my protein interaction data last week, so my original project might be scooped anyway.
-- grade 1, debate Seeker|Analyst, distance 35: I've already spent eighteen months collecting data on protein interactions, and switching now would mean that work might not be publishable.
+- grade 2, chat with Analyst, distance 11: Actually, the principal just emailed yesterday saying they're extending my deadline to March 1st because the board meeting got rescheduled.
+- grade 1, chat with Guardian, distance 25: The principal told me I need to decide by February 15th because they have to post the position externally if I turn it down.
 
 **Closest distractors** (by content-word overlap with the probe)
-- debate Diplomat|Guardian, overlap 0.00: Dr. Chen's lab published three Nature papers in the last two years, which is really impressive.
-- debate Seeker|Analyst, overlap 0.00: Dr. Harrison mentioned that the computational modeling involves using Python and machine learning frameworks, which I've never touched before.
-- chat with Guardian, overlap 0.00: In undergrad at Ohio State, I loved being in the lab and doing hands-on experiments, which is why I chose a wet-lab PhD program.
+- chat with Analyst, overlap 0.04: Tom has been applying to full-time positions, but the accounting market is tough right now and he's had several interviews that didn't lead anywhere.
+- chat with Diplomat, overlap 0.03: The department chair office is this windowless room in the basement next to the furnace, and just thinking about being down there instead of in my bright third-floor classroom makes me feel claustrophobic.
+- debate Diplomat|Guardian, overlap 0.00: One of the first-year teachers I mentor, Jessica, told me last week that she's thinking about quitting because she feels overwhelmed and doesn't think she can handle another year.
 
 - [ ] gold is correct and sufficient
 - [ ] probe is realistic for MyCouncil
@@ -315,18 +315,18 @@
 - [ ] probe is realistic for MyCouncil
 - [ ] no other turn also answers it
 
-## 20. career-1 / career-1-p5 (update, test)
+## 20. friendship-and-social-life-4 / friendship-and-social-life-4-p5 (update, test)
 
-**Probe** (chat with Seeker): Now that I know we have $11 million total in funding with the new investment, should that change how I think about the company's stability and my decision to stay?
+**Probe** (chat with Analyst): I was just thinking about how we did see each other briefly on the 18th, even though it was awkward. Should I reference that when I reach out, or does that make it worse?
 
 **Gold**
-- grade 2, chat with Seeker, distance 3: Actually, I found out yesterday that we just secured another $3 million from an existing investor, so the runway is even longer than I thought.
-- grade 1, chat with Guardian, distance 25: The company just closed a Series A round of $8 million in October, so there's funding for at least two years according to our CEO.
+- grade 2, chat with Analyst, distance 12: Actually, I forgot we did grab coffee on December 18th for about thirty minutes, but it felt really rushed and awkward.
+- grade 1, chat with Guardian, distance 29: The last time we actually hung out was December 10th, right before he told me about the move.
 
 **Closest distractors** (by content-word overlap with the probe)
-- chat with Analyst, overlap 0.05: Sarah just got back from a conference in Austin and seemed really energized about some new product ideas she heard about there.
-- chat with Analyst, overlap 0.05: That TechCrunch article got shared around by a lot of people I know, which was embarrassing but also kind of validating.
-- refinement, overlap 0.00: Amazon actually reached out again last month to see if I'd reconsider, but I didn't respond because I felt weird about it.
+- refinement, overlap 0.00: We have a group chat with four other friends from college who are all scattered around the country now.
+- chat with Diplomat, overlap 0.00: Marcus and I met in our sophomore year engineering program at Oregon State, in a thermodynamics class.
+- debate Diplomat|Guardian, overlap 0.00: Marcus has been looking at apartments in the Capitol Hill area of Denver, which he says has a good scene.
 
 - [ ] gold is correct and sufficient
 - [ ] probe is realistic for MyCouncil

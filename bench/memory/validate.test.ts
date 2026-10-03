@@ -165,3 +165,23 @@ describe('auditBias', () => {
     expect(md).toMatch(/same-channel/i);
   });
 });
+
+describe('validateContent: multi probes may use an update as one of their gold ids', () => {
+  test('accepts a fact plus an update', () => {
+    const c = clone();
+    c.probes[3].goldFactIds = ['f6', 'u2'];
+    expect(validateContent(c).ok).toBe(true);
+  });
+
+  test('still rejects an update id on explicit and implicit probes', () => {
+    const c = clone();
+    c.probes[1].goldFactIds = ['u1'];
+    expect(errorsOf(c)).toMatch(/u1/);
+  });
+
+  test('rejects a multi probe whose gold includes both a fact and the update that supersedes it', () => {
+    const c = clone();
+    c.probes[3].goldFactIds = ['f1', 'u1'];
+    expect(errorsOf(c)).toMatch(/supersed/);
+  });
+});

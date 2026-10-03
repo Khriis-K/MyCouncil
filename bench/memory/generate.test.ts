@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, test } from 'vitest';
 import { PROMPT_VERSION } from './content';
-import { buildDataset, buildMessages, extractJson, generateScenario, planScenarios } from './generate';
+import { buildDataset, buildMessages, extractJson, generateScenario, planScenarios, regenerateScenarios } from './generate';
 import { datasetSchema } from './schema';
 import { syntheticContent } from './testContent';
 
@@ -125,5 +125,41 @@ describe('buildDataset', () => {
     expect(out.dataset.scenarios).toHaveLength(47);
     expect(out.dataset.meta.dropped).toEqual([expect.objectContaining({ id: 'career-2' })]);
     expect(out.raw['career-2'].attempts).toHaveLength(3);
+  });
+});
+
+describe('regenerateScenarios', () => {
+  const failing = async (messages: { content: string }[]) =>
+    messages.map(m => m.content).join().includes('SCENARIO career-2 ') ? 'garbage' : JSON.stringify(syntheticContent());
+  const opts = { model: 'test/model', date: '2026-10-03', concurrency: 8 };
+
+  test('fills a dropped scenario, keeps the rest untouched, and refreshes meta', async () => {
+    const before = await buildDataset({ ...opts, llm: failing });
+    const after = await regenerateScenarios(before.dataset, { ...opts, llm: good, ids: ['career-2'] });
+    expect(after.dataset.scenarios).toHaveLength(48);
+    expect(after.dataset.meta.dropped).toEqual([]);
+    const kept = after.dataset.scenarios.filter(s => s.id !== 'career-2');
+    expect(kept).toEqual(before.dataset.scenarios);
+    expect(after.dataset.scenarios.find(s => s.id === 'career-2')?.split).toBe(planScenarios().find(p => p.id === 'career-2')!.split);
+    const sha = createHash('sha256').update(JSON.stringify(after.dataset.scenarios)).digest('hex');
+    expect(after.dataset.meta.sha256).toBe(sha);
+    expect(Object.keys(after.raw)).toEqual(['career-2']);
+  });
+
+  test('keeps the drop record when the retry fails again, and keeps scenarios in plan order', async () => {
+    const before = await buildDataset({ ...opts, llm: failing });
+    const after = await regenerateScenarios(before.dataset, { ...opts, llm: failing, ids: ['career-2'] });
+    expect(after.dataset.scenarios).toHaveLength(47);
+    expect(after.dataset.meta.dropped).toEqual([expect.objectContaining({ id: 'career-2' })]);
+  });
+
+  test('refuses to mix generator models', async () => {
+    const before = await buildDataset({ ...opts, llm: good });
+    await expect(regenerateScenarios(before.dataset, { ...opts, model: 'other/model', llm: good, ids: ['career-2'] })).rejects.toThrow(/model/);
+  });
+
+  test('rejects an id that is not in the plan', async () => {
+    const before = await buildDataset({ ...opts, llm: good });
+    await expect(regenerateScenarios(before.dataset, { ...opts, llm: good, ids: ['nope-1'] })).rejects.toThrow(/nope-1/);
   });
 });

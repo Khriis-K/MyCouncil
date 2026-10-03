@@ -52,10 +52,15 @@ export function validateContent(raw: unknown): ContentResult {
     if (p.goldFactIds.length !== GOLD_ARITY[p.category]) {
       errors.push(`probe ${p.id} (${p.category}) needs ${GOLD_ARITY[p.category]} gold id(s)`);
     }
-    const allowed = p.category === 'update' ? updateIds : factIds;
+    const allowed = p.category === 'update' ? updateIds : p.category === 'multi' ? new Set([...factIds, ...updateIds]) : factIds;
     for (const id of p.goldFactIds) {
-      if (!allowed.has(id)) errors.push(`probe ${p.id} (${p.category}) gold ${id} is not a ${p.category === 'update' ? 'update' : 'fact'} id`);
+      if (!allowed.has(id)) errors.push(`probe ${p.id} (${p.category}) gold ${id} is not an allowed id for this category`);
       else if (containment(textOf.get(id)!, c.dilemma) >= MAX_DILEMMA_OVERLAP) errors.push(`dilemma overlaps gold ${id} (probe ${p.id})`);
+    }
+    for (const u of c.updates) {
+      if (p.category !== 'update' && p.goldFactIds.includes(u.id) && p.goldFactIds.includes(u.supersedes)) {
+        errors.push(`probe ${p.id} gold has update ${u.id} and the fact it supersedes (${u.supersedes})`);
+      }
     }
   }
 

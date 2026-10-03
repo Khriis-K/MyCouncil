@@ -116,8 +116,10 @@ export function assemble(content: ScenarioContent, meta: { id: string; domain: s
 
   const probes: Probe[] = content.probes.map(p => {
     const required = p.goldFactIds.map(id => gold(id, 2));
-    const superseded =
-      p.category === 'update' ? p.goldFactIds.map(id => gold(content.updates.find(u => u.id === id)!.supersedes, 1)) : [];
+    const superseded = p.goldFactIds
+      .map(id => content.updates.find(u => u.id === id)?.supersedes)
+      .filter((id): id is string => !!id)
+      .map(id => gold(id, 1));
     const goldTurns = [...required, ...superseded];
     const thread =
       rng() < SAME_CHANNEL_SHARE
