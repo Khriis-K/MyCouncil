@@ -1,4 +1,4 @@
-import { CouncilResponse, ReflectionFocus } from "../types";
+import { CouncilResponse, MemorySource, RecalledMemory, ReflectionFocus } from "../types";
 
 const API_URL = '/api/summon';
 
@@ -135,8 +135,9 @@ export const sendCounselorChat = async (
   dilemma: string,
   mbti: string | null,
   history: { sender: 'user' | 'counselor'; text: string }[],
-  message: string
-): Promise<{ response: string }> => {
+  message: string,
+  memorySources: MemorySource[]
+): Promise<{ response: string; memory?: { used: RecalledMemory[]; fallback?: string } }> => {
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
@@ -146,7 +147,8 @@ export const sendCounselorChat = async (
         dilemma,
         mbti,
         history,
-        message
+        message,
+        memorySources
       })
     });
 

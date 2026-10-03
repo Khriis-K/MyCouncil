@@ -295,6 +295,21 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
                                                                     >
                                                                       {msg.text}
                                                                     </ReactMarkdown>
+                                                                    {msg.recalled && msg.recalled.length > 0 && (
+                                                                      <details className="mt-2 text-xs text-[var(--text-secondary)] opacity-80">
+                                                                        <summary className="cursor-pointer select-none">Recalled from earlier ({msg.recalled.length})</summary>
+                                                                        <ul className="mt-1 space-y-1">
+                                                                          {msg.recalled.map((r, i) => (
+                                                                            <li key={i}>
+                                                                              <span className="font-semibold">
+                                                                                {r.channel === 'chat' ? `Chat with ${r.counselorId}` : r.channel === 'debate' ? 'Debate' : 'Added context'}:
+                                                                              </span>{' '}
+                                                                              "{r.text}"
+                                                                            </li>
+                                                                          ))}
+                                                                        </ul>
+                                                                      </details>
+                                                                    )}
                                                                   </div>                    </div>
                   ))
                 )}

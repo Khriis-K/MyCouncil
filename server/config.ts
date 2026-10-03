@@ -8,6 +8,13 @@ export const config = {
   env: process.env.NODE_ENV || 'development',
   openRouterApiKey: process.env.OPENROUTER_API_KEY,
   model: process.env.OPENROUTER_MODEL || 'amazon/nova-lite-v1',
+  // Placeholder defaults, to be tuned on the dev split in a later ticket.
+  memory: {
+    enabled: process.env.MEMORY_ENABLED !== '0',
+    k: 5,
+    candidatePool: 30,
+    recentWindow: 6,
+  },
   rateLimit: {
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: process.env.NODE_ENV === 'production' ? 5 : 100,

@@ -99,3 +99,4 @@ GEMINI.md
 !.claude/settings.json
 !.claude/skills/
 __pycache__/
+.cache/

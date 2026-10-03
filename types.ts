@@ -73,9 +73,28 @@ export interface CouncilResponse {
   }[];
 }
 
+export type MemoryChannel = 'refinement' | 'chat' | 'debate';
+
+export interface MemorySource {
+  id: string;
+  channel: MemoryChannel;
+  speaker: 'user' | 'counselor';
+  counselorId?: string;
+  debatePairId?: string;
+  text: string;
+  timestamp: number;
+}
+
+export interface RecalledMemory {
+  text: string;
+  channel: MemoryChannel;
+  counselorId?: string;
+}
+
 export interface ChatMessage {
   id: string;
   sender: 'user' | 'counselor';
   text: string;
   timestamp: number;
+  recalled?: RecalledMemory[];
 }

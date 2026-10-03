@@ -7,6 +7,8 @@ import { buildSystemPrompt, buildDebateInjectionPrompt, buildChatPrompt } from '
 import { summonSchema, debateInjectionSchema, chatSchema } from './schemas';
 import { config } from './config';
 import { generateText } from './llm';
+import { recallForChat } from './memory/chatMemory';
+import { formatMemoriesForPrompt } from './memory/format';
 
 const app = express();
 
@@ -165,7 +167,7 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
-    const { counselorId, dilemma, mbti, history, message } = validationResult.data;
+    const { counselorId, dilemma, mbti, history, message, memorySources } = validationResult.data;
 
     if (!config.openRouterApiKey) {
       return res.status(500).json({ error: "Server misconfiguration: API Key missing" });
@@ -182,7 +184,17 @@ app.post('/api/chat', async (req, res) => {
       return res.status(404).json({ error: "Counselor not found for this MBTI type" });
     }
 
-    const prompt = buildChatPrompt(dilemma, history as any, message, counselor, mbtiKey);
+    const recall = await recallForChat({ counselorId, message, sources: memorySources, settings: config.memory });
+    // Older turns are reachable through retrieval, so only trim when retrieval actually ran.
+    const promptHistory = recall.fallback ? history : history.slice(-config.memory.recentWindow);
+    const prompt = buildChatPrompt(dilemma, promptHistory, message, counselor, mbtiKey, formatMemoriesForPrompt(recall.used, {}));
+
+    if (recall.trace) {
+      const { timingsMs, cache } = recall.trace;
+      console.log(`[memory] chat idx=${recall.trace.indexSize} used=${recall.used.length} total=${Math.round(timingsMs.total)}ms cache=${cache.hits}/${cache.misses}`);
+    } else {
+      console.log(`[memory] chat skipped (${recall.fallback})`);
+    }
 
     console.log(`Generating chat response for ${counselor.title}...`);
     
@@ -190,7 +202,13 @@ app.post('/api/chat', async (req, res) => {
 
     console.log('AI Chat Response:', text.substring(0, 100) + '...');
 
-    res.json({ response: text.trim() });
+    res.json({
+      response: text.trim(),
+      memory: {
+        used: recall.used.map(u => ({ id: u.id, sourceId: u.sourceId, text: u.text, channel: u.channel, counselorId: u.counselorId })),
+        fallback: recall.fallback,
+      },
+    });
 
   } catch (error) {
     console.error("Error processing chat:", error);

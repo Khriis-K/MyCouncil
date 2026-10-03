@@ -13,6 +13,7 @@ import { COUNSELORS, TENSION_PAIRS } from './constants';
 import { fetchCouncilAnalysis } from './services/CouncilService';
 import { buildCounselorsFromResponse, buildTensionPairs } from './utils/counselorMapper';
 import { useChat } from './hooks/useChat';
+import { buildMemorySources } from './utils/memorySources';
 
 const estimateLoadTime = (dilemmaLength: number, councilSize: number): number => {
   const baseTime = 12000; // Adjusted base time (was 15000)
@@ -78,7 +79,7 @@ const App: React.FC = () => {
   const [originalSummary, setOriginalSummary] = useState<string>(''); // Store initial summary, never changes
   const [isInitialRender, setIsInitialRender] = useState(false); // For initial counselor animation
   const [loadingMessage, setLoadingMessage] = useState<string>(''); // For center bubble during refinement
-  const [refinementHistory, setRefinementHistory] = useState<string[]>([]); // Track all refinement contexts
+  const [refinementHistory, setRefinementHistory] = useState<{ text: string; timestamp: number }[]>([]); // Track all refinement contexts
   const [estimatedTimeMs, setEstimatedTimeMs] = useState<number>(0);
   
   // Highlight states
@@ -188,7 +189,7 @@ const App: React.FC = () => {
     // removed setLoadingMessage to avoid subtitle during refinement
     
     // Store refinement in history
-    setRefinementHistory(prev => [...prev, additionalContext]);
+    setRefinementHistory(prev => [...prev, { text: additionalContext, timestamp: Date.now() }]);
     
     try {
       // Call API with refinement data
@@ -439,7 +440,7 @@ const App: React.FC = () => {
           onClose={closeOverlay}
           chatMessages={chatHistory[selectedCounselor.id] || []}
           isTyping={isTyping[selectedCounselor.id] || false}
-          onSendMessage={(msg) => sendMessage(selectedCounselor.id, msg, dilemma, selectedMBTI)}
+          onSendMessage={(msg) => sendMessage(selectedCounselor.id, msg, dilemma, selectedMBTI, buildMemorySources({ chatHistory, refinements: refinementHistory }))}
         />
       )}
 
@@ -448,7 +449,7 @@ const App: React.FC = () => {
         <DilemmaHistoryOverlay
           dilemma={dilemma}
           originalSummary={originalSummary}
-          refinementHistory={refinementHistory}
+          refinementHistory={refinementHistory.map(r => r.text)}
           onClose={closeOverlay}
           onAddMoreContext={handleAddMoreContext}
           onRestartScenario={handleRestartScenario}
