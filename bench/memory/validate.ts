@@ -1,4 +1,5 @@
 import { contentWords } from '../../server/memory/stopwords';
+import { threadKey } from './assemble';
 import { contentSchema, type ScenarioContent } from './content';
 import { scenarioSchema, type Scenario } from './schema';
 
@@ -35,7 +36,7 @@ export function validateContent(raw: unknown): ContentResult {
   const errors: string[] = [];
 
   const ids = [...c.facts, ...c.updates, ...c.distractors, ...c.probes].map(x => x.id);
-  for (const id of new Set(ids.filter((id, i) => ids.indexOf(id) !== i))) errors.push(`duplicate id: ${id}`);
+  for (const id of duplicates(ids)) errors.push(`duplicate id: ${id}`);
 
   const factIds = new Set(c.facts.map(f => f.id));
   const updateIds = new Set(c.updates.map(u => u.id));
@@ -67,7 +68,7 @@ export function validateScenario(scenario: Scenario): string[] {
   const errors: string[] = [];
 
   const ids = scenario.timeline.map(e => e.id);
-  for (const id of new Set(ids.filter((id, i) => ids.indexOf(id) !== i))) errors.push(`duplicate timeline id: ${id}`);
+  for (const id of duplicates(ids)) errors.push(`duplicate timeline id: ${id}`);
 
   const byId = new Map(scenario.timeline.map(e => [e.id, e]));
   for (const p of scenario.probes) {
@@ -102,8 +103,7 @@ const median = (xs: number[]) => {
   const s = [...xs].sort((a, b) => a - b);
   return s.length ? (s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2) : 0;
 };
-const threadOf = (e: { channel: string; counselorId?: string; debatePairId?: string }) =>
-  e.channel === 'chat' ? `chat:${e.counselorId}` : e.channel === 'debate' ? `debate:${e.debatePairId}` : 'refinement';
+const duplicates = (ids: string[]) => [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
 
 /** Report-only: measures how easy the benchmark is for keyword matching and how it is spread. Never used to filter. */
 export function auditBias(scenarios: Scenario[]): BiasAudit {
@@ -118,7 +118,7 @@ export function auditBias(scenarios: Scenario[]): BiasAudit {
       const required = p.gold.filter(g => g.grade === 2);
       // Best-matching required gold: the most favourable case for a keyword matcher.
       overlaps[p.category].push(Math.max(...required.map(g => jaccard(p.text, byId.get(g.sourceId)!.text))));
-      if (required.some(g => threadOf(byId.get(g.sourceId)!) === threadOf(p))) same++;
+      if (required.some(g => threadKey(byId.get(g.sourceId)!) === threadKey(p))) same++;
       probes++;
       for (const g of required) if (g.distance !== undefined) distances.push(g.distance);
     }

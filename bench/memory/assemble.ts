@@ -57,7 +57,7 @@ function placeTurns(turns: UserTurn[], rng: Rng): UserTurn[] {
   return slots.map(s => s ?? rest.pop()!);
 }
 
-// Turn text is capped at 280 chars by the content schema, so every turn fits the 300-char refinement limit.
+// Every turn is <=280 chars (content schema), so any turn may legally go to refinement (limit 300).
 function drawThread(titles: string[], pairs: string[], rng: Rng): Thread {
   const r = rng();
   if (r < REFINEMENT_SHARE) return { channel: 'refinement' };
