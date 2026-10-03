@@ -6,6 +6,10 @@
 
 **MyCouncil** is an interactive AI-powered reflection tool designed to help users navigate complex dilemmas. By "summoning a council" of diverse AI personas, users receive multi-faceted advice tailored to their situation and personality type.
 
+<p align="center">
+    <img src="imgs/demo.gif" alt="MyCouncil demo: describing a dilemma, summoning the council, and opening a counselor's analysis" width="100%" />
+</p>
+
 ## 🌟 Key Capabilities
 
 -   **Customizable Council Summoning**: Define your dilemma and assemble a council of 3-7 AI personas. Customize their "cognitive style" by selecting your MBTI type, or choose a balanced panel.
