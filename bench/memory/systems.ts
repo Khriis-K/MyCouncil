@@ -4,7 +4,7 @@ import { retrieveMemories } from '../../server/memory/pipeline';
 import type { CrossEncoderName, RerankerName } from '../../server/memory/models';
 import { buildChatQuery } from '../../server/memory/queries';
 import type { Reranker } from '../../server/memory/reranker';
-import type { MemoryUnit, RetrievalTrace } from '../../server/memory/types';
+import type { MemoryUnit, RetrievalTrace, Stage1Mode } from '../../server/memory/types';
 import type { Probe, Scenario, TimelineEvent } from './schema';
 
 export interface ProbeContext {
@@ -39,6 +39,8 @@ export interface SystemOptions {
   rerankers: Record<CrossEncoderName, Reranker>;
   /** what memory-production runs, i.e. config.memory.reranker */
   productionReranker: RerankerName;
+  /** memory-production's candidate generator, i.e. config.memory.stage1; omitted means 'dense' */
+  productionStage1?: Stage1Mode;
   /** stage-2 LLM selector; adds the dense+llm-select system when set */
   llmSelector?: Reranker;
   /** LLM selector that keeps the dense top 2; adds the dense-top2+llm-select system when set */
@@ -110,11 +112,11 @@ const recency = (k: number): System => ({
   },
 });
 
-const dense = (name: string, reranker: Reranker | null, { embedder, k, candidatePool }: SystemOptions): System => ({
+const retrieval = (name: string, stage1: Stage1Mode, reranker: Reranker | null, { embedder, k, candidatePool }: SystemOptions): System => ({
   name,
   async run(ctx) {
     const { used, trace } = await retrieveMemories({
-      query: chatQuery(ctx), sources: ctx.scenario.timeline, excludeSourceIds: [], k, candidatePool, embedder, reranker, endpoint: 'bench',
+      query: chatQuery(ctx), sources: ctx.scenario.timeline, excludeSourceIds: [], k, candidatePool, stage1, embedder, reranker, endpoint: 'bench',
     });
     assertReranked(trace);
     return {
@@ -131,7 +133,7 @@ const dense = (name: string, reranker: Reranker | null, { embedder, k, candidate
 const memoryProduction = (options: SystemOptions): System => ({
   name: 'memory-production',
   async run(ctx) {
-    const { embedder, k, window, candidatePool } = options;
+    const { embedder, k, window, candidatePool, productionStage1: stage1 } = options;
     const reranker = productionRerankerOf(options);
     const { scenario, probe } = ctx;
     const sources = scenario.timeline;
@@ -144,9 +146,9 @@ const memoryProduction = (options: SystemOptions): System => ({
       probe.channel === 'chat'
         ? await recallForChat({
             counselorId: probe.counselorId!, message: probe.text, sources,
-            settings: { enabled: true, k, candidatePool, recentWindow: window }, embedder, reranker,
+            settings: { enabled: true, k, candidatePool, recentWindow: window, stage1 }, embedder, reranker,
           })
-        : await retrieveMemories({ query: probe.text, sources, excludeSourceIds: windowIds, k, candidatePool, embedder, reranker, endpoint: 'bench' });
+        : await retrieveMemories({ query: probe.text, sources, excludeSourceIds: windowIds, k, candidatePool, stage1, embedder, reranker, endpoint: 'bench' });
     if (!recall.trace) throw new Error(`memory-production retrieval fell back: ${recall.fallback ?? 'no trace'}`);
     assertReranked(recall.trace);
 
@@ -166,11 +168,14 @@ export function createSystems(options: SystemOptions): System[] {
   return [
     existingContext,
     recency(options.k),
-    dense('dense', null, options),
-    dense('dense+rerank', options.rerankers.minilm, options),
-    dense('dense+rerank-bge', options.rerankers['bge-base'], options),
-    ...(options.llmSelector ? [dense('dense+llm-select', options.llmSelector, options)] : []),
-    ...(options.hybridSelector ? [dense('dense-top2+llm-select', options.hybridSelector, options)] : []),
+    retrieval('dense', 'dense', null, options),
+    retrieval('bm25', 'bm25', null, options),
+    retrieval('hybrid', 'hybrid', null, options),
+    retrieval('dense+rerank', 'dense', options.rerankers.minilm, options),
+    retrieval('hybrid+rerank', 'hybrid', options.rerankers.minilm, options),
+    retrieval('dense+rerank-bge', 'dense', options.rerankers['bge-base'], options),
+    ...(options.llmSelector ? [retrieval('dense+llm-select', 'dense', options.llmSelector, options)] : []),
+    ...(options.hybridSelector ? [retrieval('dense-top2+llm-select', 'dense', options.hybridSelector, options)] : []),
     memoryProduction(options),
   ];
 }

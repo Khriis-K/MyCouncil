@@ -5,13 +5,15 @@ import { createProductionSelector } from './productionSelector';
 import { buildChatQuery } from './queries';
 import { createReranker, type Reranker } from './reranker';
 import { TransformersEmbedder } from './transformersEmbedder';
-import type { MemorySource, MemoryUnit, RetrievalTrace } from './types';
+import type { MemorySource, MemoryUnit, RetrievalTrace, Stage1Mode } from './types';
 
 export interface MemorySettings {
   enabled: boolean;
   k: number;
   candidatePool: number;
   recentWindow: number;
+  /** omitted means 'dense' */
+  stage1?: Stage1Mode;
   /** stage-2 model; omitted means 'none' */
   reranker?: RerankerName;
   /** 'llm-select' only: past this, ranking falls back to dense order */
@@ -71,6 +73,7 @@ export async function recallForChat(params: {
       excludeSourceIds: windowSourceIds(sources, counselorId, settings.recentWindow),
       k: settings.k,
       candidatePool: settings.candidatePool,
+      stage1: settings.stage1,
       embedder: params.embedder ?? defaultEmbedder(),
       reranker: params.reranker !== undefined ? params.reranker : defaultReranker(settings),
       endpoint: 'chat',

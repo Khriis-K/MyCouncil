@@ -1,5 +1,8 @@
 export type MemoryChannel = 'refinement' | 'chat' | 'debate';
 
+/** stage-1 candidate generator; 'hybrid' is RRF of the dense and BM25 lists */
+export type Stage1Mode = 'dense' | 'bm25' | 'hybrid';
+
 export interface MemorySource {
   id: string;
   channel: MemoryChannel;
@@ -28,7 +31,12 @@ export interface TraceCandidate {
   counselorId?: string;
   textPreview: string;
   stage1Rank: number;
+  /** cosine for dense, BM25 for bm25, the RRF score for hybrid */
   stage1Score: number;
+  // Set only for bm25/hybrid stage 1: the unit's place in each input list.
+  denseRank?: number;
+  bm25Rank?: number;
+  bm25Score?: number;
   // Set only when stage 2 actually reranked.
   rerankScore?: number;
   finalRank?: number;
@@ -41,7 +49,7 @@ export interface RetrievalTrace {
   requestId: string;
   endpoint: 'chat' | 'debate' | 'refinement' | 'bench';
   query: string;
-  config: { embedderId: string; stage1: string; rerankerId: string | null; candidatePool: number; k: number };
+  config: { embedderId: string; stage1: Stage1Mode; rerankerId: string | null; candidatePool: number; k: number };
   /** units searched, after exclusion */
   indexSize: number;
   /** units dropped because their source was excluded (e.g. the verbatim window) */

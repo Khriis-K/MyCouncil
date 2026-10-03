@@ -18,9 +18,12 @@ export function summaryLine(trace: RetrievalTrace): string {
 }
 
 export function candidateRows(trace: RetrievalTrace) {
+  // Lexical columns only when stage 1 was bm25 or hybrid; a dense table stays as it was.
+  const lexical = trace.config.stage1 !== 'dense';
   return trace.candidates.map(c => ({
     stage1Rank: c.stage1Rank,
     stage1Score: blank(c.stage1Score, 3),
+    ...(lexical && { denseRank: blank(c.denseRank), bm25Rank: blank(c.bm25Rank), bm25Score: blank(c.bm25Score, 3) }),
     rerankScore: blank(c.rerankScore, 3),
     finalRank: blank(c.finalRank),
     rankDelta: blank(c.rankDelta),

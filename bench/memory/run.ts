@@ -312,13 +312,16 @@ const pad = (cells: string[], widths: number[]) => cells.map((c, i) => c.padEnd(
 /** Debug view of one retrieval: final order, gold marked with ★, plus gold that never reached the pool. */
 export function renderTrace(trace: RetrievalTrace, probe: { gold: string[]; context: Set<string> }): string {
   const gold = new Set(probe.gold);
-  const header = ['', 'final', 's1', 'Δ', 's1 score', 'rerank', 'sel', 'source', 'preview'];
+  const header = ['', 'final', 's1', 'Δ', 's1 score', 'dense', 'bm25', 'bm25 score', 'rerank', 'sel', 'source', 'preview'];
   const body = trace.candidates.map(c => [
     gold.has(c.sourceId) ? '★' : '',
     String(c.finalRank ?? ''),
     String(c.stage1Rank),
     c.rankDelta === undefined ? '' : c.rankDelta > 0 ? `+${c.rankDelta}` : String(c.rankDelta),
     fixed(c.stage1Score, 3),
+    String(c.denseRank ?? ''),
+    String(c.bm25Rank ?? ''),
+    fixed(c.bm25Score, 3),
     fixed(c.rerankScore, 3),
     c.selected ? '✓' : '',
     c.sourceId,
@@ -329,7 +332,7 @@ export function renderTrace(trace: RetrievalTrace, probe: { gold: string[]; cont
   const outside = probe.gold.filter(id => !pooled.has(id)).map(id => `${id} (${probe.context.has(id) ? 'in window' : 'missed'})`);
   return [
     `query: ${trace.query}`,
-    `reranker: ${trace.config.rerankerId ?? 'none'}  index=${trace.indexSize} excluded=${trace.excludedCount} pool=${trace.candidates.length} k=${trace.config.k}`,
+    `stage1: ${trace.config.stage1}  reranker: ${trace.config.rerankerId ?? 'none'}  index=${trace.indexSize} excluded=${trace.excludedCount} pool=${trace.candidates.length} k=${trace.config.k}`,
     ...(trace.fallback ? [`fallback: ${trace.fallback}`] : []),
     pad(header, widths),
     ...body.map(r => pad(r, widths)),
@@ -382,6 +385,7 @@ async function main() {
     candidatePool: config.memory.candidatePool,
     rerankers: { minilm: createReranker('minilm')!, 'bge-base': createReranker('bge-base')! },
     productionReranker: config.memory.reranker,
+    productionStage1: config.memory.stage1,
     llmSelector: llm ? new LlmSelector(complete, config.model, args.k) : undefined,
     // No timeout: the bench measures the full call; production caps it with config.memory.selectorTimeoutMs.
     hybridSelector: llm ? createProductionSelector(args.k) : undefined,
