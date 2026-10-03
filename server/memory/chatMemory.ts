@@ -21,12 +21,19 @@ let sharedEmbedder: CachedEmbedder | undefined;
 const defaultEmbedder = () => (sharedEmbedder ??= new CachedEmbedder(new TransformersEmbedder()));
 
 // The client sends this counselor's whole chat as sources, so the verbatim window is its last N turns.
-function windowSourceIds(sources: MemorySource[], counselorId: string, windowSize: number): string[] {
+export function windowSourceIds(sources: MemorySource[], counselorId: string, windowSize: number): string[] {
   return sources
     .filter(s => s.channel === 'chat' && s.counselorId === counselorId)
     .sort((a, b) => a.timestamp - b.timestamp)
     .slice(-windowSize)
     .map(s => s.id);
+}
+
+export function lastCounselorTurn(sources: MemorySource[], counselorId: string): string | undefined {
+  return sources
+    .filter(s => s.channel === 'chat' && s.counselorId === counselorId && s.speaker === 'counselor')
+    .sort((a, b) => a.timestamp - b.timestamp)
+    .at(-1)?.text;
 }
 
 export async function recallForChat(params: {
@@ -41,13 +48,8 @@ export async function recallForChat(params: {
   if (!settings.enabled) return { used: [], fallback: 'disabled' };
 
   try {
-    const lastCounselorTurn = sources
-      .filter(s => s.channel === 'chat' && s.counselorId === counselorId && s.speaker === 'counselor')
-      .sort((a, b) => a.timestamp - b.timestamp)
-      .at(-1)?.text;
-
     return await retrieveMemories({
-      query: buildChatQuery(message, lastCounselorTurn),
+      query: buildChatQuery(message, lastCounselorTurn(sources, counselorId)),
       sources,
       excludeSourceIds: windowSourceIds(sources, counselorId, settings.recentWindow),
       k: settings.k,
