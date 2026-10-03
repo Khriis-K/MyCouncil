@@ -56,7 +56,45 @@ Return exactly this shape, with one entry per probe and each "id" copied verbati
   ];
 }
 
-export async function judgeScenario(scenario: Scenario, llm: JudgeLlm): Promise<JudgeIssue[]> {
+/**
+ * Judge a scenario `samples` times and keep an issue only if a strict majority of samples raise
+ * the same kind for the same probe. A single sample is one noisy opinion; voting steadies it.
+ */
+export async function judgeScenario(scenario: Scenario, llm: JudgeLlm, samples = 1): Promise<JudgeIssue[]> {
+  const runs = await Promise.all(Array.from({ length: samples }, () => judgeOnce(scenario, llm)));
+  const votes = new Map<string, { issue: JudgeIssue; count: number }>();
+  for (const run of runs) {
+    const seen = new Set<string>();
+    for (const issue of run) {
+      const key = `${issue.probeId}:${issue.kind}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const entry = votes.get(key) ?? { issue, count: 0 };
+      entry.count++;
+      votes.set(key, entry);
+    }
+  }
+  return [...votes.values()].filter(v => v.count > samples / 2).map(v => v.issue);
+}
+
+const LABEL_KIND = { gold: 'insufficient', unique: 'ambiguous' } as const;
+
+/** Compare judge issues with human labels: the check each probe failed, or null if it passed. */
+export function scoreAgreement(labels: Record<string, 'gold' | 'unique' | null>, issues: JudgeIssue[]) {
+  const score = { caught: [] as string[], missed: [] as string[], falselyFlagged: [] as string[], correctlyPassed: [] as string[], wrongKind: [] as string[] };
+  for (const [probeId, failed] of Object.entries(labels)) {
+    const judged = issues.filter(i => i.probeId === probeId);
+    if (failed && judged.length > 0) {
+      score.caught.push(probeId);
+      if (!judged.some(i => i.kind === LABEL_KIND[failed])) score.wrongKind.push(probeId);
+    } else if (failed) score.missed.push(probeId);
+    else if (judged.length > 0) score.falselyFlagged.push(probeId);
+    else score.correctlyPassed.push(probeId);
+  }
+  return score;
+}
+
+async function judgeOnce(scenario: Scenario, llm: JudgeLlm): Promise<JudgeIssue[]> {
   const verdict = verdictSchema.parse(extractJson(await llm(buildJudgeMessages(scenario))));
   const byId = new Map(scenario.timeline.map(e => [e.id, e]));
   const issues: JudgeIssue[] = [];

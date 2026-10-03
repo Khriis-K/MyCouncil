@@ -1,0 +1,25 @@
+{
+  "source": "Human review of the 20 probes in REVIEW.md (seeded sample). failed = the check that failed: \"gold\" (gold not sufficient) or \"unique\" (another turn also answers it); null = passed gold, realistic and unique.",
+  "probes": {
+    "career-2-p1": null,
+    "education-5-p1": null,
+    "finances-1-p1": "gold",
+    "career-4-p1": null,
+    "family-and-caregiving-5-p1": null,
+    "family-and-caregiving-6-p3": "unique",
+    "career-2-p3": "unique",
+    "career-1-p2": null,
+    "family-and-caregiving-1-p2": "gold",
+    "romantic-relationship-4-p2": null,
+    "career-3-p4": null,
+    "friendship-and-social-life-1-p4": "unique",
+    "friendship-and-social-life-2-p4": null,
+    "finances-4-p4": "gold",
+    "relocation-5-p4": null,
+    "friendship-and-social-life-1-p5": null,
+    "health-and-wellbeing-4-p5": null,
+    "career-5-p5": null,
+    "finances-4-p5": null,
+    "friendship-and-social-life-4-p5": null
+  }
+}

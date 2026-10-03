@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { config } from '../../server/config';
 import { generateText } from '../../server/llm';
 import { assemble } from './assemble';
 import { PROMPT_VERSION } from './content';
-import { judgeScenario, type JudgeIssue, type JudgeLlm } from './judge';
+import { judgeScenario, scoreAgreement, type JudgeIssue, type JudgeLlm } from './judge';
 import { extractJson } from './json';
 import { pick, rngFor } from './rng';
 import { renderReview, sampleReviewProbes } from './review';
@@ -18,6 +18,9 @@ const DATA_DIR = path.join(import.meta.dirname, 'data');
 const MAX_ATTEMPTS = 3;
 const SEED = 'mycouncil-memory-bench-v1';
 const DEFAULT_CONCURRENCY = 4;
+// A stronger model than the generator, so the generator does not grade its own work.
+const JUDGE_MODEL = 'anthropic/claude-opus-5.5';
+const JUDGE_SAMPLES = 3;
 
 type Message = { role: 'system' | 'user' | 'assistant'; content: string };
 export type Llm = (messages: Message[]) => Promise<string>;
@@ -129,7 +132,7 @@ const withFeedback = (seed: ScenarioSeed, previous?: Attempt): Message[] => {
   return [...base, { role: 'assistant', content: previous.raw }, { role: 'user', content: feedback }];
 };
 
-export async function generateScenario(seed: ScenarioSeed, llm: Llm, judge?: JudgeLlm): Promise<GenerationResult> {
+export async function generateScenario(seed: ScenarioSeed, llm: Llm, judge?: JudgeLlm, judgeSamples = 1): Promise<GenerationResult> {
   const attempts: Attempt[] = [];
   for (let n = 0; n < MAX_ATTEMPTS; n++) {
     let raw = '';
@@ -143,7 +146,7 @@ export async function generateScenario(seed: ScenarioSeed, llm: Llm, judge?: Jud
       const scenario = assemble(checked.content, seed);
       const errors = validateScenario(scenario);
       if (errors.length === 0 && judge) {
-        errors.push(...(await judgeScenario(scenario, judge)).map(issue => `${issue.probeId}: ${issue.detail}`));
+        errors.push(...(await judgeScenario(scenario, judge, judgeSamples)).map(issue => `${issue.probeId}: ${issue.detail}`));
       }
       attempts.push({ raw, errors });
       if (errors.length === 0) return { scenario, attempts };
@@ -161,6 +164,7 @@ export interface BuildOptions {
   concurrency?: number;
   seeds?: ScenarioSeed[];
   judge?: JudgeLlm;
+  judgeSamples?: number;
 }
 
 export interface BuildOutput {
@@ -191,7 +195,9 @@ interface Generated {
 }
 
 async function generateAll(seeds: ScenarioSeed[], options: BuildOptions): Promise<Generated> {
-  const results = await mapPool(seeds, options.concurrency ?? DEFAULT_CONCURRENCY, seed => generateScenario(seed, options.llm, options.judge));
+  const results = await mapPool(seeds, options.concurrency ?? DEFAULT_CONCURRENCY, seed =>
+    generateScenario(seed, options.llm, options.judge, options.judgeSamples),
+  );
   const out: Generated = { scenarios: [], dropped: [], raw: {} };
   seeds.forEach((seed, i) => {
     out.raw[seed.id] = { scenarioId: seed.id, promptVersion: PROMPT_VERSION, model: options.model, attempts: results[i].attempts };
@@ -228,12 +234,17 @@ export async function buildDataset(options: BuildOptions): Promise<BuildOutput> 
 }
 
 /** Judge every scenario in a frozen dataset; returns issues only for the scenarios that have some. */
-export async function judgeDataset(dataset: Dataset, judge: JudgeLlm, concurrency = DEFAULT_CONCURRENCY): Promise<Record<string, JudgeIssue[]>> {
+export async function judgeDataset(
+  dataset: Dataset,
+  judge: JudgeLlm,
+  concurrency = DEFAULT_CONCURRENCY,
+  samples = 1,
+): Promise<Record<string, JudgeIssue[]>> {
   const judgeWithRetry = async (s: Scenario): Promise<JudgeIssue[]> => {
     let last: unknown;
     for (let n = 0; n < MAX_ATTEMPTS; n++) {
       try {
-        return await judgeScenario(s, judge);
+        return await judgeScenario(s, judge, samples);
       } catch (error) {
         last = error;
       }
@@ -274,17 +285,35 @@ async function main() {
   const base = { llm: generateText, model: config.model, date: new Date().toISOString().slice(0, 10) };
   const onlyFlag = process.argv.indexOf('--only');
   const loadExisting = () => datasetSchema.parse(JSON.parse(readFileSync(path.join(DATA_DIR, 'scenarios.v1.json'), 'utf8')));
+  const judge: JudgeLlm = messages => generateText(messages, JUDGE_MODEL);
   let out: BuildOutput;
+  if (process.argv.includes('--judge-check')) {
+    // Score the judge against the human review labels; the dataset is not touched.
+    const { probes: labels } = JSON.parse(readFileSync(path.join(DATA_DIR, 'human-labels.json'), 'utf8'));
+    const existing = loadExisting();
+    const labelled = existing.scenarios.filter(s => s.probes.some(p => p.id in labels));
+    const issues = await judgeDataset({ ...existing, scenarios: labelled }, judge, DEFAULT_CONCURRENCY, JUDGE_SAMPLES);
+    const score = scoreAgreement(labels, Object.values(issues).flat());
+    const file = path.join(DATA_DIR, 'judge-agreement.json');
+    const runs = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')).runs : [];
+    runs.push({ judgeModel: JUDGE_MODEL, samples: JUDGE_SAMPLES, date: base.date, score, issues });
+    writeFileSync(file, JSON.stringify({ runs }, null, 2));
+    console.log(JSON.stringify(score, null, 2));
+    return;
+  }
   if (process.argv.includes('--judge')) {
     // Audit the frozen dataset, then regenerate only the scenarios the judge rejects (the replacements are judged too).
     const existing = loadExisting();
-    const issues = await judgeDataset(existing, generateText);
+    const issues = await judgeDataset(existing, judge, DEFAULT_CONCURRENCY, JUDGE_SAMPLES);
     mkdirSync(DATA_DIR, { recursive: true });
-    writeFileSync(path.join(DATA_DIR, 'judge-findings.json'), JSON.stringify({ judgeModel: config.model, date: base.date, issues }, null, 2));
+    writeFileSync(
+      path.join(DATA_DIR, 'judge-findings.json'),
+      JSON.stringify({ judgeModel: JUDGE_MODEL, samples: JUDGE_SAMPLES, date: base.date, issues }, null, 2),
+    );
     const ids = Object.keys(issues);
     console.log(`judge flagged ${ids.length} of ${existing.scenarios.length} scenarios: ${ids.join(', ') || 'none'}`);
     if (ids.length === 0) return;
-    out = await regenerateScenarios(existing, { ...base, ids, judge: generateText });
+    out = await regenerateScenarios(existing, { ...base, ids, judge, judgeSamples: JUDGE_SAMPLES });
   } else if (onlyFlag === -1) {
     out = await buildDataset(base);
   } else {
