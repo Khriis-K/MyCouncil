@@ -15,7 +15,7 @@ export const config = {
     enabled: process.env.MEMORY_ENABLED !== '0',
     k: 5,
     candidatePool: 30,
-    // Placeholder until the stage-1 comparison (dense vs bm25 vs hybrid) is run on the dev split.
+    // Dense beat bm25 and matched hybrid on the dev split (bench/memory/results/dev-2026-10-03T18-04-43-537Z.md).
     stage1: 'dense' as Stage1Mode,
     recentWindow: 6,
     // 'llm-select' won on the held-out test split; both cross-encoders lowered recall (bench/memory/results/latest-test.md).
