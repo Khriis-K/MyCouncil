@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "models:download": "tsx scripts/models-download.ts",
-    "bench:memory": "tsx bench/memory/run.ts"
+    "bench:memory": "tsx bench/memory/run.ts",
+    "bench:memory:generate": "tsx bench/memory/generate.ts"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.0",

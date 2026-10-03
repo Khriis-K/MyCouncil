@@ -1,0 +1,238 @@
+[
+  {
+    "probe": "finances-1-p1",
+    "id": "finances-1-p1",
+    "before": "I'm trying to understand our cash flow - so for the past four months, we've been spending more than Jordan brings home each month, right? That's why our emergency fund has dropped so much?",
+    "after": "I'm redoing our budget - how much does Jordan take home a month? That's all we've had coming in while I'm on leave, right?",
+    "reason": "gold not sufficient: the probe asserted a four-month timeline and overspending that f3 does not state. Rewritten to ask only what f3 states."
+  },
+  {
+    "probe": "family-and-caregiving-1-p2",
+    "id": "family-and-caregiving-1-p2",
+    "before": "I'm worried that if I take dad in, I'll end up having another breakdown like I did during my divorce. Is it wrong to choose my own stability over family obligation?",
+    "after": "If dad moves in with me, I lose the one place that's been just mine. Is it selfish to want to protect that?",
+    "reason": "gold not sufficient: \"another breakdown like during my divorce\" is stated nowhere. Rewritten around what f7 states, still with no content words shared with it."
+  },
+  {
+    "probe": "finances-4-p4",
+    "id": "finances-4-p4",
+    "before": "If we moved to Dallas where housing is cheaper, and I got the salary increase, would that actually put us in a better position to hit our retirement savings target, or would we still fall short?",
+    "after": "If we sold our place and bought in Dallas, would the leftover money make a real dent compared to what we've already got put away for retirement?",
+    "reason": "gold not sufficient: the probe needed the retirement target, which u1 later revised, so f2 alone gives a stale answer. Rewritten to need the current savings (f2) and the Dallas equity (f4)."
+  },
+  {
+    "probe": "family-and-caregiving-6-p3",
+    "id": "family-and-caregiving-6-p3",
+    "before": "I'm wondering if the dynamic will shift dramatically once I'm gone during the day and Alex is the primary caregiver at home. Will that change how we approach the sleep issue?",
+    "after": "When I'm back at the office, do we still need to find a nanny or daycare for Emma, or is that unnecessary for us?",
+    "reason": "another turn also answers: d5 (night bottles) answered the \"sleep issue\" part. Rewritten around daytime care only, which f3 answers."
+  },
+  {
+    "probe": "career-2-p3",
+    "id": "career-2-q-6",
+    "before": "How similar was the competing paper to your research?",
+    "after": "Do you keep up with the big journals?",
+    "reason": "another turn also answers: the counselor line before d4 presupposed the scoop. Rewritten with d4."
+  },
+  {
+    "probe": "career-2-p3",
+    "id": "career-2-d4",
+    "before": "The Nature paper that scooped us had slightly different methodology, but the conclusions were basically identical.",
+    "after": "I skim Nature on my phone most mornings before heading into the lab - it's kind of a ritual.",
+    "reason": "another turn also answers: d4 restated the scoop that f4 (gold) states. Rewritten to stay on the same surface topic without answering the probe."
+  },
+  {
+    "probe": "friendship-and-social-life-1-p4",
+    "id": "friendship-and-social-life-1-p4",
+    "before": "If I want to reconnect with the hiking group, would it be strange to explain that my qualifying exams got in the way and I'd like to try again?",
+    "after": "I want to go back to the hiking club and actually show up at the next department happy hour. How do I walk back in after bailing on both?",
+    "reason": "another turn also answers: d8 (qualifying exams) answered the \"exams got in the way\" part, and f5 was not needed. Rewritten to need both f1 and f5."
+  },
+  {
+    "probe": "career-5-p4",
+    "regrade": {
+      "superseded": "career-5-f4",
+      "update": "career-5-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 4: The raise changed from $18,000/$87,000 total to $22,000/$91,000 total, which materially changes the financial-security comparison."
+  },
+  {
+    "probe": "relocation-2-p1",
+    "regrade": {
+      "superseded": "relocation-2-f3",
+      "update": "relocation-2-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 5: The compensation changed from $185,000 base to $195,000 base plus a $30,000 signing bonus, so the probe's stated comparison is outdated."
+  },
+  {
+    "probe": "romantic-relationship-1-p4",
+    "regrade": {
+      "superseded": "romantic-relationship-1-f5",
+      "update": "romantic-relationship-1-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 7: In-person LA meetings are no longer essential because the client agreed to fully remote meetings, removing a major stated cost of moving."
+  },
+  {
+    "probe": "romantic-relationship-2-p3",
+    "regrade": {
+      "superseded": "romantic-relationship-2-f7",
+      "update": "romantic-relationship-2-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 8: The new $4,000-per-month client materially changes the premise that money is currently too tight to consider a more expensive home."
+  },
+  {
+    "probe": "romantic-relationship-2-p4",
+    "regrade": {
+      "superseded": "romantic-relationship-2-f2",
+      "update": "romantic-relationship-2-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 9: The current proposal is now a three-bedroom shared with a roommate, not simply a two-bedroom with a dedicated office; that changes whether living together addresses the user's concerns."
+  },
+  {
+    "probe": "romantic-relationship-3-p1",
+    "regrade": {
+      "superseded": "romantic-relationship-3-f3",
+      "update": "romantic-relationship-3-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 10: The gold says the offer was declined, while the update establishes that the position is available again—the key fact assumed by the probe."
+  },
+  {
+    "probe": "romantic-relationship-3-p4",
+    "regrade": {
+      "superseded": "romantic-relationship-3-f3",
+      "update": "romantic-relationship-3-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 11: Whether the Boston opportunity can still be pursued depends on the later update that the company reopened the offer."
+  },
+  {
+    "probe": "romantic-relationship-5-p3",
+    "regrade": {
+      "superseded": "romantic-relationship-5-f4",
+      "update": "romantic-relationship-5-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 12: A good answer needs the update that therapy is still available and already scheduled; otherwise it may wrongly treat the missed first offer as the current situation."
+  },
+  {
+    "probe": "romantic-relationship-5-p4",
+    "regrade": {
+      "superseded": "romantic-relationship-5-f6",
+      "update": "romantic-relationship-5-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 13: Rachel is moving out next weekend, so the claimed ongoing lack of physical space is about to change materially."
+  },
+  {
+    "probe": "family-and-caregiving-2-p4",
+    "regrade": {
+      "superseded": "family-and-caregiving-2-f2",
+      "update": "family-and-caregiving-2-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 14: Karen's contribution increased from $800 to $1,200 monthly, invalidating the probe's $825 monthly shortfall calculation."
+  },
+  {
+    "probe": "family-and-caregiving-4-p4",
+    "regrade": {
+      "superseded": "family-and-caregiving-4-f2",
+      "update": "family-and-caregiving-4-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 15: The new option to defend by Zoom materially changes the travel and preparation tradeoff posed by the probe."
+  },
+  {
+    "probe": "finances-4-p2",
+    "regrade": {
+      "superseded": "finances-4-f2",
+      "update": "finances-4-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 16: The required retirement target rose from $1.2 million to $1.5 million, directly changing whether the household would have enough."
+  },
+  {
+    "probe": "finances-6-p4",
+    "regrade": {
+      "superseded": "finances-6-f2",
+      "update": "finances-6-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 18: The severance changed from 18 months/$135,000 to 22 months/$165,000, directly changing the amount available per month."
+  },
+  {
+    "probe": "finances-6-p4",
+    "regrade": {
+      "superseded": "finances-6-f4",
+      "update": "finances-6-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 19: The scholarship reduces the family's annual college cost from $18,000 to $6,000, directly changing how much severance remains."
+  },
+  {
+    "probe": "education-1-p2",
+    "regrade": {
+      "superseded": "education-1-f1",
+      "update": "education-1-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 20: The decision deadline moved from January 15 to January 8, materially reducing the time available to evaluate the options."
+  },
+  {
+    "probe": "education-1-p4",
+    "regrade": {
+      "superseded": "education-1-f2",
+      "update": "education-1-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 22: The competing publication materially changes the probe's premise that pivoting would simply throw away otherwise valuable unpublished work."
+  },
+  {
+    "probe": "education-6-p4",
+    "regrade": {
+      "superseded": "education-6-f4",
+      "update": "education-6-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 23: The mother's availability changed from two days to three different days per week, directly changing the childcare plan and its gaps."
+  },
+  {
+    "probe": "health-and-wellbeing-2-p1",
+    "regrade": {
+      "superseded": "health-and-wellbeing-2-f3",
+      "update": "health-and-wellbeing-2-u2"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 24: The correct out-of-pocket cost is now a $20 copay rather than $35 per session."
+  },
+  {
+    "probe": "health-and-wellbeing-6-p3",
+    "regrade": {
+      "superseded": "health-and-wellbeing-6-f2",
+      "update": "health-and-wellbeing-6-u1"
+    },
+    "reason": "superseded gold, marked stale in SUPERSEDED_REVIEW.md item 25: Two new clients improve the current income decline from about 60% to 35%, materially changing the claim that next month's expenses are barely affordable."
+  },
+  {
+    "probe": "relocation-2-p1",
+    "id": "relocation-2-p1",
+    "before": "I'm trying to figure out the financial comparison. The Austin offer is $185k base versus my current $142k. Even with the higher cost of living there, it seems like a significant increase. Does that kind of jump make this a no-brainer financially?",
+    "after": "Now that I've negotiated a higher base and a signing bonus for Austin, does the money make this a no-brainer, or am I letting the bonus cloud my judgment?",
+    "reason": "stated the superseded fact as current after its gold was regraded (SUPERSEDED_REVIEW.md item 5); rewritten to use the updated fact, approved by the reviewer"
+  },
+  {
+    "probe": "family-and-caregiving-2-p4",
+    "id": "family-and-caregiving-2-p4",
+    "before": "I'm trying to figure out if we can actually afford the home care agency. If they need 15 hours a week at $25 per hour, that's $375 weekly. With Karen offering $800 monthly, we'd still need to cover about $825 a month. Is that manageable?",
+    "after": "With Karen's bigger contribution now, could we actually cover the home care agency's minimum hours, or would we still come up short every month?",
+    "reason": "stated the superseded fact as current after its gold was regraded (SUPERSEDED_REVIEW.md item 14); rewritten to use the updated fact, approved by the reviewer"
+  },
+  {
+    "probe": "romantic-relationship-2-p3",
+    "id": "romantic-relationship-2-p3",
+    "before": "If I'm already struggling to make ends meet most months, is it even realistic for me to consider sharing a more expensive place with Marcus?",
+    "after": "Now that things are a bit easier on my end financially, is it realistic for me to split a pricier apartment with Marcus, or am I getting ahead of myself?",
+    "reason": "stated the superseded fact as current after its gold was regraded (SUPERSEDED_REVIEW.md item 8); rewritten to use the updated fact, approved by the reviewer"
+  },
+  {
+    "probe": "romantic-relationship-2-p4",
+    "id": "romantic-relationship-2-p4",
+    "before": "Does the fact that he wants a dedicated office space for me and works completely different hours mean we could actually make living together work despite my concerns?",
+    "after": "Marcus keeps such different hours from me that we'd barely overlap at home, but now there'd be a roommate in the mix too. Could living together still work given my concerns?",
+    "reason": "stated the superseded fact as current after its gold was regraded (SUPERSEDED_REVIEW.md item 9); rewritten to use the updated fact, approved by the reviewer"
+  },
+  {
+    "probe": "health-and-wellbeing-6-p3",
+    "id": "health-and-wellbeing-6-p3",
+    "before": "I'm wondering if the fact that I can barely afford next month's expenses is making my physical symptoms worse. Could financial stress actually cause chest pain?",
+    "after": "Money's still tighter than it used to be, even if it's improving a little. Could that kind of lingering stress be what's behind the chest pain?",
+    "reason": "stated the superseded fact as current after its gold was regraded (SUPERSEDED_REVIEW.md item 25); rewritten to use the updated fact, approved by the reviewer"
+  }
+]
