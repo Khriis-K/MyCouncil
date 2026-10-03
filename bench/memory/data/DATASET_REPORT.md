@@ -9,9 +9,9 @@ Report only: nothing here filters the dataset. Overlap is content-word Jaccard b
 
 | category | probes | mean Jaccard | median Jaccard | zero-overlap share |
 |---|---|---|---|---|
-| explicit | 48 | 0.211 | 0.208 | 2.1% |
-| implicit | 96 | 0.035 | 0.033 | 47.9% |
-| multi | 48 | 0.108 | 0.090 | 4.2% |
+| explicit | 48 | 0.213 | 0.208 | 2.1% |
+| implicit | 96 | 0.034 | 0.015 | 50.0% |
+| multi | 48 | 0.107 | 0.085 | 4.2% |
 | update | 48 | 0.128 | 0.115 | 2.1% |
 
 ## Channel
@@ -25,3 +25,14 @@ Report only: nothing here filters the dataset. Overlap is content-word Jaccard b
 - 10-19: 19
 - 20-29: 85
 - 30+: 162
+
+## Human review
+
+Seeded sample from REVIEW.md, checked by a person: is the gold sufficient, is the probe realistic, and does no other turn also answer it.
+
+- 6 of 20 failed (30.0%; 95% Wilson interval 14.5%-51.9%)
+- gold not sufficient: 3 (finances-1-p1, family-and-caregiving-1-p2, finances-4-p4)
+- another turn also answers: 3 (family-and-caregiving-6-p3, career-2-p3, friendship-and-social-life-1-p4)
+- fixed by hand (data/hand-edits.json): finances-1-p1, family-and-caregiving-1-p2, finances-4-p4, family-and-caregiving-6-p3, career-2-p3, friendship-and-social-life-1-p4
+
+The other 220 probes were not reviewed, and nothing automated checks these two failure kinds: the validator checks structure and word overlap, not whether the gold turn semantically suffices or a distractor also answers. Expect a similar share of the unreviewed probes to have the same defects. An LLM judge (bench/memory/judge.ts) was tried as an automatic check and did not agree with these labels well enough to gate regeneration.

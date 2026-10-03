@@ -1,0 +1,51 @@
+[
+  {
+    "probe": "finances-1-p1",
+    "id": "finances-1-p1",
+    "before": "I'm trying to understand our cash flow - so for the past four months, we've been spending more than Jordan brings home each month, right? That's why our emergency fund has dropped so much?",
+    "after": "I'm redoing our budget - how much does Jordan take home a month? That's all we've had coming in while I'm on leave, right?",
+    "reason": "gold not sufficient: the probe asserted a four-month timeline and overspending that f3 does not state. Rewritten to ask only what f3 states."
+  },
+  {
+    "probe": "family-and-caregiving-1-p2",
+    "id": "family-and-caregiving-1-p2",
+    "before": "I'm worried that if I take dad in, I'll end up having another breakdown like I did during my divorce. Is it wrong to choose my own stability over family obligation?",
+    "after": "If dad moves in with me, I lose the one place that's been just mine. Is it selfish to want to protect that?",
+    "reason": "gold not sufficient: \"another breakdown like during my divorce\" is stated nowhere. Rewritten around what f7 states, still with no content words shared with it."
+  },
+  {
+    "probe": "finances-4-p4",
+    "id": "finances-4-p4",
+    "before": "If we moved to Dallas where housing is cheaper, and I got the salary increase, would that actually put us in a better position to hit our retirement savings target, or would we still fall short?",
+    "after": "If we sold our place and bought in Dallas, would the leftover money make a real dent compared to what we've already got put away for retirement?",
+    "reason": "gold not sufficient: the probe needed the retirement target, which u1 later revised, so f2 alone gives a stale answer. Rewritten to need the current savings (f2) and the Dallas equity (f4)."
+  },
+  {
+    "probe": "family-and-caregiving-6-p3",
+    "id": "family-and-caregiving-6-p3",
+    "before": "I'm wondering if the dynamic will shift dramatically once I'm gone during the day and Alex is the primary caregiver at home. Will that change how we approach the sleep issue?",
+    "after": "When I'm back at the office, do we still need to find a nanny or daycare for Emma, or is that unnecessary for us?",
+    "reason": "another turn also answers: d5 (night bottles) answered the \"sleep issue\" part. Rewritten around daytime care only, which f3 answers."
+  },
+  {
+    "probe": "career-2-p3",
+    "id": "career-2-q-6",
+    "before": "How similar was the competing paper to your research?",
+    "after": "Do you keep up with the big journals?",
+    "reason": "another turn also answers: the counselor line before d4 presupposed the scoop. Rewritten with d4."
+  },
+  {
+    "probe": "career-2-p3",
+    "id": "career-2-d4",
+    "before": "The Nature paper that scooped us had slightly different methodology, but the conclusions were basically identical.",
+    "after": "I skim Nature on my phone most mornings before heading into the lab - it's kind of a ritual.",
+    "reason": "another turn also answers: d4 restated the scoop that f4 (gold) states. Rewritten to stay on the same surface topic without answering the probe."
+  },
+  {
+    "probe": "friendship-and-social-life-1-p4",
+    "id": "friendship-and-social-life-1-p4",
+    "before": "If I want to reconnect with the hiking group, would it be strange to explain that my qualifying exams got in the way and I'd like to try again?",
+    "after": "I want to go back to the hiking club and actually show up at the next department happy hour. How do I walk back in after bailing on both?",
+    "reason": "another turn also answers: d8 (qualifying exams) answered the \"exams got in the way\" part, and f5 was not needed. Rewritten to need both f1 and f5."
+  }
+]

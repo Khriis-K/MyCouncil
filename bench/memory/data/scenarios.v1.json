@@ -9,8 +9,16 @@
       "family-and-caregiving-4": "2026-10-03",
       "finances-1": "2026-10-03"
     },
+    "handEditedProbes": [
+      "finances-1-p1",
+      "family-and-caregiving-1-p2",
+      "finances-4-p4",
+      "family-and-caregiving-6-p3",
+      "career-2-p3",
+      "friendship-and-social-life-1-p4"
+    ],
     "dropped": [],
-    "sha256": "7387c979b1e317dd4f43c3740548be2ec03d8a86f0d4277dd21f34360ca90732"
+    "sha256": "c07f6ba0d9813c906ffc8c57e500f181b485d719f42ac711f26666a0663297db"
   },
   "scenarios": [
     {
@@ -904,7 +912,7 @@
           "channel": "chat",
           "speaker": "counselor",
           "counselorId": "Guardian",
-          "text": "How similar was the competing paper to your research?",
+          "text": "Do you keep up with the big journals?",
           "timestamp": 1767225610000,
           "kind": "counselor"
         },
@@ -913,7 +921,7 @@
           "channel": "chat",
           "speaker": "user",
           "counselorId": "Guardian",
-          "text": "The Nature paper that scooped us had slightly different methodology, but the conclusions were basically identical.",
+          "text": "I skim Nature on my phone most mornings before heading into the lab - it's kind of a ritual.",
           "timestamp": 1767225611000,
           "kind": "distractor"
         },
@@ -16495,7 +16503,7 @@
         },
         {
           "id": "family-and-caregiving-1-p2",
-          "text": "I'm worried that if I take dad in, I'll end up having another breakdown like I did during my divorce. Is it wrong to choose my own stability over family obligation?",
+          "text": "If dad moves in with me, I lose the one place that's been just mine. Is it selfish to want to protect that?",
           "channel": "chat",
           "counselorId": "Seeker",
           "gold": [
@@ -20796,7 +20804,7 @@
         },
         {
           "id": "family-and-caregiving-6-p3",
-          "text": "I'm wondering if the dynamic will shift dramatically once I'm gone during the day and Alex is the primary caregiver at home. Will that change how we approach the sleep issue?",
+          "text": "When I'm back at the office, do we still need to find a nanny or daycare for Emma, or is that unnecessary for us?",
           "channel": "chat",
           "counselorId": "Seeker",
           "gold": [
@@ -21715,7 +21723,7 @@
       "probes": [
         {
           "id": "finances-1-p1",
-          "text": "I'm trying to understand our cash flow - so for the past four months, we've been spending more than Jordan brings home each month, right? That's why our emergency fund has dropped so much?",
+          "text": "I'm redoing our budget - how much does Jordan take home a month? That's all we've had coming in while I'm on leave, right?",
           "channel": "chat",
           "counselorId": "Seeker",
           "gold": [
@@ -24453,7 +24461,7 @@
         },
         {
           "id": "finances-4-p4",
-          "text": "If we moved to Dallas where housing is cheaper, and I got the salary increase, would that actually put us in a better position to hit our retirement savings target, or would we still fall short?",
+          "text": "If we sold our place and bought in Dallas, would the leftover money make a real dent compared to what we've already got put away for retirement?",
           "channel": "chat",
           "counselorId": "Seeker",
           "gold": [
@@ -37706,7 +37714,7 @@
         },
         {
           "id": "friendship-and-social-life-1-p4",
-          "text": "If I want to reconnect with the hiking group, would it be strange to explain that my qualifying exams got in the way and I'd like to try again?",
+          "text": "I want to go back to the hiking club and actually show up at the next department happy hour. How do I walk back in after bailing on both?",
           "channel": "chat",
           "counselorId": "Seeker",
           "gold": [

@@ -36,15 +36,15 @@
 
 ## 3. finances-1 / finances-1-p1 (explicit, test)
 
-**Probe** (chat with Seeker): I'm trying to understand our cash flow - so for the past four months, we've been spending more than Jordan brings home each month, right? That's why our emergency fund has dropped so much?
+**Probe** (chat with Seeker): I'm redoing our budget - how much does Jordan take home a month? That's all we've had coming in while I'm on leave, right?
 
 **Gold**
 - grade 2, chat with Diplomat, distance 49: My maternity leave is unpaid, so we've been living entirely on Jordan's $4,100 monthly take-home pay since October.
 
 **Closest distractors** (by content-word overlap with the probe)
-- chat with Guardian, overlap 0.04: Jordan and I got married in February last year at a venue in the Hill Country.
-- chat with Diplomat, overlap 0.04: The tech startup Jordan works for is focused on educational software for schools.
-- chat with Diplomat, overlap 0.04: Our apartment is a two-bedroom in South Austin, which we moved into about eighteen months ago.
+- chat with Guardian, overlap 0.06: Jordan and I got married in February last year at a venue in the Hill Country.
+- chat with Diplomat, overlap 0.06: The tech startup Jordan works for is focused on educational software for schools.
+- chat with Diplomat, overlap 0.06: We bought our car, a 2019 Honda Civic, right after we got married because my old one finally died.
 
 - [ ] gold is correct and sufficient
 - [ ] probe is realistic for MyCouncil
@@ -84,15 +84,15 @@
 
 ## 6. family-and-caregiving-6 / family-and-caregiving-6-p3 (implicit, dev)
 
-**Probe** (chat with Seeker): I'm wondering if the dynamic will shift dramatically once I'm gone during the day and Alex is the primary caregiver at home. Will that change how we approach the sleep issue?
+**Probe** (chat with Seeker): When I'm back at the office, do we still need to find a nanny or daycare for Emma, or is that unnecessary for us?
 
 **Gold**
 - grade 2, chat with Diplomat, distance 25: Alex works from home as a software developer and has been doing most of the daytime childcare while I've been on leave.
 
 **Closest distractors** (by content-word overlap with the probe)
-- chat with Diplomat, overlap 0.05: I started pumping more so Alex can do some nighttime bottles, but Emma still wants me specifically at 3 AM.
-- chat with Guardian, overlap 0.04: Alex made dinner last night without me asking, which almost never happens anymore.
-- chat with Diplomat, overlap 0.00: My mother came over yesterday and stayed for three hours, which was actually really helpful even though she's opinionated.
+- refinement, overlap 0.13: We have a baby monitor with a camera, and I find myself checking it obsessively even when Emma is quiet.
+- chat with Diplomat, overlap 0.06: I started pumping more so Alex can do some nighttime bottles, but Emma still wants me specifically at 3 AM.
+- refinement, overlap 0.06: Emma smiled at me for the first time this morning, and it made me cry because it reminded me why we're doing all this.
 
 - [ ] gold is correct and sufficient
 - [ ] probe is realistic for MyCouncil
@@ -106,9 +106,9 @@
 - grade 2, chat with Diplomat, distance 32: Last summer I stayed in the lab and we got scooped by a German group who published our findings first in Nature.
 
 **Closest distractors** (by content-word overlap with the probe)
+- chat with Guardian, overlap 0.06: I skim Nature on my phone most mornings before heading into the lab - it's kind of a ritual.
 - debate Diplomat|Guardian, overlap 0.06: There are two other grad students in Dr. Chen's lab, but they're both further along than me in their programs.
 - refinement, overlap 0.05: Dr. Chen is usually in the lab by 7am every day, which is honestly pretty intense.
-- chat with Guardian, overlap 0.00: The Nature paper that scooped us had slightly different methodology, but the conclusions were basically identical.
 
 - [ ] gold is correct and sufficient
 - [ ] probe is realistic for MyCouncil
@@ -132,14 +132,14 @@
 
 ## 9. family-and-caregiving-1 / family-and-caregiving-1-p2 (implicit, test)
 
-**Probe** (chat with Seeker): I'm worried that if I take dad in, I'll end up having another breakdown like I did during my divorce. Is it wrong to choose my own stability over family obligation?
+**Probe** (chat with Seeker): If dad moves in with me, I lose the one place that's been just mine. Is it selfish to want to protect that?
 
 **Gold**
 - grade 2, chat with Seeker, distance 36: I had my own apartment for the first time just two years ago, after my divorce, and it's been really important for my mental health.
 
 **Closest distractors** (by content-word overlap with the probe)
-- refinement, overlap 0.06: Michael called me yesterday just to complain about his job, didn't even ask about dad.
-- chat with Seeker, overlap 0.05: Dad was a machinist for 35 years and always prided himself on being independent and providing for us.
+- refinement, overlap 0.07: Michael called me yesterday just to complain about his job, didn't even ask about dad.
+- chat with Seeker, overlap 0.06: Dad was a machinist for 35 years and always prided himself on being independent and providing for us.
 - chat with Diplomat, overlap 0.00: St. Mary's ICU is one of the busiest in Portland, we're always understaffed on weekends.
 
 - [ ] gold is correct and sufficient
@@ -181,16 +181,16 @@
 
 ## 12. friendship-and-social-life-1 / friendship-and-social-life-1-p4 (multi, dev)
 
-**Probe** (chat with Seeker): If I want to reconnect with the hiking group, would it be strange to explain that my qualifying exams got in the way and I'd like to try again?
+**Probe** (chat with Seeker): I want to go back to the hiking club and actually show up at the next department happy hour. How do I walk back in after bailing on both?
 
 **Gold**
 - grade 2, chat with Diplomat, distance 23: I did join a hiking club in September, but I only went to two meetups before my qualifying exams started and I never went back.
 - grade 2, chat with Analyst, distance 27: Last month I skipped a departmental happy hour because I convinced myself I'd just stand around awkwardly and not talk to anyone.
 
 **Closest distractors** (by content-word overlap with the probe)
-- chat with Analyst, overlap 0.21: My qualifying exams were in October and honestly they were way more stressful than I anticipated.
-- chat with Analyst, overlap 0.05: The hiking club meets at various trailheads around Dane County, usually leaving around 8 AM on Saturdays.
-- chat with Analyst, overlap 0.00: Priya is in a completely different field - she's getting her MBA - so we don't overlap academically at all.
+- chat with Analyst, overlap 0.09: The hiking club meets at various trailheads around Dane County, usually leaving around 8 AM on Saturdays.
+- chat with Seeker, overlap 0.05: My best friend from San Diego, Rebecca, is actually planning to visit me in April for a weekend.
+- chat with Seeker, overlap 0.04: Maya and I actually work on pretty different research topics - she does social psychology and I'm in cognitive neuroscience.
 
 - [ ] gold is correct and sufficient
 - [ ] probe is realistic for MyCouncil
@@ -215,7 +215,7 @@
 
 ## 14. finances-4 / finances-4-p4 (multi, test)
 
-**Probe** (chat with Seeker): If we moved to Dallas where housing is cheaper, and I got the salary increase, would that actually put us in a better position to hit our retirement savings target, or would we still fall short?
+**Probe** (chat with Seeker): If we sold our place and bought in Dallas, would the leftover money make a real dent compared to what we've already got put away for retirement?
 
 **Gold**
 - grade 2, chat with Guardian, distance 37: Housing costs in Dallas are actually about 15% lower than Charlotte, so we could probably sell our house here and buy something comparable there with money left over.
@@ -223,8 +223,8 @@
 
 **Closest distractors** (by content-word overlap with the probe)
 - refinement, overlap 0.04: The Dallas office is about twice the size of what I manage now, so I'd go from supervising 12 people to around 25.
-- chat with Seeker, overlap 0.00: I've worked my way up from assistant manager to regional manager, and there were definitely some tough years early on when I wasn't sure I'd make it.
-- chat with Analyst, overlap 0.00: The health insurance continuation would bridge the gap until Medicare kicks in, which gives me some peace of mind about that piece at least.
+- chat with Seeker, overlap 0.04: I've worked my way up from assistant manager to regional manager, and there were definitely some tough years early on when I wasn't sure I'd make it.
+- chat with Analyst, overlap 0.04: We bought our house in Charlotte fifteen years ago and it's been such a perfect neighborhood – quiet streets, good neighbors, walking distance to everything.
 
 - [ ] gold is correct and sufficient
 - [ ] probe is realistic for MyCouncil

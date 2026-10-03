@@ -1,5 +1,5 @@
 {
-  "source": "Human review of the 20 probes in REVIEW.md (seeded sample). failed = the check that failed: \"gold\" (gold not sufficient) or \"unique\" (another turn also answers it); null = passed gold, realistic and unique.",
+  "source": "Human review of the 20 probes in REVIEW.md (seeded sample). failed = the check that failed: \"gold\" (gold not sufficient) or \"unique\" (another turn also answers it); null = passed gold, realistic and unique. Labels describe the probes as reviewed, before data/hand-edits.json was applied.",
   "probes": {
     "career-2-p1": null,
     "education-5-p1": null,

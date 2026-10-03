@@ -12,7 +12,8 @@ import { pick, rngFor } from './rng';
 import { renderReview, sampleReviewProbes } from './review';
 import { datasetSchema, type Dataset, type Scenario } from './schema';
 import { assignSplits, DOMAINS, SCENARIOS_PER_DOMAIN } from './split';
-import { auditBias, renderReport, validateContent, validateScenario } from './validate';
+import { auditBias, renderReport, validateContent, validateScenario, type HumanReview } from './validate';
+import { applyHandEdits, type HandEdit } from './handEdits';
 
 const DATA_DIR = path.join(import.meta.dirname, 'data');
 const MAX_ATTEMPTS = 3;
@@ -165,6 +166,7 @@ export interface BuildOptions {
   seeds?: ScenarioSeed[];
   judge?: JudgeLlm;
   judgeSamples?: number;
+  humanReview?: HumanReview;
 }
 
 export interface BuildOutput {
@@ -207,7 +209,7 @@ async function generateAll(seeds: ScenarioSeed[], options: BuildOptions): Promis
   return out;
 }
 
-function freeze(generated: Generated, meta: Record<string, unknown>): BuildOutput {
+function freeze(generated: Generated, meta: Record<string, unknown>, humanReview?: HumanReview): BuildOutput {
   const { scenarios, dropped, raw } = generated;
   const dataset: Dataset = {
     version: 'v1',
@@ -222,7 +224,7 @@ function freeze(generated: Generated, meta: Record<string, unknown>): BuildOutpu
   };
   return {
     dataset,
-    report: renderReport(auditBias(scenarios), { scenarios: scenarios.length, dropped }),
+    report: renderReport(auditBias(scenarios), { scenarios: scenarios.length, dropped, humanReview }),
     review: renderReview(sampleReviewProbes(scenarios, SEED)),
     raw,
   };
@@ -230,7 +232,18 @@ function freeze(generated: Generated, meta: Record<string, unknown>): BuildOutpu
 
 export async function buildDataset(options: BuildOptions): Promise<BuildOutput> {
   const generated = await generateAll(options.seeds ?? planScenarios(), options);
-  return freeze(generated, { generatorModel: options.model, generatedAt: options.date });
+  return freeze(generated, { generatorModel: options.model, generatedAt: options.date }, options.humanReview);
+}
+
+/** Apply reviewed hand edits to a frozen dataset and re-freeze it; nothing is regenerated. */
+export function applyEdits(existing: Dataset, edits: HandEdit[], humanReview?: HumanReview): BuildOutput {
+  const { scenarios } = applyHandEdits(existing, edits);
+  const { generatorModel, generatedAt, regeneratedAt } = existing.meta;
+  return freeze(
+    { scenarios, dropped: existing.meta.dropped as Generated['dropped'], raw: {} },
+    { generatorModel, generatedAt, regeneratedAt, handEditedProbes: [...new Set(edits.map(e => e.probe))] },
+    humanReview,
+  );
 }
 
 /** Judge every scenario in a frozen dataset; returns issues only for the scenarios that have some. */
@@ -277,19 +290,29 @@ export async function regenerateScenarios(existing: Dataset, options: BuildOptio
   return freeze(
     { scenarios, dropped: [...previousDrops, ...fresh.dropped], raw: fresh.raw },
     { generatorModel: existing.meta.generatorModel, generatedAt: existing.meta.generatedAt, regeneratedAt },
+    options.humanReview,
   );
 }
 
 async function main() {
   if (!config.openRouterApiKey) throw new Error('OPENROUTER_API_KEY is missing: put it in .env.local');
-  const base = { llm: generateText, model: config.model, date: new Date().toISOString().slice(0, 10) };
+  const readData = (file: string) => JSON.parse(readFileSync(path.join(DATA_DIR, file), 'utf8'));
+  const edits: HandEdit[] = readData('hand-edits.json');
+  const labels: HumanReview['labels'] = readData('human-labels.json').probes;
+  const humanReview: HumanReview = { labels, fixedProbeIds: [...new Set(edits.map(e => e.probe))] };
+  const base = { llm: generateText, model: config.model, date: new Date().toISOString().slice(0, 10), humanReview };
   const onlyFlag = process.argv.indexOf('--only');
-  const loadExisting = () => datasetSchema.parse(JSON.parse(readFileSync(path.join(DATA_DIR, 'scenarios.v1.json'), 'utf8')));
+  // Validate, but keep the file's own key order so a re-freeze only diffs what actually changed.
+  const loadExisting = (): Dataset => {
+    const raw = readData('scenarios.v1.json');
+    datasetSchema.parse(raw);
+    return raw;
+  };
   const judge: JudgeLlm = messages => generateText(messages, JUDGE_MODEL);
   let out: BuildOutput;
   if (process.argv.includes('--judge-check')) {
     // Score the judge against the human review labels; the dataset is not touched.
-    const { probes: labels } = JSON.parse(readFileSync(path.join(DATA_DIR, 'human-labels.json'), 'utf8'));
+    // The labels describe the probes as reviewed, i.e. before data/hand-edits.json was applied.
     const existing = loadExisting();
     const labelled = existing.scenarios.filter(s => s.probes.some(p => p.id in labels));
     const issues = await judgeDataset({ ...existing, scenarios: labelled }, judge, DEFAULT_CONCURRENCY, JUDGE_SAMPLES);
@@ -301,7 +324,9 @@ async function main() {
     console.log(JSON.stringify(score, null, 2));
     return;
   }
-  if (process.argv.includes('--judge')) {
+  if (process.argv.includes('--apply-edits')) {
+    out = applyEdits(loadExisting(), edits, humanReview);
+  } else if (process.argv.includes('--judge')) {
     // Audit the frozen dataset, then regenerate only the scenarios the judge rejects (the replacements are judged too).
     const existing = loadExisting();
     const issues = await judgeDataset(existing, judge, DEFAULT_CONCURRENCY, JUDGE_SAMPLES);

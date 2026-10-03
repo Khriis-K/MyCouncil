@@ -152,9 +152,51 @@ export function auditBias(scenarios: Scenario[]): BiasAudit {
   };
 }
 
-export function renderReport(audit: BiasAudit, info: { scenarios: number; dropped: { id: string; reason: string }[] }): string {
+/** 95% Wilson score interval for k successes in n trials. */
+export function wilsonInterval(k: number, n: number): [number, number] {
+  const z = 1.96;
+  const p = k / n;
+  const denom = 1 + (z * z) / n;
+  const center = (p + (z * z) / (2 * n)) / denom;
+  const half = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / denom;
+  return [Math.max(0, center - half), Math.min(1, center + half)];
+}
+
+export interface HumanReview {
+  /** Per reviewed probe: the check it failed, or null if it passed. */
+  labels: Record<string, 'gold' | 'unique' | null>;
+  fixedProbeIds: string[];
+}
+
+const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
+
+function renderHumanReview({ labels, fixedProbeIds }: HumanReview, totalProbes: number): string[] {
+  const ids = Object.keys(labels);
+  const failedOn = (check: 'gold' | 'unique') => ids.filter(id => labels[id] === check);
+  const gold = failedOn('gold');
+  const unique = failedOn('unique');
+  const failed = gold.length + unique.length;
+  const [lo, hi] = wilsonInterval(failed, ids.length);
+  return [
+    '## Human review',
+    '',
+    `Seeded sample from REVIEW.md, checked by a person: is the gold sufficient, is the probe realistic, and does no other turn also answer it.`,
+    '',
+    `- ${failed} of ${ids.length} failed (${pct(failed / ids.length)}; 95% Wilson interval ${pct(lo)}-${pct(hi)})`,
+    `- gold not sufficient: ${gold.length}${gold.length ? ` (${gold.join(', ')})` : ''}`,
+    `- another turn also answers: ${unique.length}${unique.length ? ` (${unique.join(', ')})` : ''}`,
+    `- fixed by hand (data/hand-edits.json): ${fixedProbeIds.length ? fixedProbeIds.join(', ') : 'none'}`,
+    '',
+    `The other ${totalProbes - ids.length} probes were not reviewed, and nothing automated checks these two failure kinds: the validator checks structure and word overlap, not whether the gold turn semantically suffices or a distractor also answers. Expect a similar share of the unreviewed probes to have the same defects. An LLM judge (bench/memory/judge.ts) was tried as an automatic check and did not agree with these labels well enough to gate regeneration.`,
+    '',
+  ];
+}
+
+export function renderReport(
+  audit: BiasAudit,
+  info: { scenarios: number; dropped: { id: string; reason: string }[]; humanReview?: HumanReview },
+): string {
   const f = (n: number) => n.toFixed(3);
-  const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
   const rows = CATEGORIES.map(c => {
     const s = audit.byCategory[c];
     return `| ${c} | ${s.n} | ${f(s.meanJaccard)} | ${f(s.medianJaccard)} | ${pct(s.zeroOverlapShare)} |`;
@@ -183,5 +225,6 @@ export function renderReport(audit: BiasAudit, info: { scenarios: number; droppe
     `- required gold turns: ${d.n}; min ${d.min}, median ${d.median}, mean ${d.mean.toFixed(1)}, max ${d.max}`,
     ...Object.entries(d.buckets).map(([k, v]) => `- ${k}: ${v}`),
     '',
+    ...(info.humanReview ? renderHumanReview(info.humanReview, CATEGORIES.reduce((n, c) => n + audit.byCategory[c].n, 0)) : []),
   ].join('\n');
 }
