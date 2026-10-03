@@ -103,3 +103,7 @@ GEMINI.md
 !.claude/skills/
 __pycache__/
 .cache/
+
+# Demo recording output
+/scripts/record-demos/frames/
+/scripts/record-demos/out/
