@@ -45,6 +45,16 @@ describe('LlmSelector', () => {
     expect(await selector.score('q', ['a', 'b', 'c', 'd'])).toEqual([1, 0, 1, 0]);
   });
 
+  test('keepTop always keeps the first stage-1 candidates ahead of the picks', async () => {
+    const selector = new LlmSelector(async () => '{"selected": [4]}', 'test-model', 5, 2);
+    expect(await selector.score('q', ['a', 'b', 'c', 'd', 'e'])).toEqual([2, 2, 0, 1, 0]);
+  });
+
+  test('keepTop: a pick that is already kept stays kept', async () => {
+    const selector = new LlmSelector(async () => '{"selected": [1, 3]}', 'test-model', 5, 2);
+    expect(await selector.score('q', ['a', 'b', 'c', 'd'])).toEqual([2, 2, 1, 0]);
+  });
+
   test('does not call the model when there is nothing to choose from', async () => {
     let calls = 0;
     const selector = new LlmSelector(async () => { calls++; return '{"selected": []}'; }, 'test-model', 5);
@@ -59,5 +69,10 @@ describe('LlmSelector', () => {
 
   test('id names the model', () => {
     expect(new LlmSelector(async () => '', 'amazon/nova-lite-v1', 5).id).toContain('amazon/nova-lite-v1');
+  });
+
+  test('id names kept candidates, so the two selector systems are distinguishable in traces', () => {
+    expect(new LlmSelector(async () => '', 'amazon/nova-lite-v1', 5).id).toBe('llm-select:amazon/nova-lite-v1');
+    expect(new LlmSelector(async () => '', 'amazon/nova-lite-v1', 5, 2).id).toBe('llm-select:amazon/nova-lite-v1+keep2');
   });
 });

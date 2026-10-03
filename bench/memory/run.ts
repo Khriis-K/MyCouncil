@@ -242,7 +242,7 @@ export function renderMarkdown(results: BenchResults): string {
     `- dataset version: ${meta.datasetVersion}`,
     `- embedder: ${meta.embedderId}`,
     `- memory-production reranker: ${meta.rerankerId ?? 'none'}`,
-    ...(meta.llmSelectorId ? [`- dense+llm-select selector: ${meta.llmSelectorId} (temperature 0, live API calls: rerank latency includes the network)`] : []),
+    ...(meta.llmSelectorId ? [`- dense+llm-select selector: ${meta.llmSelectorId} (temperature 0, live API calls: rerank latency includes the network); dense-top2+llm-select keeps the dense top 2 and lets the selector fill the rest`] : []),
     `- settings: k=${meta.k}, window=${meta.window}, candidatePool=${meta.candidatePool}`,
     `- probes per system: ${aggregates[systems[0]]?.overall.n ?? 0}`,
     '- token counts are approximate (context chars / 4)',
@@ -369,6 +369,9 @@ async function main() {
   const dataPath = args.data ?? defaultDataPath(args.split);
   const dataset = loadDataset(dataPath, args.split);
   // Cross-encoders load lazily, so an unselected system never loads its model.
+  const complete = (messages: Parameters<typeof generateText>[0]) => generateText(messages, config.model, { temperature: 0 });
+  // Needs the OpenRouter key; without it the LLM selector systems are simply not offered.
+  const llm = Boolean(config.openRouterApiKey);
   const options: RunOptions = {
     dataset,
     split: args.split,
@@ -378,10 +381,8 @@ async function main() {
     candidatePool: config.memory.candidatePool,
     rerankers: { minilm: createReranker('minilm')!, 'bge-base': createReranker('bge-base')! },
     productionReranker: config.memory.reranker,
-    // Needs the OpenRouter key; without it the dense+llm-select system is simply not offered.
-    llmSelector: config.openRouterApiKey
-      ? new LlmSelector(messages => generateText(messages, config.model, { temperature: 0 }), config.model, args.k)
-      : undefined,
+    llmSelector: llm ? new LlmSelector(complete, config.model, args.k) : undefined,
+    hybridSelector: llm ? new LlmSelector(complete, config.model, args.k, 2) : undefined,
     systems: args.systems,
   };
   if (args.probe) {

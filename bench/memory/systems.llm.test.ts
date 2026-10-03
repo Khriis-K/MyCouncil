@@ -18,6 +18,11 @@ describe('dense+llm-select', () => {
     expect(createSystems({ ...base, llmSelector: new OverlapReranker() }).map(s => s.name)).toContain('dense+llm-select');
   });
 
+  test('dense-top2+llm-select is only offered when a hybrid selector is configured', () => {
+    expect(createSystems(base).map(s => s.name)).not.toContain('dense-top2+llm-select');
+    expect(createSystems({ ...base, hybridSelector: new OverlapReranker() }).map(s => s.name)).toContain('dense-top2+llm-select');
+  });
+
   test('ranks by the selector and fails the row instead of falling back', async () => {
     const broken: Reranker = { id: 'broken', score: async () => { throw new Error('boom'); } };
     const system = createSystems({ ...base, llmSelector: broken }).find(s => s.name === 'dense+llm-select')!;

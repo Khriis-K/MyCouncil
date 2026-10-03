@@ -31,17 +31,20 @@ export function parseSelection(reply: string, count: number): number[] {
 // An instruction-following LLM in the stage-2 slot. Selected memories score 1, the rest 0, so the
 // pipeline's tie-break keeps stage-1 order within each group. Pick order is ignored: the model lists
 // picks in memory-number order rather than by importance.
+// keepTop > 0 scores the first stage-1 candidates 2, so they stay ahead of the picks: the model tends to
+// skip a memory the message already restates, which dense ranks first. Candidates are chunks, so two
+// chunks of one source can take both kept slots; dedupe then leaves one.
 export class LlmSelector implements Reranker {
   readonly id: string;
 
-  constructor(private complete: Complete, model: string, private maxPicks: number) {
-    this.id = `llm-select:${model}`;
+  constructor(private complete: Complete, model: string, private maxPicks: number, private keepTop = 0) {
+    this.id = `llm-select:${model}${keepTop ? `+keep${keepTop}` : ''}`;
   }
 
   async score(query: string, passages: string[]): Promise<number[]> {
     if (passages.length === 0) return [];
     const reply = await this.complete(buildSelectorMessages(query, passages, this.maxPicks));
     const picks = new Set(parseSelection(reply, passages.length));
-    return passages.map((_, i) => (picks.has(i) ? 1 : 0));
+    return passages.map((_, i) => (i < this.keepTop ? 2 : picks.has(i) ? 1 : 0));
   }
 }
