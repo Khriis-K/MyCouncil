@@ -21,8 +21,12 @@
   --ember: #f08a3c;         /* the dilemma core glow */
   --ember-soft: rgba(240, 138, 60, .16);
   --counsel: #5b8def;       /* counselor node blue */
-  --counsel-soft: rgba(91, 141, 239, .18);
-  --tension: #e5566b;
+  --tension: #ef4444;       /* the app's conflict line */
+  --synthesis: #10b981;     /* the app's synthesis line */
+  --analyst: #0891b2;       /* MBTI group colors, as in the app's type picker */
+  --diplomat: #10b981;
+  --sentinel: #f59e0b;
+  --explorer: #a855f7;
 
   --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
@@ -79,7 +83,9 @@ h1 em { font-style: normal; color: var(--ember); }
 }
 .ring { position: absolute; inset: 9%; border-radius: 50%; border: 1px dashed var(--line); }
 .tension { position: absolute; inset: 0; width: 100%; height: 100%; }
-.tension line { stroke: var(--tension); stroke-width: 1.2; stroke-dasharray: 4 5; opacity: .75; animation: dash 3s linear infinite; }
+.tension line { stroke-width: 1.2; stroke-dasharray: 4 5; opacity: .8; animation: dash 3s linear infinite; }
+.tension .conflict { stroke: var(--tension); }
+.tension .synthesis { stroke: var(--synthesis); }
 @keyframes dash { to { stroke-dashoffset: -18; } }
 .core {
   position: absolute; left: 50%; top: 50%; width: 42%; aspect-ratio: 1; transform: translate(-50%, -50%);
@@ -91,12 +97,15 @@ h1 em { font-style: normal; color: var(--ember); }
 .core b { font: 700 .92rem/1.2 var(--f-display); }
 .node {
   position: absolute; width: 23%; aspect-ratio: 1; transform: translate(-50%, -50%);
-  border-radius: 50%; background: #000; border: 1.5px solid var(--counsel);
-  box-shadow: 0 0 22px var(--counsel-soft);
+  --c: var(--counsel);
+  border-radius: 50%; background: #000; border: 1.5px solid var(--c);
+  box-shadow: 0 0 22px -2px var(--c);
   display: grid; place-content: center; text-align: center;
   font: 500 .66rem/1.1 var(--f-body); color: var(--ink-dim);
 }
-.node span { display: block; font: 500 .7rem/1 var(--f-mono); color: var(--counsel); margin-bottom: 3px; }
+.node span { display: block; font: 500 .7rem/1 var(--f-mono); color: var(--c); margin-bottom: 3px; }
+.node.analyst { --c: var(--analyst); } .node.diplomat { --c: var(--diplomat); }
+.node.sentinel { --c: var(--sentinel); } .node.explorer { --c: var(--explorer); }
 .n1 { left: 50%; top: 11%; } .n2 { left: 87%; top: 40%; } .n3 { left: 73%; top: 85%; } .n4 { left: 27%; top: 85%; } .n5 { left: 13%; top: 40%; }
 @media (prefers-reduced-motion: no-preference) {
   .node { animation: bob 5s ease-in-out infinite; }
@@ -219,18 +228,20 @@ code { font: 400 .88em var(--f-mono); color: var(--ink); background: var(--panel
       <div class="url">github.com/Khriis-K/MyCouncil</div>
     </div>
 
-    <div class="orbit" role="img" aria-label="Illustration of the app's sphere view: a dilemma at the center with five counselors orbiting it and tension lines between two disagreeing pairs.">
+    <div class="orbit" role="img" aria-label="Illustration of the app's sphere view: a dilemma at the center with five counselors orbiting it and red conflict lines and green synthesis lines between neighboring counselors.">
       <div class="ring"></div>
       <svg class="tension" viewBox="0 0 100 100" aria-hidden="true">
-        <line x1="50" y1="11" x2="73" y2="85"/>
-        <line x1="13" y1="40" x2="87" y2="40"/>
+        <line class="conflict" x1="50" y1="11" x2="87" y2="40"/>
+        <line class="conflict" x1="87" y1="40" x2="73" y2="85"/>
+        <line class="synthesis" x1="73" y1="85" x2="27" y2="85"/>
+        <line class="synthesis" x1="13" y1="40" x2="50" y2="11"/>
       </svg>
       <div class="core"><small>Your dilemma</small><b>Take the offer or stay?</b></div>
-      <div class="node n1"><div><span>ENFJ</span>Protagonist</div></div>
-      <div class="node n2"><div><span>INTJ</span>Architect</div></div>
-      <div class="node n3"><div><span>ISFJ</span>Defender</div></div>
-      <div class="node n4"><div><span>ENFP</span>Campaigner</div></div>
-      <div class="node n5"><div><span>ESTP</span>Entrepreneur</div></div>
+      <div class="node n1 diplomat"><div><span>ENFJ</span>Protagonist</div></div>
+      <div class="node n2 analyst"><div><span>INTJ</span>Architect</div></div>
+      <div class="node n3 sentinel"><div><span>ISFJ</span>Defender</div></div>
+      <div class="node n4 diplomat"><div><span>ENFP</span>Campaigner</div></div>
+      <div class="node n5 explorer"><div><span>ESTP</span>Entrepreneur</div></div>
     </div>
   </div>
 

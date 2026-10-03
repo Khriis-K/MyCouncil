@@ -3,7 +3,7 @@ import path from 'node:path';
 
 // Usage: npm run demos:build
 // Embeds out/<clip>.mp4 into template.html and writes site/index.html: one self-contained file
-// that serves GitHub Pages and can be attached to applications as-is.
+// that serves GitHub Pages and can be attached to applications as-is. Also writes out/artifact.html.
 const DIR = import.meta.dirname;
 const CLIPS = ['summon', 'debate', 'chat', 'refine', 'mbti'];
 
@@ -15,7 +15,10 @@ for (const clip of CLIPS) {
 const leftover = page.match(/__[A-Z]+__/);
 if (leftover) throw new Error(`Unfilled placeholder ${leftover[0]} in template.html`);
 
-// The template is an artifact body (no document shell); Pages needs a full document.
+// The template is an artifact body (no document shell), published as-is to the Claude artifact.
+fs.writeFileSync(path.join(DIR, 'out', 'artifact.html'), page);
+
+// Pages needs a full document.
 const [head, body] = page.split('<div class="wrap">', 2);
 const html = `<!doctype html>
 <html lang="en">
