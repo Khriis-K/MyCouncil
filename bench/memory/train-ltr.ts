@@ -129,6 +129,7 @@ export function renderCvReport({ cv, baseline, folds, weights }: CvReport): stri
     `- each cell is the mean over folds of the per-fold mean over probes`,
     `- lambda picked by mean CV nDCG@5. The chosen lambda's CV score is slightly optimistic: it was selected on these same folds`,
     `- ${folds[0].length} scenarios per validation fold: the per-fold numbers are noisy, read the spread before the mean`,
+    '- every fold, and the test split, comes from the same generator: a feature that fingerprints how it plants gold (e.g. gold turns being longer or older than filler) scores well here and nowhere else. Check large context weights against the data before trusting them',
     '',
     '## CV by lambda',
     '',
