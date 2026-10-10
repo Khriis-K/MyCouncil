@@ -68,21 +68,15 @@ export const REFLECTION_FOCUS_OPTIONS: ReflectionFocusOption[] = [
     value: 'Decision-Making',
     label: 'Decision-Making',
     description: 'Emphasizes practical choices, tradeoffs, and actionable outcomes',
-    color: 'text-orange-400',
-    badgeColor: 'bg-orange-500/20 border-orange-500/40 text-orange-300'
   },
   {
     value: 'Emotional Processing',
     label: 'Emotional Processing',
     description: 'Focuses on feelings, values, and internal emotional conflicts',
-    color: 'text-pink-400',
-    badgeColor: 'bg-pink-500/20 border-pink-500/40 text-pink-300'
   },
   {
     value: 'Creative Problem Solving',
     label: 'Creative Problem Solving',
     description: 'Prioritizes novel perspectives, alternatives, and unconventional approaches',
-    color: 'text-cyan-400',
-    badgeColor: 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300'
   }
 ];

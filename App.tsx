@@ -300,7 +300,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden font-sans" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
+    <div className="flex h-screen w-screen overflow-hidden font-body bg-paper text-ink">
 
       {/* 1. Sidebar Configuration */}
       <Sidebar
@@ -334,28 +334,12 @@ const App: React.FC = () => {
         style={{ width: sidebarOpen && !isMobile ? 'calc(100% - var(--sidebar-width))' : '100%' }}
       >
 
-        {/* Background Grid/Effects */}
-        <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
-          <div 
-            className="w-full h-full bg-[size:40px_40px]"
-            style={{
-              backgroundImage: `linear-gradient(to right, var(--grid-color) 1px, transparent 1px), linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px)`
-            }}
-          ></div>
-          <div className="absolute inset-0" style={{ background: 'var(--grid-fade)' }}></div>
-        </div>
-
         {/* View Content */}
         <div className="flex-grow flex items-center justify-center relative z-10">
           {viewState === 'INITIAL' ? (
-            <div className="text-center space-y-4 opacity-60 animate-pulse-slow">
-              <div 
-                className="w-24 h-24 rounded-full mx-auto flex items-center justify-center"
-                style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-primary)' }}
-              >
-                <span className="material-symbols-outlined text-4xl" style={{ color: 'var(--text-muted)' }}>psychology</span>
-              </div>
-              <p className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>Summon the Council to begin reflection.</p>
+            <div className="text-center space-y-2 px-6">
+              <p className="label">The chamber is empty</p>
+              <p className="font-display italic text-2xl text-ink2">Summon the Council to begin reflection.</p>
             </div>
           ) : (
             <ReflectionSphere

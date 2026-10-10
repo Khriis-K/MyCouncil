@@ -1,116 +1,71 @@
-@keyframes pulse {
-  0% {
-    opacity: 1;
-    filter: drop-shadow(0 0 32px #6366f1) drop-shadow(0 0 12px #818cf8);
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.98;
-    filter: drop-shadow(0 0 48px #6366f1) drop-shadow(0 0 24px #818cf8);
-    transform: scale(1.06);
-  }
-  100% {
-    opacity: 1;
-    filter: drop-shadow(0 0 32px #6366f1) drop-shadow(0 0 12px #818cf8);
-    transform: scale(1);
-  }
-}
-/* Theme CSS Variables */
+/* ============================================
+   CHAMBER THEME TOKENS
+   Limestone paper and iron-gall ink. Oxblood (seal) marks actions and conflict,
+   brass marks synthesis. Group colours are the MBTI temperaments, muted.
+   ============================================ */
 :root {
-  /* Backgrounds */
-  --bg-primary: #f6f6f8;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #e5e7eb;
-  --bg-glass: rgba(255, 255, 255, 0.85);
-  --bg-glass-hover: rgba(255, 255, 255, 0.95);
-  
-  /* Text */
-  --text-primary: #1e293b;
-  --text-secondary: #475569;
-  --text-tertiary: #64748b;
-  --text-muted: #94a3b8;
-  
-  /* Borders */
-  --border-primary: #e2e8f0;
-  --border-secondary: #cbd5e1;
-  --border-subtle: rgba(0, 0, 0, 0.1);
-  
-  /* Overlays & Effects */
-  --overlay-backdrop: rgba(100, 116, 139, 0.4);
-  --shadow-color: rgba(0, 0, 0, 0.1);
-  --glow-color: rgba(79, 70, 229, 0.3);
-  
-  /* Grid Pattern */
-  --grid-color: #e2e8f0;
-  --grid-fade: linear-gradient(to top, var(--bg-primary), transparent);
-  
-  /* Responsive Layout - defaults for desktop */
-  --sidebar-width: 360px;
+  --paper: #E6E3DC;
+  --paper2: #F1EEE8;
+  --ink: #1D2028;
+  --ink2: #5A5D66;
+  --rule: #C6C0B3;
+  --seal: #7B2232;
+  --on-seal: #F6F1E8;
+  --brass: #8A6B2C;
+  --veil: rgba(29, 32, 40, 0.28);
+
+  --group-analyst: #3E5C8A;
+  --group-diplomat: #4A7656;
+  --group-sentinel: #8A6B2C;
+  --group-explorer: #8E4656;
+
+  --font-display: 'Cormorant Garamond', Garamond, 'Times New Roman', serif;
+  --font-body: 'Source Serif 4', Georgia, serif;
+  --font-label: 'IBM Plex Sans Condensed', 'Arial Narrow', sans-serif;
 }
 
-/* Dark Theme */
 .dark {
-  /* Backgrounds */
-  --bg-primary: #101622;
-  --bg-secondary: rgb(30, 41, 59);
-  --bg-tertiary: rgb(51, 65, 85);
-  --bg-glass: rgba(30, 41, 59, 0.7);
-  --bg-glass-hover: rgba(30, 41, 59, 0.9);
-  
-  /* Text */
-  --text-primary: #f1f5f9;
-  --text-secondary: #e2e8f0;
-  --text-tertiary: #cbd5e1;
-  --text-muted: #94a3b8;
-  
-  /* Borders */
-  --border-primary: #334155;
-  --border-secondary: #475569;
-  --border-subtle: rgba(255, 255, 255, 0.1);
-  
-  /* Overlays & Effects */
-  --overlay-backdrop: rgba(15, 23, 42, 0.6);
-  --shadow-color: rgba(0, 0, 0, 0.3);
-  --glow-color: rgba(79, 70, 229, 0.3);
-  
-  /* Grid Pattern */
-  --grid-color: #1e293b;
-  --grid-fade: linear-gradient(to top, var(--bg-primary), transparent);
+  --paper: #15171C;
+  --paper2: #1C1F25;
+  --ink: #EAE5DA;
+  --ink2: #A29E94;
+  --rule: #363940;
+  --seal: #D9707F;
+  --on-seal: #15171C;
+  --brass: #C9A764;
+  --veil: rgba(0, 0, 0, 0.5);
+
+  --group-analyst: #93ACD8;
+  --group-diplomat: #90BD9B;
+  --group-sentinel: #C9A764;
+  --group-explorer: #D79BA9;
 }
 
-/* AMOLED Theme */
+/* Dark, with true-black paper for OLED screens */
 .amoled {
-  /* Backgrounds */
-  --bg-primary: #000000;
-  --bg-secondary: #121212;
-  --bg-tertiary: #18181b;
-  --bg-glass: rgba(0, 0, 0, 0.9);
-  --bg-glass-hover: rgba(18, 18, 18, 0.95);
-  
-  /* Text */
-  --text-primary: #e2e8f0;
-  --text-secondary: #a1a1aa;
-  --text-tertiary: #71717a;
-  --text-muted: #52525b;
-  
-  /* Borders */
-  --border-primary: #27272a;
-  --border-secondary: #3f3f46;
-  --border-subtle: rgba(255, 255, 255, 0.15);
-  
-  /* Overlays & Effects */
-  --overlay-backdrop: rgba(0, 0, 0, 0.8);
-  --shadow-color: rgba(0, 0, 0, 0.5);
-  --glow-color: rgba(79, 70, 229, 0.4);
-  
-  /* Grid Pattern */
-  --grid-color: #18181b;
-  --grid-fade: linear-gradient(to top, var(--bg-primary), transparent);
+  --paper: #000000;
+  --paper2: #0E0F12;
+  --ink: #EAE5DA;
+  --ink2: #A29E94;
+  --rule: #2A2C31;
+  --seal: #D9707F;
+  --on-seal: #000000;
+  --brass: #C9A764;
+  --veil: rgba(0, 0, 0, 0.7);
+
+  --group-analyst: #93ACD8;
+  --group-diplomat: #90BD9B;
+  --group-sentinel: #C9A764;
+  --group-explorer: #D79BA9;
 }
 
 /* ============================================
    RESPONSIVE SIDEBAR BREAKPOINTS
    ============================================ */
+
+:root {
+  --sidebar-width: 360px;
+}
 
 /* Mobile: sidebar as full overlay */
 @media (max-width: 767px) {
@@ -123,13 +78,6 @@
 @media (min-width: 768px) and (max-width: 1279px) {
   :root {
     --sidebar-width: 320px;
-  }
-}
-
-/* Desktop: full sidebar */
-@media (min-width: 1280px) {
-  :root {
-    --sidebar-width: 360px;
   }
 }
 
@@ -205,25 +153,113 @@
   }
 }
 
-/* Base Styles */
+/* ============================================
+   BASE AND TYPE SCALE
+   ============================================ */
 body {
-  background-color: var(--bg-primary);
-  color: var(--text-secondary);
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
   overflow: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Utility Classes */
-.glass-panel {
-  background: var(--bg-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
-.glass-panel-solid {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-primary);
+/* Condensed small caps for labels and headers */
+.label {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+
+/* Small caps for controls: tabs, toggles, the theme switch */
+.caps {
+  font-family: var(--font-label);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Section and overlay titles */
+.display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 40px;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.wordmark em {
+  font-weight: 500;
+}
+
+/* The masthead's date line */
+.docket {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink2);
+}
+
+/* The one call to act: an oxblood seal */
+.btn-seal {
+  background: var(--seal);
+  color: var(--on-seal);
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 13px 26px;
+}
+
+.btn-seal:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Secondary action at full weight: ruled in ink */
+.btn-outline {
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 12px 16px;
+}
+
+/* Secondary action: an underlined caps link */
+.btn-link {
+  font-family: var(--font-label);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  border-bottom: 1px solid var(--ink);
+  padding: 2px 0;
+}
+
+.btn-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Scrollbar Styling */
@@ -250,46 +286,40 @@ input[type=range] {
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  height: 16px;
-  width: 16px;
+  height: 14px;
+  width: 14px;
   border-radius: 50%;
-  background: var(--text-secondary);
+  background: var(--seal);
   cursor: pointer;
   margin-top: -6px;
-  box-shadow: 0 0 0 1px #4f46e5;
   position: relative;
   z-index: 50;
 }
 
 input[type=range]::-webkit-slider-runnable-track {
   width: 100%;
-  height: 4px;
+  height: 2px;
   cursor: pointer;
-  background: var(--text-tertiary);
-  border-radius: 2px;
-  opacity: 0.8;
+  background: var(--rule);
   position: relative;
   z-index: 1;
 }
 
 /* Firefox */
 input[type=range]::-moz-range-thumb {
-  height: 16px;
-  width: 16px;
+  height: 14px;
+  width: 14px;
   border: none;
   border-radius: 50%;
-  background: var(--text-secondary);
+  background: var(--seal);
   cursor: pointer;
-  box-shadow: 0 0 0 1px #4f46e5;
 }
 
 input[type=range]::-moz-range-track {
   width: 100%;
-  height: 4px;
+  height: 2px;
   cursor: pointer;
-  background: var(--text-tertiary);
-  border-radius: 2px;
-  opacity: 0.8;
+  background: var(--rule);
 }
 
 /* Theme transition for smooth switching */
@@ -312,8 +342,3 @@ input[type=range]::-moz-range-track {
 .animate-slide-in-left {
   animation: slide-in-left 0.3s ease-out forwards;
 }
-
-/* Disable transitions for animations */
-.animate-slide-in-right,
-.animate-slide-in-left,
-.animate-slide-out-right,

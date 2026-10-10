@@ -2,6 +2,7 @@ import React from 'react';
 import { Counselor, TensionPair, CouncilResponse, ReflectionFocus } from '../types';
 import { REFLECTION_FOCUS_OPTIONS } from '../constants';
 import { useContainerSize, calculateLayoutValues } from '../hooks/useContainerSize';
+import { groupColor } from '../utils/groupColor';
 
 interface ReflectionSphereProps {
   dilemma: string;
@@ -55,6 +56,8 @@ const getSlingshotControlPoint = (
     y: midY + vy * factor
   };
 };
+
+const tensionColor = (type: TensionPair['type']) => type === 'conflict' ? 'var(--seal)' : 'var(--brass)';
 
 const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   dilemma,
@@ -191,27 +194,6 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
   const svgCenterX = 500;  // Center of 1000x1000 viewBox
   const svgCenterY = (layout.centerY / layout.height) * 1000; // Adjusted center for bottom bar
 
-  // Ambient atmosphere colors for each lens
-  const atmosphereColors: Record<string, { gradient: string, glow: string, borderColor: string }> = {
-    'Decision-Making': {
-      gradient: 'radial-gradient(ellipse at center, rgba(249, 115, 22, 0.08) 0%, transparent 60%)',
-      glow: 'rgba(249, 115, 22, 0.3)',
-      borderColor: 'rgba(249, 115, 22, 0.4)'
-    },
-    'Emotional Processing': {
-      gradient: 'radial-gradient(ellipse at center, rgba(236, 72, 153, 0.08) 0%, transparent 60%)',
-      glow: 'rgba(236, 72, 153, 0.3)',
-      borderColor: 'rgba(236, 72, 153, 0.4)'
-    },
-    'Creative Problem Solving': {
-      gradient: 'radial-gradient(ellipse at center, rgba(6, 182, 212, 0.08) 0%, transparent 60%)',
-      glow: 'rgba(6, 182, 212, 0.3)',
-      borderColor: 'rgba(6, 182, 212, 0.4)'
-    }
-  };
-
-  const currentAtmosphere = reflectionFocus ? atmosphereColors[reflectionFocus] : null;
-
   return (
     <div 
       ref={containerRef}
@@ -219,66 +201,24 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
       style={{ maxWidth: '100%', maxHeight: '100%' }}
     >
 
-      {/* Ambient Atmosphere Layer */}
-      {currentAtmosphere && (
-        <div 
-          className="absolute inset-0 pointer-events-none animate-atmosphere-breathe"
-          style={{ background: currentAtmosphere.gradient }}
-        >
-          {/* Secondary atmospheric glow spots */}
-          <div 
-            className="absolute inset-0"
-            style={{
-              background: `
-                radial-gradient(circle at 30% 30%, ${currentAtmosphere.glow.replace('0.3', '0.04')} 0%, transparent 40%),
-                radial-gradient(circle at 70% 70%, ${currentAtmosphere.glow.replace('0.3', '0.03')} 0%, transparent 30%)
-              `
-            }}
-          />
-        </div>
-      )}
-
-      {/* Vignette Overlay (New) */}
-      {currentFocusOption && (
-        <div className="fixed inset-0 pointer-events-none z-0">
-           {/* Vignette Gradient */}
-           <div 
-             className="absolute inset-0"
-             style={{
-               background: `radial-gradient(ellipse at center, transparent 40%, ${currentAtmosphere?.glow.replace('0.3', '0.08') || 'rgba(168, 85, 247, 0.08)'} 100%)`
-             }}
-           />
-           {/* Shimmer Border Effect (Simulated with inset shadow for simplicity in React) */}
-           <div className="absolute inset-0 border-[3px] border-transparent rounded-none opacity-30"
-                style={{
-                  boxShadow: `inset 0 0 40px ${currentAtmosphere?.glow.replace('0.3', '0.1') || 'rgba(168, 85, 247, 0.1)'}`
-                }}
-           />
-        </div>
-      )}
-
       {/* Floating Orb Focus Indicator - hidden on landscape, moves left when debate panel visible */}
       {currentFocusOption && !isLandscape && (
         <div 
-          className={`absolute z-20 flex items-center gap-2 px-3 py-2 rounded-full backdrop-blur-md border border-white/10 shadow-2xl animate-float ${isMobile ? 'scale-90' : ''}`}
+          className={`absolute z-20 flex items-center gap-2 px-3 py-2 border ${isMobile ? 'scale-90' : ''} bg-paper border-rule`}
           style={{
             top: '1rem',
             // Move to left side when debate mode is on and we're not constrained (legend is showing on right)
             right: (isDebateMode && !isConstrained) ? 'auto' : '1rem',
-            left: (isDebateMode && !isConstrained) ? '1rem' : 'auto',
-            background: currentAtmosphere?.glow.replace('0.3', '0.2') || 'rgba(168, 85, 247, 0.2)',
-            borderColor: currentAtmosphere?.borderColor || 'rgba(168, 85, 247, 0.4)'
+            left: (isDebateMode && !isConstrained) ? '1rem' : 'auto'
           }}
         >
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-inner ${currentFocusOption.color.replace('text-', 'bg-').replace('400', '500').replace('500', '600')}`}>
-            <span className="material-symbols-outlined text-white text-lg">visibility</span>
-          </div>
+          <span className="material-symbols-outlined text-lg text-ink2">visibility</span>
           <div className="flex flex-col">
-            <span className="text-xs font-bold text-white uppercase tracking-wider">
+            <span className="label !text-ink">
               {currentFocusOption.label.split(' ')[0]} Lens
             </span>
             {!isMobile && (
-              <span className={`text-[10px] font-medium opacity-90 leading-none mt-0.5 ${currentFocusOption.color}`}>
+              <span className="text-[12px] italic leading-none mt-0.5 text-ink2">
                 {currentFocusOption.label.split(' ').slice(1).join(' ') || 'Perspective'}
               </span>
             )}
@@ -323,20 +263,12 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                   <path
                     d={`M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`}
                     fill="none"
-                    stroke={isConflict ? '#ef4444' : '#10b981'}
-                    strokeWidth={isHovered ? 5 : 3}
-                    strokeDasharray={pair.type === 'challenge' ? "12 12" : "0"}
+                    stroke={tensionColor(pair.type)}
+                    strokeWidth={isHovered ? 3 : 1.8}
+                    strokeDasharray={isConflict ? undefined : "5 5"}
+                    vectorEffect="non-scaling-stroke"
                     className="transition-all duration-300"
-                    style={{
-                      filter: isHovered 
-                        ? `drop-shadow(0 0 10px ${isConflict ? 'rgba(239,68,68,0.9)' : 'rgba(16,185,129,0.9)'})` 
-                        : `drop-shadow(0 0 5px ${isConflict ? 'rgba(239,68,68,0.5)' : 'rgba(16,185,129,0.5)'})`
-                    }}
                   />
-                  {/* Animated Pulse on Line */}
-                  <circle r="4" fill="white" opacity={isHovered ? 1 : 0.7}>
-                    <animateMotion dur="2s" repeatCount="indefinite" path={`M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`} />
-                  </circle>
                 </g>
               );
             })}
@@ -386,16 +318,10 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                 <div 
                   className={`
                     w-9 h-9 rounded-full flex items-center justify-center
-                    font-bold text-sm text-white
-                    transition-all duration-200 shadow-lg
-                    ${isHovered ? 'scale-125' : 'scale-100'}
-                  `}
-                  style={{
-                    backgroundColor: isConflict ? '#ef4444' : '#10b981',
-                    boxShadow: isHovered 
-                      ? `0 0 20px ${isConflict ? 'rgba(239,68,68,0.8)' : 'rgba(16,185,129,0.8)'}` 
-                      : `0 0 10px ${isConflict ? 'rgba(239,68,68,0.5)' : 'rgba(16,185,129,0.5)'}`,
-                  }}
+                    font-display text-lg font-semibold
+                    transition-all duration-200
+                    ${isHovered ? 'scale-125' : 'scale-100'} text-on-seal`}
+                  style={{ backgroundColor: tensionColor(pair.type) }}
                 >
                   {markerNumber}
                 </div>
@@ -407,26 +333,21 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
           {/* Unconstrained: Panel positioned relative to container, not viewport */}
           {!isConstrained && (
             <div 
-              className="absolute top-4 right-4 w-80 max-w-[35%] backdrop-blur-md rounded-xl p-4 z-30 animate-fade-in shadow-xl"
-              style={{
-                backgroundColor: 'var(--bg-glass)',
-                border: '1px solid var(--border-subtle)'
-              }}
+              className="absolute top-4 right-4 w-80 max-w-[35%] p-4 z-30 animate-fade-in bg-paper border border-rule"
             >
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-              <span className="material-symbols-outlined text-xl text-yellow-400">electric_bolt</span>
-              <h3 className="font-semibold text-base" style={{ color: 'var(--text-primary)' }}>
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-rule">
+              <h3 className="label">
                 Tensions
               </h3>
               {/* Legend Key */}
               <div className="ml-auto flex items-center gap-4 text-xs">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <span style={{ color: 'var(--text-muted)' }}>Conflict</span>
+                  <span className="w-5 border-t-2 border-seal"></span>
+                  <span className="text-ink2">Conflict</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                  <span style={{ color: 'var(--text-muted)' }}>Synthesis</span>
+                  <span className="w-5 border-t-2 border-dashed border-brass"></span>
+                  <span className="text-ink2">Synthesis</span>
                 </div>
               </div>
             </div>
@@ -445,19 +366,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                 return (
                   <li 
                     key={idx} 
-                    className={`
-                      p-3 rounded-lg cursor-pointer transition-all duration-200
-                      ${isHovered ? 'scale-[1.02]' : ''}
-                    `}
-                    style={{
-                      backgroundColor: isHovered 
-                        ? (isConflict ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)')
-                        : 'transparent',
-                      border: `1px solid ${isHovered 
-                        ? (isConflict ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)')
-                        : 'transparent'
-                      }`,
-                    }}
+                    className={`p-3 cursor-pointer border transition-all duration-200 ${isHovered ? 'bg-paper2' : 'border-transparent'}`}
+                    style={isHovered ? { borderColor: tensionColor(pair.type) } : undefined}
                     onClick={() => onTensionClick(pair)}
                     onMouseEnter={() => setHoveredTensionIdx(idx)}
                     onMouseLeave={() => setHoveredTensionIdx(null)}
@@ -465,24 +375,23 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                     <div className="flex items-start gap-3">
                       {/* Numbered Badge */}
                       <div 
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 mt-0.5"
-                        style={{ backgroundColor: isConflict ? '#ef4444' : '#10b981' }}
+                        className="w-6 h-6 rounded-full flex items-center justify-center font-display text-sm font-semibold flex-shrink-0 mt-0.5 text-on-seal"
+                        style={{ backgroundColor: tensionColor(pair.type) }}
                       >
                         {idx + 1}
                       </div>
                       
                       <div className="flex-1 min-w-0">
                         {/* Counselor Names */}
-                        <div className="flex items-center gap-2 text-sm font-medium mb-1">
-                          <span style={{ color: 'var(--text-secondary)' }}>{c1.name}</span>
-                          <span className={isConflict ? 'text-red-400' : 'text-emerald-400'}>↔</span>
-                          <span style={{ color: 'var(--text-secondary)' }}>{c2.name}</span>
+                        <div className="flex items-center gap-2 font-display text-lg font-semibold leading-tight mb-1">
+                          <span className="text-ink">{c1.name}</span>
+                          <span style={{ color: tensionColor(pair.type) }}>↔</span>
+                          <span className="text-ink">{c2.name}</span>
                         </div>
                         
                         {/* Core Issue */}
-                        <p 
-                          className="text-xs leading-relaxed"
-                          style={{ color: 'var(--text-muted)' }}
+                        <p
+                          className="text-[13px] italic leading-snug text-ink2"
                         >
                           {coreIssue}
                         </p>
@@ -499,18 +408,14 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
           {isConstrained && (
             <button
               onClick={() => setIsTensionDrawerOpen(!isTensionDrawerOpen)}
-              className="fixed bottom-24 right-4 z-40 w-12 h-12 rounded-full backdrop-blur-md shadow-lg flex items-center justify-center transition-all"
-              style={{
-                backgroundColor: 'var(--bg-glass)',
-                border: '1px solid var(--border-subtle)'
-              }}
+              className="fixed bottom-24 right-4 z-40 w-12 h-12 rounded-full flex items-center justify-center transition-all bg-paper border border-rule"
             >
-              <span className="material-symbols-outlined text-yellow-400">
+              <span className="material-symbols-outlined text-ink">
                 {isTensionDrawerOpen ? 'close' : 'electric_bolt'}
               </span>
               {/* Badge showing tension count */}
               {!isTensionDrawerOpen && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[11px] font-label font-semibold flex items-center justify-center bg-seal text-on-seal">
                   {activeTensions.length}
                 </span>
               )}
@@ -520,35 +425,29 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
           {/* Constrained: Bottom Drawer */}
           {isConstrained && (
             <div 
-              className={`fixed bottom-0 left-0 right-0 z-30 backdrop-blur-md rounded-t-2xl shadow-2xl transition-transform duration-300 ${
+              className={`fixed bottom-0 left-0 right-0 z-30 transition-transform duration-300 ${
                 isTensionDrawerOpen ? 'translate-y-0' : 'translate-y-full'
-              }`}
-              style={{
-                backgroundColor: 'var(--bg-glass)',
-                border: '1px solid var(--border-subtle)',
-                borderBottom: 'none',
-                maxHeight: isLandscape ? '70vh' : '50vh'
-              }}
+              } bg-paper border border-rule`}
+              style={{ borderBottom: 'none', maxHeight: isLandscape ? '70vh' : '50vh' }}
             >
             {/* Drawer Handle */}
             <div className="flex justify-center py-2">
-              <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'var(--border-secondary)' }}></div>
+              <div className="w-10 h-1 rounded-full bg-rule"></div>
             </div>
             
             {/* Drawer Header */}
-            <div className="flex items-center gap-2 px-4 pb-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-              <span className="material-symbols-outlined text-lg text-yellow-400">electric_bolt</span>
-              <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+            <div className="flex items-center gap-2 px-4 pb-3 border-b border-rule">
+              <h3 className="label">
                 Tensions
               </h3>
-              <div className="ml-auto flex items-center gap-3 text-[10px]">
+              <div className="ml-auto flex items-center gap-3 text-[11px]">
                 <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                  <span style={{ color: 'var(--text-muted)' }}>Conflict</span>
+                  <span className="w-4 border-t-2 border-seal"></span>
+                  <span className="text-ink2">Conflict</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                  <span style={{ color: 'var(--text-muted)' }}>Synthesis</span>
+                  <span className="w-4 border-t-2 border-dashed border-brass"></span>
+                  <span className="text-ink2">Synthesis</span>
                 </div>
               </div>
             </div>
@@ -568,11 +467,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                   return (
                     <li 
                       key={idx} 
-                      className="p-3 rounded-lg cursor-pointer active:scale-[0.98] transition-all"
-                      style={{
-                        backgroundColor: isConflict ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                        border: `1px solid ${isConflict ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
-                      }}
+                      className="p-3 cursor-pointer border bg-paper2 active:scale-[0.98] transition-all"
+                      style={{ borderColor: tensionColor(pair.type) }}
                       onClick={() => {
                         onTensionClick(pair);
                         setIsTensionDrawerOpen(false);
@@ -580,24 +476,24 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                     >
                       <div className="flex items-start gap-3">
                         <div 
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                          style={{ backgroundColor: isConflict ? '#ef4444' : '#10b981' }}
+                          className="w-6 h-6 rounded-full flex items-center justify-center font-display text-sm font-semibold flex-shrink-0 text-on-seal"
+                          style={{ backgroundColor: tensionColor(pair.type) }}
                         >
                           {idx + 1}
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 text-sm font-medium mb-1">
-                            <span style={{ color: 'var(--text-secondary)' }}>{c1.name}</span>
-                            <span className={isConflict ? 'text-red-400' : 'text-emerald-400'}>↔</span>
-                            <span style={{ color: 'var(--text-secondary)' }}>{c2.name}</span>
+                          <div className="flex items-center gap-1.5 font-display text-lg font-semibold leading-tight mb-1">
+                            <span className="text-ink">{c1.name}</span>
+                            <span style={{ color: tensionColor(pair.type) }}>↔</span>
+                            <span className="text-ink">{c2.name}</span>
                           </div>
-                          <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                          <p className="text-[13px] italic leading-snug text-ink2">
                             {coreIssue}
                           </p>
                         </div>
                         
-                        <span className="material-symbols-outlined text-lg" style={{ color: 'var(--text-muted)' }}>
+                        <span className="material-symbols-outlined text-lg text-ink2">
                           chevron_right
                         </span>
                       </div>
@@ -612,7 +508,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
           {/* Drawer Backdrop */}
           {isConstrained && isTensionDrawerOpen && (
             <div 
-              className="fixed inset-0 z-20 bg-black/30"
+              className="fixed inset-0 z-20 bg-veil"
               onClick={() => setIsTensionDrawerOpen(false)}
             />
           )}
@@ -624,32 +520,28 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
         className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 transition-all duration-[2000ms] ${
           animationPhase === 'hidden' ? 'opacity-0' : 'opacity-100'
         } ${
-          animationPhase === 'center-pulse' ? 'animate-pulse-slow' : ''
+          animationPhase === 'center-pulse' ? 'animate-pulse' : ''
         }`}
       >
         <button
           onClick={onCenterClick}
-          className="rounded-full backdrop-blur-sm border flex flex-col items-center justify-center text-center group transition-all duration-500 cursor-pointer overflow-hidden"
+          className="rounded-full border border-ink bg-paper flex flex-col items-center justify-center text-center group transition-all duration-500 cursor-pointer overflow-hidden"
           style={{
             width: `${layout.centerSize}px`,
             height: `${layout.centerSize}px`,
             padding: isMobile ? '0.75rem' : '1rem',
-            backgroundColor: 'var(--bg-glass)',
-            borderColor: currentAtmosphere?.borderColor || 'var(--border-primary)',
-            boxShadow: currentAtmosphere ? `0 0 60px ${currentAtmosphere.glow}` : '0 0 40px rgba(79,70,229,0.2)'
           }}
         >
           <span 
-            className="font-semibold uppercase tracking-wider mb-1 group-hover:text-primary transition-colors flex-shrink-0"
-            style={{ fontSize: `${layout.centerLabelSize}px`, color: 'var(--text-muted)' }}
+            className="label mb-1 group-hover:text-seal transition-colors flex-shrink-0"
+            style={{ fontSize: `${layout.centerLabelSize}px` }}
           >
             {animationPhase === 'center-pulse' ? 'Status' : 'Your Dilemma'}
           </span>
           <p 
-            className="font-bold leading-snug break-words w-full overflow-hidden text-ellipsis transition-opacity duration-500"
-            style={{ 
+            className="font-display italic leading-snug break-words w-full overflow-hidden text-ellipsis transition-opacity duration-500 text-ink"
+            style={{
               fontSize: `clamp(12px, ${layout.centerSize * 0.08}px, ${layout.centerFontSize}px)`,
-              color: 'var(--text-primary)',
               display: '-webkit-box',
               WebkitLineClamp: 4,
               WebkitBoxOrient: 'vertical',
@@ -664,10 +556,9 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
           {/* Subtitle: Context Summary */}
           {contextSummary && animationPhase !== 'center-pulse' && (
             <span 
-              className="mt-2 italic leading-tight px-3 break-words flex-shrink-0 overflow-hidden text-ellipsis opacity-80"
-              style={{ 
+              className="mt-2 italic leading-tight px-3 break-words flex-shrink-0 overflow-hidden text-ellipsis opacity-80 text-ink"
+              style={{
                 fontSize: `${Math.max(10, layout.centerLabelSize - 1)}px`, 
-                color: 'var(--text-secondary)',
                 maxHeight: `${layout.centerSize * 0.15}px`,
                 display: '-webkit-box',
                 WebkitLineClamp: 2,
@@ -683,15 +574,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
       {/* Counselors - Dynamic container-aware sizing with pixel positioning */}
       {counselors.map((counselor, idx) => {
         const pos = positions[idx];
-        const colorMap: Record<string, { border: string, text: string, glow: string }> = {
-          blue: { border: 'border-blue-500', text: 'text-blue-400', glow: 'rgba(59,130,246,0.4)' },
-          green: { border: 'border-green-500', text: 'text-green-400', glow: 'rgba(16,185,129,0.4)' },
-          yellow: { border: 'border-yellow-500', text: 'text-yellow-400', glow: 'rgba(234,179,8,0.4)' },
-          purple: { border: 'border-purple-500', text: 'text-purple-400', glow: 'rgba(168,85,247,0.4)' },
-          red: { border: 'border-red-500', text: 'text-red-400', glow: 'rgba(239,68,68,0.4)' },
-        };
-
-        const colors = colorMap[counselor.color] || colorMap['purple'];
+        const accent = groupColor(counselor.role);
 
         // Use calculated layout values - offset is exactly half of node size for proper centering
         const nodeSizePx = layout.nodeSize;
@@ -752,15 +635,15 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
         }
 
         // Button styles for appearance
-        let buttonClass = `w-full h-full rounded-full backdrop-blur-md border flex flex-col items-center justify-center transition-transform duration-300 ${colors.border} ${colors.text}`;
-        let buttonStyle: React.CSSProperties = { 
-          ['--glow-color' as string]: colors.glow,
-          backgroundColor: 'var(--bg-glass)',
+        let buttonClass = `w-full h-full rounded-full border-[1.6px] bg-paper2 flex flex-col items-center justify-center transition-transform duration-300`;
+        let buttonStyle: React.CSSProperties = {
+          borderColor: accent,
+          color: accent,
           padding: isMobile ? '0.25rem' : '0.5rem',
         };
 
         if (isStable) {
-           buttonClass += ' animate-pulse-glow hover:scale-110 active:scale-95';
+           buttonClass += ' hover:scale-105 active:scale-95';
         }
 
         return (
@@ -788,8 +671,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                 {counselor.icon}
               </span>
               <span 
-                className="font-medium text-center leading-tight"
-                style={{ fontSize: `${layout.nodeFontSize}px`, color: 'var(--text-secondary)' }}
+                className="font-display font-semibold text-center leading-tight text-ink"
+                style={{ fontSize: `${layout.nodeFontSize + 3}px` }}
               >
                 {counselor.name.replace(/^The /, '')}
               </span>

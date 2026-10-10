@@ -37,11 +37,7 @@ const BottomBar: React.FC<BottomBarProps> = ({
 
   return (
     <footer 
-      className={`absolute bottom-0 left-0 right-0 backdrop-blur-md p-3 md:p-4 z-40 transition-all duration-300 ${isDisabled ? 'opacity-50 pointer-events-none' : 'opacity-100'} ${isHighlighted ? 'ring-4 ring-primary ring-opacity-50 shadow-[0_0_30px_rgba(79,70,229,0.6)]' : ''}`}
-      style={{
-        backgroundColor: 'var(--bg-glass)',
-        borderTop: '1px solid var(--border-primary)'
-      }}
+      className={`absolute bottom-0 left-0 right-0 p-3 md:p-4 z-40 transition-all duration-300 ${isDisabled ? 'opacity-50 pointer-events-none' : 'opacity-100'} ${isHighlighted ? 'ring-2 ring-inset ring-seal' : ''} bg-paper border-t border-rule`}
     >
       <div className={`max-w-screen-2xl mx-auto ${isMobile ? 'flex flex-col space-y-3' : 'flex items-center space-x-4'}`}>
         
@@ -54,16 +50,12 @@ const BottomBar: React.FC<BottomBarProps> = ({
             onChange={(e) => setAdditionalContext(e.target.value)}
             onKeyPress={handleKeyPress}
             maxLength={300}
-            className="w-full rounded-lg pl-4 pr-20 py-2 focus:ring-primary focus:border-primary text-sm"
-            style={{
-              backgroundColor: 'var(--bg-secondary)',
-              borderColor: 'var(--border-primary)',
-              color: 'var(--text-secondary)'
-            }}
+            className="w-full bg-transparent border-b pl-0 pr-16 py-2 italic text-[15px] focus:outline-none focus:border-ink placeholder:text-ink2 border-rule text-ink"
+            
             disabled={isDisabled || isRefining}
           />
           {additionalContext.length > 0 && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink2">
               {additionalContext.length}/300
             </span>
           )}
@@ -72,22 +64,20 @@ const BottomBar: React.FC<BottomBarProps> = ({
         {/* Mobile: Row with toggle and button */}
         <div className={`${isMobile ? 'flex items-center justify-between' : 'flex items-center space-x-4'}`}>
           {/* Debate Toggle */}
-          <div className={`flex items-center space-x-2 md:space-x-3 ${isMobile ? '' : 'px-4'}`} style={!isMobile ? { borderRight: '1px solid var(--border-primary)' } : undefined}>
-            <label htmlFor="debate-mode" className="text-xs md:text-sm font-medium cursor-pointer select-none whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
+          <div className={`flex items-center space-x-2 md:space-x-3 ${isMobile ? '' : 'px-4 border-r border-rule'}`}>
+            <label htmlFor="debate-mode" className="caps cursor-pointer select-none whitespace-nowrap text-ink">
               {isMobile ? 'Debate' : 'Debate Mode'}
             </label>
             <button
               id="debate-mode"
               onClick={toggleDebateMode}
               disabled={isRefining}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                isDebateMode ? 'bg-primary' : ''
-              } ${isRefining ? 'opacity-50 cursor-not-allowed' : ''}`}
-              style={!isDebateMode ? { backgroundColor: 'var(--border-secondary)' } : undefined}
+              aria-pressed={isDebateMode}
+              className={`relative inline-flex h-4 w-[30px] items-center rounded-full border transition-colors ${isDebateMode ? 'border-ink' : 'border-rule'} ${isRefining ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  isDebateMode ? 'translate-x-6' : 'translate-x-1'
+                className={`inline-block h-2.5 w-2.5 transform rounded-full transition-transform ${
+                  isDebateMode ? 'translate-x-[15px] bg-seal' : 'translate-x-[2px] bg-ink2'
                 }`}
               />
             </button>
@@ -97,7 +87,7 @@ const BottomBar: React.FC<BottomBarProps> = ({
           <button 
             onClick={onRefine}
             disabled={isRefining || (!additionalContext.trim())}
-            className={`bg-primary hover:bg-indigo-500 text-white font-semibold py-2 px-4 md:px-6 rounded-lg shadow-[0_0_15px_rgba(79,70,229,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm md:text-base ${
+            className={`btn-seal !py-2.5 !px-5 whitespace-nowrap flex items-center gap-2 ${
               isRefining ? 'cursor-wait' : ''
             }`}
           >
