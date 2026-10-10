@@ -6,6 +6,7 @@ import { chamberLayout } from '../utils/chamberLayout';
 import { tensionArc } from '../utils/tensionArc';
 import { arcLabel, arcLabelWidth } from '../utils/arcLabel';
 import { groupColor } from '../utils/groupColor';
+import { tensionPair } from '../utils/counselorMapper';
 import { useElementWidth } from '../hooks/useElementWidth';
 
 export type SittingStatus = 'summoning' | 'refining' | 'sitting';
@@ -14,7 +15,6 @@ interface ChamberFloorProps {
   seats: (RollSeat | CouncilSeat)[]; // The roll while summoning, the seated council after
   filled: number; // Seats shown as taken; the rest are drawn empty
   status: SittingStatus;
-  sitting: number; // Changes with each new sitting, to replay the seating animation
   tensions: CouncilResponse['tensions'];
   showTensions: boolean;
   selectedId: string | null;
@@ -29,11 +29,17 @@ interface ChamberFloorProps {
 const isMbtiCode = (type: string) => /^[EI][NS][FT][JP]$/.test(type);
 const shortName = (name: string) => name.replace(/^The /, '');
 
+// Enter or Space activates an SVG group that acts as a button, as they would a real one.
+const onActivateKey = (activate: () => void) => (e: React.KeyboardEvent) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault(); // Space would otherwise scroll the page
+  activate();
+};
+
 const ChamberFloor: React.FC<ChamberFloorProps> = ({
   seats,
   filled,
   status,
-  sitting,
   tensions,
   showTensions,
   selectedId,
@@ -76,7 +82,7 @@ const ChamberFloor: React.FC<ChamberFloorProps> = ({
               if (from === -1 || to === -1) return null;
               const label = layout.labelled ? arcLabel(t.core_issue) : '';
               const arc = tensionArc(layout, from, to, label ? arcLabelWidth(label) : 0);
-              const pair: TensionPair = { counselor1: t.counselor_ids[0], counselor2: t.counselor_ids[1], type: t.type };
+              const pair = tensionPair(t);
               const synthesis = t.type === 'synthesis';
               return (
                 <g
@@ -86,7 +92,7 @@ const ChamberFloor: React.FC<ChamberFloorProps> = ({
                   tabIndex={0}
                   aria-label={`${t.counselor_ids[0]} and ${t.counselor_ids[1]}: ${t.core_issue}`}
                   onClick={() => onTensionClick(pair)}
-                  onKeyDown={e => e.key === 'Enter' && onTensionClick(pair)}
+                  onKeyDown={onActivateKey(() => onTensionClick(pair))}
                 >
                   <path d={arc.d} className="fill-none stroke-transparent" strokeWidth={18} />
                   <path d={arc.d} className={`tension-arc ${synthesis ? 'tension-synthesis' : 'tension-conflict'}`} />
@@ -104,7 +110,7 @@ const ChamberFloor: React.FC<ChamberFloorProps> = ({
               );
             })}
 
-            <g key={sitting}>
+            <g>
               {seats.map((seat, i) => {
                 const spot = layout.seats[i];
                 const taken = i < filled;
@@ -116,13 +122,13 @@ const ChamberFloor: React.FC<ChamberFloorProps> = ({
                   <g
                     key={seat.numeral}
                     data-counselor-seat
-                    className={`seat ${clickable ? 'cursor-pointer' : ''}`}
+                    className={`seat ${status === 'summoning' ? 'seat-enter' : ''} ${clickable ? 'cursor-pointer' : ''}`}
                     style={{ animationDelay: `${i * 120}ms`, opacity: taken && status !== 'refining' ? 1 : 0.35 }}
                     role={clickable ? 'button' : undefined}
                     tabIndex={clickable ? 0 : undefined}
                     aria-label={clickable ? `Seat ${seat.numeral}, ${seat.name}` : undefined}
                     onClick={clickable ? () => onSeatClick(counselor) : undefined}
-                    onKeyDown={clickable ? e => e.key === 'Enter' && onSeatClick(counselor) : undefined}
+                    onKeyDown={clickable ? onActivateKey(() => onSeatClick(counselor)) : undefined}
                   >
                     <circle
                       cx={spot.x}

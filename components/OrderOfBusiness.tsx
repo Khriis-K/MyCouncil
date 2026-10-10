@@ -1,6 +1,7 @@
 import React from 'react';
 import { Counselor, CouncilResponse, TensionPair } from '../types';
 import { CouncilSeat } from '../utils/councilSeats';
+import { tensionPair } from '../utils/counselorMapper';
 
 interface OrderOfBusinessProps {
   seats: CouncilSeat[];
@@ -49,7 +50,7 @@ const OrderOfBusiness: React.FC<OrderOfBusinessProps> = ({ seats, tensions, sele
                 key={t.pair_id}
                 type="button"
                 disabled={disabled}
-                onClick={() => onTensionClick({ counselor1: t.counselor_ids[0], counselor2: t.counselor_ids[1], type: t.type })}
+                onClick={() => onTensionClick(tensionPair(t))}
                 className="grid grid-cols-[22px_1fr] gap-x-2.5 items-baseline text-left text-[14px] enabled:hover:text-seal"
               >
                 <i

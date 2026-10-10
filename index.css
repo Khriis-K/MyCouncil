@@ -81,9 +81,13 @@
   letter-spacing: 0.12em;
 }
 
-/* Seats take their places one after another at each new sitting, and dim while the council confers */
+/* Seats dim while the council confers. They take their places one after another only as the council
+   is summoned, so filled seats don't vanish and fade back in when its answer arrives. */
 .seat {
   transition: opacity 0.6s ease;
+}
+
+.seat-enter {
   animation: seat-in 0.6s ease-out backwards;
 }
 
@@ -126,7 +130,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .seat,
+  .seat-enter,
   .tension-arc {
     animation: none;
   }

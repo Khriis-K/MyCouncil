@@ -11,7 +11,6 @@ interface ChamberProps {
   roll: RollSeat[]; // Who will sit, shown while the council is summoned
   seats: CouncilSeat[];
   tensions: CouncilResponse['tensions'];
-  sitting: number;
   estimatedMs: number;
   showTensions: boolean;
   selectedId: string | null;
@@ -36,7 +35,7 @@ function useElapsedWhile(working: boolean): number {
 }
 
 // The chamber page: the floor, and beside it (below it on a phone) the order of business.
-const Chamber: React.FC<ChamberProps> = ({ status, roll, seats, tensions, sitting, estimatedMs, ...props }) => {
+const Chamber: React.FC<ChamberProps> = ({ status, roll, seats, tensions, estimatedMs, ...props }) => {
   const elapsed = useElapsedWhile(status !== 'sitting');
   const summoning = status === 'summoning';
   const secondsLeft = Math.max(0, Math.round((estimatedMs - elapsed) / 1000));
@@ -46,7 +45,6 @@ const Chamber: React.FC<ChamberProps> = ({ status, roll, seats, tensions, sittin
       seats={summoning ? roll : seats}
       filled={summoning ? seatsFilled(elapsed, estimatedMs, roll.length) : seats.length}
       status={status}
-      sitting={sitting}
       tensions={tensions}
       secondsLeft={secondsLeft}
       {...props}

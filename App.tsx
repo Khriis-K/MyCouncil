@@ -64,7 +64,6 @@ const App: React.FC = () => {
   const [contextSummary, setContextSummary] = useState<string>(''); // AI-generated summary of previous refinements
   const [isRefining, setIsRefining] = useState(false);
   const [originalSummary, setOriginalSummary] = useState<string>(''); // Store initial summary, never changes
-  const [sitting, setSitting] = useState(0); // Counts each council answer, to replay the seating animation
   const [refinementHistory, setRefinementHistory] = useState<{ text: string; timestamp: number }[]>([]); // Track all refinement contexts
   const [debateLog, setDebateLog] = useState<DebateInterjection[]>([]); // User interjections across all debates, for memory
   const memorySources = buildMemorySources({ chatHistory, refinements: refinementHistory, debateLog });
@@ -114,7 +113,6 @@ const App: React.FC = () => {
       setCouncilData(data);
       setOriginalSummary(data.summary); // Store the original summary
       setViewState('SEATED');
-      setSitting(n => n + 1);
 
     } catch (error) {
       console.error("Error generating council:", error);
@@ -192,7 +190,6 @@ const App: React.FC = () => {
       }
       
       setCouncilData(data);
-      setSitting(n => n + 1);
       
       // Clear additional context input
       setAdditionalContext('');
@@ -325,7 +322,6 @@ const App: React.FC = () => {
             roll={councilRoll(selectedMBTI, councilSize)}
             seats={councilSeats(selectedMBTI, councilSize, councilData)}
             tensions={councilData?.tensions ?? []}
-            sitting={sitting}
             estimatedMs={estimatedTimeMs}
             showTensions={isDebateMode}
             selectedId={selectedCounselor?.id ?? null}

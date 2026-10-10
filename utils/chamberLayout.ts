@@ -77,6 +77,9 @@ function compactLayout(count: number, width: number): ChamberLayout {
   return { width, height: well.y + well.height + PAD, center, radius, seatRadius, labelled: false, seats, well };
 }
 
+// The name labels on the floor (none on a compact floor).
+export const seatLabels = (layout: ChamberLayout): Box[] => layout.seats.flatMap(s => (s.label ? [s.label] : []));
+
 function seatPoints(count: number, center: Point, radius: number): Point[] {
   return Array.from({ length: count }, (_, i) => {
     const degrees = FIRST_ANGLE - ((FIRST_ANGLE - LAST_ANGLE) * i) / (count - 1);
@@ -87,7 +90,7 @@ function seatPoints(count: number, center: Point, radius: number): Point[] {
 
 // True when no label or panel runs off the floor, into another, or into a seat.
 function fits(layout: ChamberLayout): boolean {
-  const pieces = [...layout.seats.flatMap(s => (s.label ? [s.label] : [])), layout.well];
+  const pieces = [...seatLabels(layout), layout.well];
   if (layout.labelled && layout.well.width < FULL.minWellWidth) return false; // Too narrow to read the dilemma
   if (pieces.some(b => b.x < 0 || b.x + b.width > layout.width)) return false;
   const clash = pieces.some((a, i) =>

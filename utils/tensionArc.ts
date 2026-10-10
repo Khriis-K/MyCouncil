@@ -1,4 +1,4 @@
-import { Box, ChamberLayout, Point, boxDistance } from './chamberLayout';
+import { Box, ChamberLayout, Point, boxDistance, seatLabels } from './chamberLayout';
 
 export interface TensionArc {
   d: string; // SVG path: a quadratic curve between the two seats
@@ -71,7 +71,7 @@ function crossesCurve(curve: Quad, box: Box): number {
 
 // How far a label stays from every seat, name and the panel (negative when it overlaps one).
 function boxClearance(layout: ChamberLayout, box: Box): number {
-  const others = [...layout.seats.flatMap(s => (s.label ? [s.label] : [])), layout.well];
+  const others = [...seatLabels(layout), layout.well];
   const fromSeats = layout.seats.map(s => boxDistance(box, s) - layout.seatRadius);
   const fromBoxes = others.map(o => gapBetween(box, o));
   return Math.min(...fromSeats, ...fromBoxes);
@@ -105,7 +105,7 @@ function curveFor(layout: ChamberLayout, a: Point, b: Point, mid: Point, anchor:
 // The closest the curve comes to anything it must avoid (negative when it runs through something).
 function clearanceOf(layout: ChamberLayout, curve: Quad, from: number, to: number): number {
   const others = layout.seats.filter((_, i) => i !== from && i !== to);
-  const boxes: Box[] = [...layout.seats.flatMap(s => (s.label ? [s.label] : [])), layout.well];
+  const boxes: Box[] = [...seatLabels(layout), layout.well];
   let closest = Infinity;
   for (let i = 0; i <= SAMPLES; i++) {
     const p = pointAt(curve, i / SAMPLES);

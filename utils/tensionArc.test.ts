@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import { chamberLayout } from './chamberLayout';
 import { tensionArc } from './tensionArc';
+import { arcLabel, arcLabelWidth } from './arcLabel';
+
+// The widest label the floor can show: a single long word, cut to the limit.
+const WIDEST_LABEL = arcLabelWidth(arcLabel('w'.repeat(60)));
 
 type Point = { x: number; y: number };
 type Box = { x: number; y: number; width: number; height: number };
@@ -55,9 +59,9 @@ describe('tensionArc', () => {
       const layout = chamberLayout(count, width);
       expect(layout.labelled).toBe(true);
       for (const [from, to] of pairs(count)) {
-        const arc = tensionArc(layout, from, to, 170);
+        const arc = tensionArc(layout, from, to, WIDEST_LABEL);
         const box = arc.labelBox!;
-        expect(box.width).toBe(170);
+        expect(box.width).toBe(WIDEST_LABEL);
         // Set beside the middle of its curve, never adrift from it, and never across it
         expect(boxDistance(box, arc.label)).toBeGreaterThan(0);
         expect(boxDistance(box, arc.label)).toBeLessThan(12);
