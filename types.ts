@@ -24,7 +24,7 @@ export interface MBTIType {
   color: string;
 }
 
-export type OverlayType = 'NONE' | 'MBTI_SELECTION' | 'MBTI_VALIDATION' | 'COUNSELOR_INSIGHT_BAR' | 'COUNSELOR_PANEL' | 'DEBATE_DIALOGUE' | 'ARGUMENT_MAP' | 'DILEMMA_HISTORY';
+export type OverlayType = 'NONE' | 'MBTI_SELECTION' | 'MBTI_VALIDATION' | 'COUNSELOR_IMPRESSION' | 'COUNSELOR_DOSSIER' | 'DEBATE_DIALOGUE' | 'ARGUMENT_MAP' | 'DILEMMA_HISTORY';
 
 export type ReflectionFocus = 'Decision-Making' | 'Emotional Processing' | 'Creative Problem Solving';
 

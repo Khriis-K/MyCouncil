@@ -129,9 +129,28 @@
   font-size: 16px;
 }
 
+/* The impression slip: the outgoing one drops away as the next is laid down */
+.slip-in {
+  animation: slip-in 0.3s ease-out;
+}
+
+.slip-out {
+  animation: slip-out 0.3s ease-in forwards;
+}
+
+@keyframes slip-in {
+  from { opacity: 0; transform: translateY(12px); }
+}
+
+@keyframes slip-out {
+  to { opacity: 0; transform: translateY(12px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .seat-enter,
-  .tension-arc {
+  .tension-arc,
+  .slip-in,
+  .slip-out {
     animation: none;
   }
 }

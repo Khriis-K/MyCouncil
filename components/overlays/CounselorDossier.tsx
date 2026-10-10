@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Counselor, CouncilResponse, ChatMessage } from '../../types';
-import { groupColor } from '../../utils/groupColor';
+import { CouncilResponse, ChatMessage } from '../../types';
+import { CouncilSeat } from '../../utils/councilSeats';
+import { recallFootnotes } from '../../utils/footnotes';
+import { seatHeading } from '../../utils/seatHeading';
 
 interface CounselorDossierProps {
-  counselor: Counselor;
+  seat: CouncilSeat;
   dynamicData?: CouncilResponse['counselors'][0];
   onClose: () => void;
   chatMessages: ChatMessage[];
@@ -12,34 +14,37 @@ interface CounselorDossierProps {
   onSendMessage: (message: string) => void;
 }
 
-type Tab = 'INSIGHT' | 'PROTOCOL' | 'COMMS';
+const PLAN_NUMERALS = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii'];
 
+// "The Commander" reads as "the Commander" mid-sentence
+const inSentence = (name: string) => name.replace(/^The /, 'the ');
+
+// A counselor's full opinion, set like a printed one, with the correspondence beside it (below it on a phone).
 const CounselorDossier: React.FC<CounselorDossierProps> = ({
-  counselor,
+  seat,
   dynamicData,
   onClose,
   chatMessages,
   isTyping,
   onSendMessage
 }) => {
-  const [activeTab, setActiveTab] = useState<Tab>('INSIGHT');
-  const [isClosing, setIsClosing] = useState(false);
   const [inputValue, setInputValue] = useState('');
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const lettersRef = useRef<HTMLDivElement>(null);
+  const lettersEndRef = useRef<HTMLDivElement>(null);
+  const seen = useRef({ chatMessages, isTyping });
+  const name = inSentence(seat.name);
 
-  const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-    }, 400);
-  };
-
-  // Auto-scroll to bottom of chat
+  // Keep the latest letter in view. The desktop column opens at its foot; after that a new letter
+  // or the typing line is scrolled into view, which on a phone scrolls the page instead. Not on open,
+  // or a phone would jump past the opinion straight to the correspondence.
   useEffect(() => {
-    if (activeTab === 'COMMS' && chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    const letters = lettersRef.current;
+    if (letters) letters.scrollTop = letters.scrollHeight;
+    if (seen.current.chatMessages !== chatMessages || seen.current.isTyping !== isTyping) {
+      lettersEndRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
-  }, [chatMessages, activeTab, isTyping]);
+    seen.current = { chatMessages, isTyping };
+  }, [chatMessages, isTyping]);
 
   const handleSend = () => {
     if (inputValue.trim()) {
@@ -55,218 +60,115 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
     }
   };
 
-  const accent = groupColor(counselor.role);
-
   return (
-    <>
-      {/* Veil */}
-      <div
-        className="fixed inset-0 z-40 bg-veil"
-        
-        onClick={handleClose}
-      />
+    <div className="flex-grow min-h-0 overflow-y-auto md:overflow-hidden flex flex-col md:grid md:grid-cols-[1fr_400px] animate-fade-in">
+      <article className="px-4 md:pl-24 md:pr-14 pt-7 pb-10 md:overflow-y-auto">
+        <button type="button" onClick={onClose} className="caps text-ink2 hover:text-ink">
+          ← Back to the chamber
+        </button>
+        <h2 className="display mt-3.5 mb-1">
+          Opinion of <em>{name}</em>
+        </h2>
+        <p className="text-[13.5px] italic text-ink2 mb-[22px]">{seatHeading(seat)}.</p>
 
-      {/* Panel */}
-      <div
-        className={`fixed inset-y-0 right-0 z-50 w-full max-w-[450px] h-full flex flex-col ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'} bg-paper border-l border-ink`}
-      >
+        {dynamicData ? (
+          <>
+            <p className="text-[16px] leading-[1.6] max-w-[62ch] first-letter:font-display first-letter:text-[56px] first-letter:float-left first-letter:leading-[0.85] first-letter:pt-1.5 first-letter:pr-2">
+              {dynamicData.assessment}
+            </p>
 
-        {/* Header */}
-        <div
-          className="h-20 flex items-center px-6 gap-4 border-b border-rule"
-        >
-          <div
-            className="w-12 h-12 rounded-full border-[1.6px] flex items-center justify-center text-2xl bg-paper2"
-            style={{ borderColor: accent, color: accent }}
+            <ol className="mt-[22px] grid md:grid-cols-3 border-t border-rule">
+              {dynamicData.action_plan.map((step, idx) => (
+                <li
+                  key={idx}
+                  className="pt-3.5 pb-1 md:pr-4 text-[14px] leading-[1.45] max-md:[&+li]:border-t md:[&:not(:nth-child(3n+1))]:border-l md:[&:not(:nth-child(3n+1))]:pl-4 border-rule"
+                >
+                  <b className="block font-display text-[24px] font-semibold text-seal">
+                    {PLAN_NUMERALS[idx] ?? idx + 1}.
+                  </b>
+                  {step}
+                </li>
+              ))}
+            </ol>
+
+            <p className="label mt-[22px]">For your reflection</p>
+            <p className="font-display italic text-[26px] leading-[1.25] max-w-[30ch] mt-1">{dynamicData.reflection_q}</p>
+          </>
+        ) : (
+          <p className="italic text-ink2">No analysis data available.</p>
+        )}
+      </article>
+
+      <aside className="border-t md:border-t-0 md:border-l border-rule flex flex-col px-4 md:px-7 pt-7 pb-[22px] md:min-h-0">
+        <h3 className="label">Correspondence with {name}</h3>
+
+        <div ref={lettersRef} className="flex-1 flex flex-col gap-[18px] mt-4 md:overflow-y-auto md:min-h-0 pb-4">
+          {chatMessages.length === 0 && !isTyping && (
+            <p className="italic text-[14px] text-ink2">No letters yet. Write to {name} below.</p>
+          )}
+
+          {chatMessages.map((msg) => {
+            const fromYou = msg.sender === 'user';
+            const notes = fromYou ? [] : recallFootnotes(msg.recalled);
+            return (
+              <div key={msg.id} className="animate-fade-in">
+                <div className="label !text-[11px] mb-[3px]">{fromYou ? 'You' : seat.name}</div>
+                <div className={`text-[14.5px] leading-[1.5] ${fromYou ? 'italic' : ''} [&>p:last-of-type]:inline`}>
+                  <ReactMarkdown
+                    components={{
+                      p: ({children}) => <p className="mb-1.5">{children}</p>,
+                      strong: ({children}) => <strong className="font-semibold">{children}</strong>,
+                      em: ({children}) => <em className="italic">{children}</em>,
+                      ul: ({children}) => <ul className="list-disc list-inside mb-1.5">{children}</ul>,
+                      ol: ({children}) => <ol className="list-decimal list-inside mb-1.5">{children}</ol>,
+                      li: ({children}) => <li className="ml-1">{children}</li>
+                    }}
+                  >
+                    {msg.text}
+                  </ReactMarkdown>
+                  {notes.length > 0 && (
+                    <sup className="text-seal font-semibold ml-0.5">{notes.map(n => n.number).join(',')}</sup>
+                  )}
+                </div>
+                {notes.length > 0 && (
+                  <ol className="text-[12px] text-ink2 border-t border-rule pt-1.5 mt-2 space-y-1">
+                    {notes.map(n => (
+                      <li key={n.number}>
+                        <sup className="text-seal font-semibold mr-0.5">{n.number}</sup>
+                        {n.source}: “{n.text}”
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+            );
+          })}
+
+          {isTyping && <p className="italic text-[13.5px] text-ink2">{seat.name} is writing…</p>}
+          <div ref={lettersEndRef} />
+        </div>
+
+        <div className="border-t border-ink pt-2.5 flex items-baseline gap-3">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={`Write to ${name}`}
+            aria-label={`Write to ${name}`}
+            className="flex-1 min-w-0 bg-transparent py-1 italic focus:outline-none placeholder:text-ink2 text-ink"
+          />
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={!inputValue.trim() || isTyping}
+            className="btn-link"
           >
-            <span className="material-symbols-outlined">{counselor.icon}</span>
-          </div>
-          <div className="flex-1">
-            <h2 className="font-display text-2xl font-semibold leading-none text-ink">{counselor.name}</h2>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="label" style={{ color: accent }}>{counselor.role}</span>
-            </div>
-          </div>
-          <button onClick={handleClose} className="transition-colors hover:text-ink text-ink2">
-            <span className="material-symbols-outlined">close</span>
+            Send
           </button>
         </div>
-
-        {/* Tabs */}
-        <div
-          className="flex px-6 gap-6 border-b border-rule"
-        >
-          {(['INSIGHT', 'PROTOCOL', 'COMMS'] as Tab[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`caps py-3 border-b transition-colors ${activeTab === tab ? 'text-ink border-ink' : 'text-ink2 border-transparent'}`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
-
-          {activeTab === 'INSIGHT' && (
-            <div className="animate-fade-in">
-              {dynamicData ? (
-                <>
-                  <div className="mb-6 pb-5 border-b border-rule">
-                    <h3 className="label mb-2">Impression</h3>
-                    <p className="font-display italic text-2xl leading-tight text-ink">"{dynamicData.impression}"</p>
-                  </div>
-
-                  <div className="max-w-none text-base leading-relaxed text-ink">
-                    <p>{dynamicData.assessment}</p>
-                  </div>
-
-                  <div className="mt-8 pt-6 border-t border-rule">
-                    <h3 className="label mb-3">Reflection Query</h3>
-                    <p className="font-display italic text-[22px] leading-snug text-ink">"{dynamicData.reflection_q}"</p>
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center justify-center h-full italic text-ink2">
-                  No analysis data available.
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'PROTOCOL' && (
-            <div className="animate-fade-in">
-              <div className="flex justify-between items-baseline mb-4">
-                <h3 className="label">Optimal Pathway</h3>
-                <span className="label !text-[10px]">CONFIDENCE: 94%</span>
-              </div>
-
-              <ol>
-                {dynamicData?.action_plan.map((step, idx) => (
-                  <li key={idx} className="grid grid-cols-[40px_1fr] gap-2 py-4 border-t border-rule">
-                    <span className="font-display text-2xl font-semibold leading-none text-seal">
-                      {['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii'][idx] ?? idx + 1}.
-                    </span>
-                    <div>
-                      <h4 className="label mb-1">
-                        Sequence 0{idx + 1}
-                      </h4>
-                      <p className="text-[15px] leading-relaxed text-ink">
-                        {step}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-
-          {activeTab === 'COMMS' && (
-            <div className="animate-fade-in h-full flex flex-col">
-              <div className="flex-1 overflow-y-auto space-y-5 pr-2">
-                {chatMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full gap-2 text-ink2">
-                    <span className="material-symbols-outlined text-4xl">forum</span>
-                    <p className="italic">Start a conversation with {counselor.name}...</p>
-                  </div>
-                ) : (
-                  chatMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[85%] text-[14.5px] leading-normal ${
-                          msg.sender === 'user'
-                            ? 'italic animate-slide-in-right'
-                            : 'animate-slide-in-left'
-                        } text-ink`}
-                      >
-                        <div className="label !text-[10.5px] mb-1">{msg.sender === 'user' ? 'You' : counselor.name}</div>
-                        <ReactMarkdown
-                          components={{
-                            p: ({children}) => <p className="mb-1 last:mb-0">{children}</p>,
-                            strong: ({children}) => <strong className="font-semibold">{children}</strong>,
-                            em: ({children}) => <em className="italic">{children}</em>,
-                            ul: ({children}) => <ul className="list-disc list-inside mb-1">{children}</ul>,
-                            ol: ({children}) => <ol className="list-decimal list-inside mb-1">{children}</ol>,
-                            li: ({children}) => <li className="ml-1">{children}</li>
-                          }}
-                        >
-                          {msg.text}
-                        </ReactMarkdown>
-                        {msg.recalled && msg.recalled.length > 0 && (
-                          <details className="mt-2 pt-1.5 text-xs text-ink2 border-t border-rule">
-                            <summary className="cursor-pointer select-none">Recalled from earlier ({msg.recalled.length})</summary>
-                            <ul className="mt-1 space-y-1">
-                              {msg.recalled.map((r, i) => (
-                                <li key={i}>
-                                  <span className="font-semibold">
-                                    {r.channel === 'chat' ? `Chat with ${r.counselorId}` : r.channel === 'debate' ? 'Debate' : 'Added context'}:
-                                  </span>{' '}
-                                  "{r.text}"
-                                </li>
-                              ))}
-                            </ul>
-                          </details>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-
-                {isTyping && (
-                   <p className="italic text-[13.5px] text-ink2">
-                     {counselor.name} is writing…
-                   </p>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-ink">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={`Message ${counselor.name}...`}
-                    className="w-full bg-transparent py-2 pr-10 italic focus:outline-none placeholder:text-ink2 text-ink"
-                    
-                  />
-                  <button
-                    onClick={handleSend}
-                    disabled={!inputValue.trim() || isTyping}
-                    className={`absolute right-0 top-1/2 -translate-y-1/2 p-1.5 transition-opacity ${inputValue.trim() ? 'opacity-100' : 'opacity-50'} text-seal`}
-                  >
-                    <span className="material-symbols-outlined text-lg">send</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        {/* Footer Action (Only show on INSIGHT and PROTOCOL tabs) */}
-        {activeTab !== 'COMMS' && (
-          <div
-            className="p-4 border-t border-rule"
-          >
-            <button
-              onClick={() => setActiveTab('COMMS')}
-              className="btn-seal w-full flex items-center justify-center gap-2"
-            >
-              <span className="material-symbols-outlined text-lg">forum</span>
-              INITIATE DIALOGUE
-            </button>
-          </div>
-        )}
-
-      </div>
-    </>
+      </aside>
+    </div>
   );
 };
 
