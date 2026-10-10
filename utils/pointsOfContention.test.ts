@@ -34,6 +34,10 @@ describe('debateTitle', () => {
     });
   });
 
+  test('sets a challenge against each other, like a conflict', () => {
+    expect(debateTitle('The Commander', 'The Advocate', 'challenge').joiner).toBe('v.');
+  });
+
   test('joins a synthesis pair rather than setting them against each other', () => {
     expect(debateTitle('The Logician', 'The Logistician', 'synthesis')).toEqual({
       first: 'The Logician',

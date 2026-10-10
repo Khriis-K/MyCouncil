@@ -99,7 +99,8 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
          maxPossible += 10 * weight;
       });
 
-      if (maxPossible === 0) return { c1Percent: 0, c2Percent: 0 };
+      // Nothing to weigh (no criteria, or every weight at zero): no verdict, rather than a "balanced" 0% v. 0%
+      if (maxPossible === 0) return null;
 
       return {
          c1Percent: Math.round((c1Total / maxPossible) * 100),
@@ -107,8 +108,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
       };
    };
 
-   const { c1Percent, c2Percent } = calculateScores();
-   const isBalanced = Math.abs(c1Percent - c2Percent) <= 5;
+   const scores = calculateScores();
 
    const handleAddCriterion = async () => {
       if (!newCriterion.trim() || isAddingCriterion || !dynamicData) return;
@@ -214,6 +214,8 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
 
    const title = debateTitle(c1.name, c2.name, pair.type);
    const shortName = (c: Counselor) => c.name.replace(/^The /, '');
+   // Oxblood marks conflict, brass marks synthesis
+   const markColor = pair.type === 'synthesis' ? 'text-brass' : 'text-seal';
 
    // A debate set as a transcript, with the points of contention beside it (below it on a phone).
    return (
@@ -324,10 +326,10 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                                  />
                               </label>
                            </td>
-                           <td className={`py-[11px] w-[52px] text-center font-display text-[22px] font-semibold tabular-nums ${marked === 'c1' ? 'text-seal' : ''}`}>
+                           <td className={`py-[11px] w-[52px] text-center font-display text-[22px] font-semibold tabular-nums ${marked === 'c1' ? markColor : ''}`}>
                               {criterion.c1_score}
                            </td>
-                           <td className={`py-[11px] w-[52px] text-center font-display text-[22px] font-semibold tabular-nums ${marked === 'c2' ? 'text-seal' : ''}`}>
+                           <td className={`py-[11px] w-[52px] text-center font-display text-[22px] font-semibold tabular-nums ${marked === 'c2' ? markColor : ''}`}>
                               {criterion.c2_score}
                            </td>
                            <td className="py-[11px] text-right">
@@ -369,20 +371,24 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
 
             <p className="text-[12.5px] italic text-ink2 mt-3">Scores out of ten. The higher score in each row is marked.</p>
 
-            <div className="mt-6 pt-3 border-t border-ink grid grid-cols-[1fr_52px_52px_24px] items-baseline">
-               <span className="label">Weighted by your priorities</span>
-               <span className="text-center font-display text-[22px] font-semibold tabular-nums" style={{ color: c1Color }}>{c1Percent}%</span>
-               <span className="text-center font-display text-[22px] font-semibold tabular-nums" style={{ color: c2Color }}>{c2Percent}%</span>
-            </div>
-            <p className="text-[14px] mt-3">
-               {isBalanced ? (
-                  <><span className="font-semibold text-brass">Balanced:</span> both perspectives align closely with your priorities. Consider a synthesis.</>
-               ) : (
-                  <>Based on your priorities, <span className="font-semibold" style={{ color: c1Percent > c2Percent ? c1Color : c2Color }}>
-                     {c1Percent > c2Percent ? title.first : title.second}
-                  </span> aligns better with your goals.</>
-               )}
-            </p>
+            {scores && (
+               <>
+                  <div className="mt-6 pt-3 border-t border-ink grid grid-cols-[1fr_52px_52px_24px] items-baseline">
+                     <span className="label">Weighted alignment</span>
+                     <span className="text-center font-display text-[22px] font-semibold tabular-nums" style={{ color: c1Color }}>{scores.c1Percent}%</span>
+                     <span className="text-center font-display text-[22px] font-semibold tabular-nums" style={{ color: c2Color }}>{scores.c2Percent}%</span>
+                  </div>
+                  <p className="text-[14px] mt-3">
+                     {Math.abs(scores.c1Percent - scores.c2Percent) <= 5 ? (
+                        <><span className="font-semibold text-brass">Balanced approach:</span> both perspectives align closely with your priorities. Consider a synthesis.</>
+                     ) : (
+                        <>Based on your priorities, <span className="font-semibold" style={{ color: scores.c1Percent > scores.c2Percent ? c1Color : c2Color }}>
+                           {shortName(scores.c1Percent > scores.c2Percent ? c1 : c2)}'s
+                        </span> approach aligns better with your goals.</>
+                     )}
+                  </p>
+               </>
+            )}
          </aside>
       </div>
    );
