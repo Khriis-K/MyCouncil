@@ -9,13 +9,13 @@ interface DilemmaHistoryOverlayProps {
   onRestartScenario: () => void;
 }
 
-const DilemmaHistoryOverlay: React.FC<DilemmaHistoryOverlayProps> = ({ 
-  dilemma, 
-  originalSummary, 
-  refinementHistory, 
-  onClose, 
+const DilemmaHistoryOverlay: React.FC<DilemmaHistoryOverlayProps> = ({
+  dilemma,
+  originalSummary,
+  refinementHistory,
+  onClose,
   onAddMoreContext,
-  onRestartScenario 
+  onRestartScenario
 }) => {
   const [isClosing, setIsClosing] = useState(false);
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
@@ -43,38 +43,37 @@ const DilemmaHistoryOverlay: React.FC<DilemmaHistoryOverlayProps> = ({
 
   return (
     <>
-      {/* Full-screen backdrop with blur/opacity - click to close */}
-      <div 
-        className="fixed inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-sm z-40"
+      {/* Full-screen veil - click to close */}
+      <div
+        className="fixed inset-0 bg-[var(--veil)] z-40"
         onClick={handleClose}
       ></div>
 
       {/* Side Panel */}
-      <div className={`fixed inset-y-0 right-0 z-50 w-full max-w-xl h-full bg-[var(--bg-secondary)] border-l border-[var(--border-primary)] shadow-2xl flex flex-col ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
+      <div className={`fixed inset-y-0 right-0 z-50 w-full max-w-xl h-full bg-[var(--paper)] border-l border-[var(--ink)] flex flex-col ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
 
         {/* Header */}
-        <header className="flex items-center p-6 border-b border-[var(--border-primary)] bg-[var(--bg-glass)]">
+        <header className="flex items-start px-8 pt-8 pb-5 border-b border-[var(--rule)]">
           <div className="flex-grow">
-            <h3 className="text-xl font-bold text-[var(--text-primary)]">Your Dilemma & History</h3>
-            <p className="text-xs text-[var(--text-tertiary)] mt-1">Original situation and refinement context</p>
+            <p className="label">The record</p>
+            <h3 className="display !text-[34px] mt-1">Your Dilemma &amp; History</h3>
+            <p className="text-[13px] italic text-[var(--ink2)] mt-1">Original situation and refinement context</p>
           </div>
-          <button onClick={handleClose} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
+          <button onClick={handleClose} className="text-[var(--ink2)] hover:text-[var(--ink)] transition-colors">
             <span className="material-symbols-outlined">close</span>
           </button>
         </header>
 
         {/* Content Area */}
-        <div className="flex-grow overflow-y-auto p-8 scrollbar-hide space-y-6">
+        <div className="flex-grow overflow-y-auto px-8 py-6 scrollbar-hide space-y-8">
           {/* Original Situation */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-primary mb-3">Original Situation</h4>
-            <div className="bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-lg p-4">
-              <p className="text-[var(--text-secondary)] text-sm leading-relaxed whitespace-pre-wrap">{dilemma}</p>
-            </div>
+            <h4 className="label mb-3">Original Situation</h4>
+            <p className="text-[var(--ink)] leading-relaxed whitespace-pre-wrap">{dilemma}</p>
             {originalSummary && (
-              <div className="mt-3 pl-4 border-l-2 border-primary/30">
-                <p className="text-xs text-[var(--text-tertiary)] mb-1">AI Summary:</p>
-                <p className="text-sm text-[var(--text-secondary)] italic">{originalSummary}</p>
+              <div className="mt-4 pl-4 border-l-2 border-[var(--rule)]">
+                <p className="label !text-[10px] mb-1">AI Summary</p>
+                <p className="font-display italic text-lg leading-snug text-[var(--ink)]">{originalSummary}</p>
               </div>
             )}
           </div>
@@ -82,16 +81,14 @@ const DilemmaHistoryOverlay: React.FC<DilemmaHistoryOverlayProps> = ({
           {/* Refinement History */}
           {refinementHistory.length > 0 && (
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-3">
+              <h4 className="label mb-1">
                 Additional Context (Refinements)
               </h4>
-              <ul className="space-y-3">
+              <ul>
                 {refinementHistory.map((context, idx) => (
-                  <li key={idx} className="bg-[var(--bg-tertiary)] border border-[var(--border-primary)]/50 rounded-lg p-3">
-                    <div className="flex items-start gap-2">
-                      <span className="text-xs font-bold text-indigo-400 mt-0.5">Update {idx + 1}:</span>
-                      <p className="text-sm text-[var(--text-secondary)] leading-relaxed flex-grow">{context}</p>
-                    </div>
+                  <li key={idx} className="grid grid-cols-[96px_1fr] gap-3 py-3 border-t border-[var(--rule)]">
+                    <span className="text-[13px] italic text-[var(--ink2)]">Update {idx + 1}</span>
+                    <p className="text-[14.5px] text-[var(--ink)] leading-relaxed">{context}</p>
                   </li>
                 ))}
               </ul>
@@ -100,20 +97,20 @@ const DilemmaHistoryOverlay: React.FC<DilemmaHistoryOverlayProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 border-t border-[var(--border-primary)] bg-[var(--bg-glass)] space-y-3">
+        <div className="px-8 py-6 border-t border-[var(--rule)] space-y-3">
           <button
             onClick={handleAddMoreContext}
-            className="w-full bg-primary hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center shadow-[0_0_15px_rgba(79,70,229,0.4)]"
+            className="btn-seal w-full flex items-center justify-center"
           >
-            <span className="material-symbols-outlined mr-2">add</span>
+            <span className="material-symbols-outlined mr-2 text-lg">add</span>
             Add More Context...
           </button>
-          
+
           <button
             onClick={() => setShowRestartConfirm(true)}
-            className="w-full bg-[var(--bg-tertiary)] hover:bg-[var(--bg-tertiary)]/80 text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-semibold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center border border-[var(--border-primary)]"
+            className="btn-outline w-full flex items-center justify-center"
           >
-            <span className="material-symbols-outlined mr-2">refresh</span>
+            <span className="material-symbols-outlined mr-2 text-lg">refresh</span>
             Restart Scenario
           </button>
         </div>
@@ -122,22 +119,22 @@ const DilemmaHistoryOverlay: React.FC<DilemmaHistoryOverlayProps> = ({
       {/* Restart Confirmation Dialog */}
       {showRestartConfirm && (
         <>
-          <div className="fixed inset-0 bg-[var(--overlay-backdrop)] z-[60]" onClick={() => setShowRestartConfirm(false)}></div>
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-full max-w-md bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-lg shadow-2xl p-6 animate-fade-in">
-            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Restart Scenario?</h3>
-            <p className="text-sm text-[var(--text-secondary)] mb-6">
+          <div className="fixed inset-0 bg-[var(--veil)] z-[60]" onClick={() => setShowRestartConfirm(false)}></div>
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-[calc(100%-2rem)] max-w-md bg-[var(--paper2)] border border-[var(--ink)] p-6 animate-fade-in">
+            <h3 className="font-display text-2xl font-semibold text-[var(--ink)] mb-2">Restart Scenario?</h3>
+            <p className="text-[14.5px] text-[var(--ink)] mb-6">
               This will clear your current dilemma, all counselor insights, and refinement history. You'll start fresh with a new scenario.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowRestartConfirm(false)}
-                className="flex-1 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-tertiary)]/80 border border-[var(--border-primary)] text-[var(--text-primary)] font-semibold py-2 px-4 rounded-lg transition-colors"
+                className="btn-outline flex-1 !py-2.5"
               >
                 Cancel
               </button>
               <button
                 onClick={handleRestartConfirm}
-                className="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                className="btn-seal flex-1 !py-2.5"
               >
                 Restart
               </button>

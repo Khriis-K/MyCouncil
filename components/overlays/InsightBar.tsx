@@ -1,5 +1,6 @@
 import React from 'react';
 import { Counselor, CouncilResponse } from '../../types';
+import { groupColor } from '../../utils/groupColor';
 
 interface InsightBarProps {
   counselor: Counselor;
@@ -10,77 +11,51 @@ interface InsightBarProps {
 }
 
 const InsightBar: React.FC<InsightBarProps> = ({ counselor, dynamicData, onViewFull, onClose, isExiting = false }) => {
-  const colorAccents: Record<string, string> = {
-    blue: 'border-blue-500/30',
-    green: 'border-green-500/30',
-    yellow: 'border-yellow-500/30',
-    purple: 'border-purple-500/30',
-  };
-
-  const bgAccents: Record<string, string> = {
-    blue: 'rgba(59, 130, 246, 0.1)',
-    green: 'rgba(16, 185, 129, 0.1)',
-    yellow: 'rgba(234, 179, 8, 0.1)',
-    purple: 'rgba(168, 85, 247, 0.1)',
-  };
-
-  const textColors: Record<string, string> = {
-    blue: 'text-blue-400',
-    green: 'text-green-400',
-    yellow: 'text-yellow-400',
-    purple: 'text-purple-400',
-  };
-
-  const buttonColors: Record<string, string> = {
-    blue: 'bg-blue-600 hover:bg-blue-500 text-white',
-    green: 'bg-green-600 hover:bg-green-500 text-white',
-    yellow: 'bg-yellow-600 hover:bg-yellow-500 text-white',
-    purple: 'bg-purple-600 hover:bg-purple-500 text-white',
-  };
+  const accent = groupColor(counselor.role);
 
   // Use the dedicated impression field from the counselor's response
   const impression = dynamicData?.impression || "Click to view full assessment";
 
   return (
-    <div 
+    <div
       data-insight-bar
       className={`fixed bottom-24 md:bottom-24 left-1/2 -translate-x-1/2 z-40 w-full max-w-5xl px-4 md:px-8 transition-all duration-300 ${
         isExiting ? 'animate-slide-out-left' : 'animate-slide-in-from-right'
       }`}
       onClick={(e) => e.stopPropagation()}
     >
-      <div 
-        className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-full border backdrop-blur-md shadow-2xl ${colorAccents[counselor.color]}`}
-        style={{ backgroundColor: bgAccents[counselor.color] || 'var(--bg-glass)' }}
+      <div
+        className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5 px-4 sm:px-6 py-3 sm:py-4 border"
+        style={{ backgroundColor: 'var(--paper2)', borderColor: 'var(--ink)' }}
       >
         {/* Top row on mobile: Icon, Name, Close */}
         <div className="flex items-center gap-3 w-full sm:w-auto">
           {/* Icon */}
-          <div 
-            className={`flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 border ${colorAccents[counselor.color]}`}
-            style={{ backgroundColor: bgAccents[counselor.color] }}
+          <div
+            className="flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 border-[1.6px]"
+            style={{ borderColor: accent, color: accent }}
           >
-            <span className={`material-symbols-outlined text-xl ${textColors[counselor.color]}`}>
+            <span className="material-symbols-outlined text-xl">
               {counselor.icon}
             </span>
           </div>
 
           {/* Counselor Name (on mobile, shown prominently) */}
-          <span className={`font-bold sm:hidden ${textColors[counselor.color]}`}>{counselor.name}</span>
+          <span className="font-display text-xl font-semibold sm:hidden">{counselor.name}</span>
         </div>
 
         {/* Counselor Name & Impression */}
         <div className="flex-grow w-full sm:w-auto">
-          <p className="text-sm leading-relaxed">
-            <span className={`font-bold hidden sm:inline ${textColors[counselor.color]}`}>{counselor.name}: </span>
-            <span style={{ color: 'var(--text-secondary)' }}>{impression}</span>
+          <p className="leading-snug">
+            <span className="font-display text-xl font-semibold hidden sm:inline">{counselor.name}: </span>
+            <span className="font-display italic text-lg">{impression}</span>
           </p>
         </div>
 
         {/* View Full Button */}
         <button
           onClick={onViewFull}
-          className={`flex-shrink-0 w-full sm:w-auto px-5 py-2 rounded-full font-semibold text-xs transition-all text-center ${buttonColors[counselor.color]}`}
+          className="btn-seal flex-shrink-0 w-full sm:w-auto !py-2.5 !px-5 text-center whitespace-nowrap"
         >
           View Full Analysis
         </button>

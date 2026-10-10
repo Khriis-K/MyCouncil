@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { TensionPair, Counselor, CouncilResponse, DebateInterjection, MemorySource } from '../../types';
 import { injectIntoDebate } from '../../services/CouncilService';
 import { debateInjectionText, interjectionFrom, DebateRequest } from '../../utils/debateInterjection';
+import { groupColor } from '../../utils/groupColor';
 
 interface DebateOverlayProps {
    pair: TensionPair;
@@ -13,58 +14,6 @@ interface DebateOverlayProps {
    memorySources: MemorySource[]; // Earlier session turns the counselors can recall
    onInterjection: (interjection: DebateInterjection) => void; // Called after a user's own words reach the council
 }
-
-// Helper to map counselor colors to Tailwind classes
-const getColorClasses = (color: string) => {
-   const map: Record<string, any> = {
-      blue: {
-         bg: 'bg-blue-500/20',
-         border: 'border-blue-400/50',
-         text: 'text-blue-400',
-         shadow: 'shadow-[0_0_15px_rgba(59,130,246,0.3)]',
-         gradient: 'from-blue-900/20',
-         panelBg: 'bg-blue-950/40',
-         panelBorder: 'border-blue-500/30'
-      },
-      green: {
-         bg: 'bg-emerald-500/20',
-         border: 'border-emerald-400/50',
-         text: 'text-emerald-400',
-         shadow: 'shadow-[0_0_15px_rgba(16,185,129,0.3)]',
-         gradient: 'from-emerald-900/20',
-         panelBg: 'bg-emerald-950/40',
-         panelBorder: 'border-emerald-500/30'
-      },
-      yellow: {
-         bg: 'bg-amber-500/20',
-         border: 'border-amber-400/50',
-         text: 'text-amber-400',
-         shadow: 'shadow-[0_0_15px_rgba(245,158,11,0.3)]',
-         gradient: 'from-amber-900/20',
-         panelBg: 'bg-amber-950/40',
-         panelBorder: 'border-amber-500/30'
-      },
-      purple: {
-         bg: 'bg-purple-500/20',
-         border: 'border-purple-400/50',
-         text: 'text-purple-400',
-         shadow: 'shadow-[0_0_15px_rgba(168,85,247,0.3)]',
-         gradient: 'from-purple-900/20',
-         panelBg: 'bg-purple-950/40',
-         panelBorder: 'border-purple-500/30'
-      },
-      red: {
-         bg: 'bg-red-500/20',
-         border: 'border-red-400/50',
-         text: 'text-red-400',
-         shadow: 'shadow-[0_0_15px_rgba(239,68,68,0.3)]',
-         gradient: 'from-red-900/20',
-         panelBg: 'bg-red-950/40',
-         panelBorder: 'border-red-500/30'
-      }
-   };
-   return map[color] || map['blue'];
-};
 
 const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamicData, onClose, dilemma, memorySources, onInterjection }) => {
    const [showMatrix, setShowMatrix] = useState(false);
@@ -133,8 +82,8 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
 
    if (!c1 || !c2) return null;
 
-   const c1Colors = getColorClasses(c1.color);
-   const c2Colors = getColorClasses(c2.color);
+   const c1Color = groupColor(c1.role);
+   const c2Color = groupColor(c2.role);
 
    const handleWeightChange = (id: string, val: string) => {
       setUserWeights(prev => ({ ...prev, [id]: parseInt(val) }));
@@ -266,33 +215,20 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
    };
 
    return (
-      <div className="absolute inset-0 z-50 flex items-center justify-center p-4 font-sans">
+      <div className="absolute inset-0 z-50 flex items-center justify-center p-4 font-body">
          {/* Backdrop */}
-         <div className="absolute inset-0 bg-[var(--overlay-backdrop)] backdrop-blur-sm" onClick={onClose}></div>
+         <div className="absolute inset-0 bg-[var(--veil)]" onClick={onClose}></div>
 
          {/* Main Container */}
-         <div className="relative w-full max-w-5xl h-[85vh] bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border-subtle)] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-fade-in">
+         <div className="relative w-full max-w-5xl h-[85vh] bg-[var(--paper)] border border-[var(--ink)] flex flex-col overflow-hidden animate-fade-in">
             
-            {/* Split Backgrounds (Only visible in Dialogue mode) */}
-            {!showMatrix && (
-               <div className="absolute inset-0 flex pointer-events-none">
-                  <div className={`w-1/2 bg-gradient-to-r ${c1Colors.gradient} to-transparent opacity-30`}></div>
-                  <div className={`w-1/2 bg-gradient-to-l ${c2Colors.gradient} to-transparent opacity-30`}></div>
-               </div>
-            )}
-
-            {/* Center Divider (Only visible in Dialogue mode) */}
-            {!showMatrix && (
-               <div className="absolute inset-y-0 left-1/2 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent pointer-events-none"></div>
-            )}
-
             {/* Header */}
-            <header className="relative z-20 flex items-center justify-between p-6 border-b border-[var(--border-subtle)] bg-[var(--bg-glass)] backdrop-blur-md">
+            <header className="relative z-20 flex items-center justify-between gap-4 px-8 py-6 border-b border-[var(--rule)] bg-[var(--paper)]">
                <div className="flex flex-col">
-                  <h2 className="text-2xl font-bold tracking-widest text-[var(--text-primary)] uppercase font-orbitron">
+                  <h2 className="display !text-[34px] text-[var(--ink)]">
                      {showMatrix ? 'Decision Matrix' : 'Council Clash'}
                   </h2>
-                  <p className="text-xs text-[var(--text-tertiary)] uppercase tracking-[0.2em]">
+                  <p className="italic text-[var(--ink2)] mt-1">
                      Conflict: {dynamicData?.core_issue || "Analyzing Tension..."}
                   </p>
                </div>
@@ -300,13 +236,13 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                <div className="flex items-center gap-4">
                   <button
                      onClick={() => setShowMatrix(!showMatrix)}
-                     className="px-4 py-2 rounded-lg text-xs font-medium uppercase tracking-wider border border-[var(--border-subtle)] hover:bg-[var(--bg-tertiary)] transition-colors text-[var(--text-secondary)]"
+                     className="btn-link whitespace-nowrap"
                   >
                      {showMatrix ? 'View Dialogue' : 'View Matrix'}
                   </button>
                   <button 
                      onClick={onClose}
-                     className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[var(--bg-tertiary)] transition-colors text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                     className="w-10 h-10 flex items-center justify-center transition-colors text-[var(--ink2)] hover:text-[var(--ink)]"
                   >
                      <span className="material-symbols-outlined">close</span>
                   </button>
@@ -322,8 +258,8 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                            if (turn.speaker === 'user') {
                               return (
                                  <div key={idx} className="flex justify-center w-full animate-fade-in">
-                                    <div className="bg-[var(--bg-tertiary)] border border-[var(--border-primary)] text-[var(--text-primary)] px-6 py-3 rounded-full shadow-lg text-sm max-w-2xl text-center backdrop-blur-md">
-                                       <span className="font-bold text-[var(--text-secondary)] mr-2">YOU:</span>
+                                    <div className="border-l-2 border-[var(--seal)] text-[var(--ink)] pl-4 py-1 italic max-w-2xl">
+                                       <span className="label not-italic mr-2">You</span>
                                        {turn.text}
                                     </div>
                                  </div>
@@ -336,7 +272,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                            }
                            
                            const isC1 = speaker.id === c1.id;
-                           const colors = isC1 ? c1Colors : c2Colors;
+                           const color = isC1 ? c1Color : c2Color;
                            
                            return (
                               <div 
@@ -344,30 +280,26 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                                  className={`flex items-start gap-4 w-full md:w-2/3 ${isC1 ? 'animate-slide-in-left' : 'ml-auto flex-row-reverse animate-slide-in-right'}`}
                               >
                                  {/* Avatar */}
-                                 <div className={`
-                                    w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center border
-                                    ${colors.bg} ${colors.border} ${colors.shadow}
-                                 `}>
-                                    <span className={`material-symbols-outlined ${colors.text}`}>
+                                 <div
+                                    className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center border-[1.6px]"
+                                    style={{ borderColor: color, color, backgroundColor: 'var(--paper2)' }}
+                                 >
+                                    <span className="material-symbols-outlined">
                                        {speaker.icon}
                                     </span>
                                  </div>
 
                                  {/* Message Bubble */}
                                  <div className={`flex-1 min-w-0 ${isC1 ? 'text-left' : 'text-right'}`}>
-                                    <div className={`text-xs mb-1 font-bold tracking-wider uppercase ${colors.text}`}>
+                                    <div className="label mb-1" style={{ color }}>
                                        {speaker.name.replace(/^The /, '')}
                                     </div>
-                                    <div className={`
-                                       p-5 text-sm leading-relaxed text-[var(--text-primary)] shadow-lg backdrop-blur-sm border
-                                       ${colors.panelBg} ${colors.panelBorder}
-                                       ${isC1 ? 'rounded-r-2xl rounded-bl-2xl' : 'rounded-l-2xl rounded-br-2xl'}
-                                    `}>
+                                    <div className="py-3 text-[15px] leading-relaxed text-[var(--ink)] border-t border-[var(--rule)]">
                                        <ReactMarkdown
                                           components={{
                                              p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>,
-                                             strong: ({children}) => <strong className={`font-bold ${colors.text}`}>{children}</strong>,
-                                             em: ({children}) => <em className="italic opacity-90">{children}</em>,
+                                             strong: ({children}) => <strong className="font-semibold">{children}</strong>,
+                                             em: ({children}) => <em className="italic">{children}</em>,
                                              ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
                                              ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
                                              li: ({children}) => <li className="ml-2">{children}</li>
@@ -384,9 +316,9 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                      {isSending && (
                         <div className="flex justify-center w-full py-4">
                            <div className="flex space-x-2">
-                              <div className="w-2 h-2 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                              <div className="w-2 h-2 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                              <div className="w-2 h-2 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                              <div className="w-2 h-2 bg-[var(--ink2)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                              <div className="w-2 h-2 bg-[var(--ink2)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                              <div className="w-2 h-2 bg-[var(--ink2)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                            </div>
                         </div>
                      )}
@@ -397,35 +329,35 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                      <div className="w-full max-w-4xl">
                         {/* Header Row */}
                         <div className="grid grid-cols-12 gap-4 mb-6 text-center px-4">
-                           <div className="col-span-4 text-left text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Criteria</div>
-                           <div className="col-span-3 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Your Priority (Weight)</div>
-                           <div className={`col-span-2 text-xs font-bold uppercase tracking-wider ${c1Colors.text}`}>{c1.name.replace(/^The /, '')}</div>
-                           <div className={`col-span-2 text-xs font-bold uppercase tracking-wider ${c2Colors.text}`}>{c2.name.replace(/^The /, '')}</div>
+                           <div className="col-span-4 text-left label">Criteria</div>
+                           <div className="col-span-3 label">Your Priority (Weight)</div>
+                           <div className="col-span-2 label" style={{ color: c1Color }}>{c1.name.replace(/^The /, '')}</div>
+                           <div className="col-span-2 label" style={{ color: c2Color }}>{c2.name.replace(/^The /, '')}</div>
                            <div className="col-span-1"></div>
                         </div>
 
                         {/* Criteria Rows */}
                         {matrixState.criteria.map((criterion, index) => (
-                           <div key={criterion.id} className="grid grid-cols-12 gap-4 items-center mb-4 p-4 bg-[var(--bg-tertiary)] rounded-xl border border-[var(--border-subtle)] hover:border-[var(--border-primary)] transition-colors group relative">
+                           <div key={criterion.id} className="grid grid-cols-12 gap-4 items-center px-4 py-3 border-t border-[var(--rule)] hover:bg-[var(--paper2)] transition-colors group relative">
                               
                               {/* Tooltip for Reasoning */}
-                              <div className={`absolute left-1/2 -translate-x-1/2 bg-black/90 text-white text-xs p-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-80 text-center z-[60] shadow-xl ${
+                              <div className={`absolute left-1/2 -translate-x-1/2 bg-[var(--ink)] text-[var(--paper)] text-[13px] p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-80 text-center z-[60] ${
                                  index < 2 
                                     ? 'top-full mt-3' 
                                     : 'bottom-full mb-3'
                               }`}>
-                                 <div className="font-bold mb-1 text-indigo-200">{criterion.label}</div>
+                                 <div className="font-display text-lg font-semibold mb-1">{criterion.label}</div>
                                  <div className="leading-relaxed">{criterion.reasoning}</div>
                                  
                                  {/* Arrow */}
                                  <div className={`absolute left-1/2 -translate-x-1/2 border-8 border-transparent ${
                                     index < 2
-                                       ? 'bottom-full border-b-black/90'
-                                       : 'top-full border-t-black/90'
+                                       ? 'bottom-full border-b-[var(--ink)]'
+                                       : 'top-full border-t-[var(--ink)]'
                                  }`}></div>
                               </div>
 
-                              <div className="col-span-4 font-bold text-sm text-[var(--text-primary)]">{criterion.label}</div>
+                              <div className="col-span-4 font-display text-xl font-semibold leading-tight text-[var(--ink)]">{criterion.label}</div>
                               
                               <div className="col-span-3 flex items-center gap-2">
                                  <input 
@@ -438,16 +370,16 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                                  />
                               </div>
                               
-                              <div className={`col-span-2 text-center font-mono font-bold ${c1Colors.text}`}>
+                              <div className="col-span-2 text-center font-display text-[22px] font-semibold tabular-nums" style={{ color: c1Color }}>
                                  {criterion.c1_score}
                               </div>
-                              <div className={`col-span-2 text-center font-mono font-bold ${c2Colors.text}`}>
+                              <div className="col-span-2 text-center font-display text-[22px] font-semibold tabular-nums" style={{ color: c2Color }}>
                                  {criterion.c2_score}
                               </div>
                               <div className="col-span-1 flex justify-end">
                                  <button 
                                     onClick={() => handleRemoveCriterion(criterion.id)}
-                                    className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-1 rounded-full hover:bg-[var(--bg-secondary)]"
+                                    className="text-[var(--ink2)] hover:text-[var(--seal)] transition-colors p-1"
                                     title="Remove Criterion"
                                  >
                                     <span className="material-symbols-outlined text-sm">delete</span>
@@ -457,14 +389,14 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                         ))}
 
                         {/* Add New Criterion Row */}
-                        <div className="grid grid-cols-12 gap-4 items-center mb-4 p-4 bg-[var(--bg-tertiary)]/50 rounded-xl border border-dashed border-[var(--border-subtle)] hover:border-[var(--border-primary)] transition-colors">
+                        <div className="grid grid-cols-12 gap-4 items-center px-4 py-3 border-y border-[var(--rule)]">
                            <div className="col-span-7">
                               <input
                                  type="text"
                                  value={newCriterion}
                                  onChange={(e) => setNewCriterion(e.target.value)}
                                  placeholder="Add your own criterion..."
-                                 className="w-full bg-transparent border-none text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:ring-0"
+                                 className="w-full bg-transparent border-none italic text-[var(--ink)] placeholder-[var(--ink2)] focus:outline-none"
                                  onKeyDown={(e) => e.key === 'Enter' && handleAddCriterion()}
                               />
                            </div>
@@ -472,7 +404,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                               <button
                                  onClick={handleAddCriterion}
                                  disabled={!newCriterion.trim() || isAddingCriterion}
-                                 className="px-4 py-1.5 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-secondary)] transition-all disabled:opacity-50"
+                                 className="btn-link"
                               >
                                  {isAddingCriterion ? 'Scoring...' : 'Score'}
                               </button>
@@ -480,14 +412,14 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                         </div>
 
                         {/* Total Score */}
-                        <div className="grid grid-cols-12 gap-4 mt-8 pt-6 border-t border-[var(--border-subtle)]">
-                           <div className="col-span-7 text-right font-bold text-lg uppercase tracking-widest text-[var(--text-muted)] flex items-center justify-end h-full">
+                        <div className="grid grid-cols-12 gap-4 mt-8 pt-6 border-t border-[var(--ink)]">
+                           <div className="col-span-7 label !text-[13px] flex items-center justify-end h-full">
                               Weighted Alignment
                            </div>
-                           <div className={`col-span-2 text-center text-2xl font-bold font-orbitron ${c1Colors.text}`}>
+                           <div className="col-span-2 text-center font-display text-[28px] font-semibold tabular-nums" style={{ color: c1Color }}>
                               {c1Percent}%
                            </div>
-                           <div className={`col-span-2 text-center text-2xl font-bold font-orbitron ${c2Colors.text}`}>
+                           <div className="col-span-2 text-center font-display text-[28px] font-semibold tabular-nums" style={{ color: c2Color }}>
                               {c2Percent}%
                            </div>
                            <div className="col-span-1"></div>
@@ -495,12 +427,12 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                         
                         <div className="mt-8 text-center animate-fade-in">
                            {isBalanced ? (
-                              <p className="text-sm text-[var(--text-secondary)]">
-                                 <span className="text-indigo-400 font-bold">Balanced Approach:</span> Both perspectives align closely with your priorities. Consider a synthesis.
+                              <p className="text-[var(--ink)]">
+                                 <span className="font-semibold text-[var(--brass)]">Balanced Approach:</span> Both perspectives align closely with your priorities. Consider a synthesis.
                               </p>
                            ) : (
-                              <p className="text-sm text-[var(--text-secondary)]">
-                                 Based on your priorities, <span className={`font-bold ${c1Percent > c2Percent ? c1Colors.text : c2Colors.text}`}>
+                              <p className="text-[var(--ink)]">
+                                 Based on your priorities, <span className="font-semibold" style={{ color: c1Percent > c2Percent ? c1Color : c2Color }}>
                                     {c1Percent > c2Percent ? c1.name.replace(/^The /, '') : c2.name.replace(/^The /, '')}'s
                                  </span> approach aligns better with your goals.
                               </p>
@@ -513,7 +445,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
 
             {/* Input Area - Only visible in Dialogue Mode */}
             {!showMatrix && (
-               <div className="relative z-20 p-6 border-t border-[var(--border-subtle)] bg-[var(--bg-glass)] backdrop-blur-md">
+               <div className="relative z-20 px-8 py-5 border-t border-[var(--ink)] bg-[var(--paper)]">
                   <div className="flex flex-col sm:flex-row gap-4">
                      <input
                         type="text"
@@ -522,12 +454,12 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                         onKeyDown={handleKeyDown}
                         disabled={isSending}
                         placeholder={isSending ? "The Council is deliberating..." : "Inject your comment or question..."}
-                        className="flex-grow bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-[var(--text-primary)] focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm placeholder-[var(--text-muted)] transition-all disabled:opacity-50"
+                        className="flex-grow bg-transparent border-b border-[var(--rule)] py-2 italic text-[var(--ink)] focus:outline-none focus:border-[var(--ink)] placeholder-[var(--ink2)] transition-all disabled:opacity-50"
                      />
                      <button 
                         onClick={handleSend}
                         disabled={isSending || !userInput.trim()}
-                        className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl font-semibold shadow-lg shadow-indigo-500/20 text-sm whitespace-nowrap transition-all hover:scale-105 active:scale-95"
+                        className="btn-seal whitespace-nowrap"
                      >
                         {isSending ? 'Sending...' : 'Send to Council'}
                      </button>

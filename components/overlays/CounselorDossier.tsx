@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Counselor, CouncilResponse, ChatMessage } from '../../types';
+import { groupColor } from '../../utils/groupColor';
 
 interface CounselorDossierProps {
   counselor: Counselor;
@@ -13,9 +14,9 @@ interface CounselorDossierProps {
 
 type Tab = 'INSIGHT' | 'PROTOCOL' | 'COMMS';
 
-const CounselorDossier: React.FC<CounselorDossierProps> = ({ 
-  counselor, 
-  dynamicData, 
+const CounselorDossier: React.FC<CounselorDossierProps> = ({
+  counselor,
+  dynamicData,
   onClose,
   chatMessages,
   isTyping,
@@ -54,121 +55,62 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
     }
   };
 
-  // Color mapping for dynamic styling based on counselor color
-  const getColorClasses = (color: string) => {
-    const map: Record<string, { 
-      border: string, 
-      text: string, 
-      bg: string, 
-      shadow: string,
-      tabActive: string,
-      button: string 
-    }> = {
-      blue: {
-        border: 'border-blue-500',
-        text: 'text-blue-400',
-        bg: 'bg-blue-900/50',
-        shadow: 'shadow-blue-500/20',
-        tabActive: 'border-blue-500 text-blue-400 bg-blue-500/10',
-        button: 'bg-blue-600 hover:bg-blue-500'
-      },
-      green: {
-        border: 'border-green-500',
-        text: 'text-green-400',
-        bg: 'bg-green-900/50',
-        shadow: 'shadow-green-500/20',
-        tabActive: 'border-green-500 text-green-400 bg-green-500/10',
-        button: 'bg-green-600 hover:bg-green-500'
-      },
-      yellow: {
-        border: 'border-yellow-500',
-        text: 'text-yellow-400',
-        bg: 'bg-yellow-900/50',
-        shadow: 'shadow-yellow-500/20',
-        tabActive: 'border-yellow-500 text-yellow-400 bg-yellow-500/10',
-        button: 'bg-yellow-600 hover:bg-yellow-500'
-      },
-      purple: {
-        border: 'border-purple-500',
-        text: 'text-purple-400',
-        bg: 'bg-purple-900/50',
-        shadow: 'shadow-purple-500/20',
-        tabActive: 'border-purple-500 text-purple-400 bg-purple-500/10',
-        button: 'bg-purple-600 hover:bg-purple-500'
-      },
-      red: {
-        border: 'border-red-500',
-        text: 'text-red-400',
-        bg: 'bg-red-900/50',
-        shadow: 'shadow-red-500/20',
-        tabActive: 'border-red-500 text-red-400 bg-red-500/10',
-        button: 'bg-red-600 hover:bg-red-500'
-      },
-    };
-    return map[color] || map['purple'];
-  };
-
-  const colors = getColorClasses(counselor.color);
+  const accent = groupColor(counselor.role);
 
   return (
     <>
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 backdrop-blur-sm z-40"
-        style={{ backgroundColor: 'var(--overlay-backdrop)' }}
+      {/* Veil */}
+      <div
+        className="fixed inset-0 z-40"
+        style={{ backgroundColor: 'var(--veil)' }}
         onClick={handleClose}
       />
 
       {/* Panel */}
-      <div 
-        className={`fixed inset-y-0 right-0 z-50 w-full max-w-[450px] h-full shadow-2xl flex flex-col ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}
+      <div
+        className={`fixed inset-y-0 right-0 z-50 w-full max-w-[450px] h-full flex flex-col ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}
         style={{
-          backgroundColor: 'var(--bg-secondary)',
-          borderLeft: '1px solid var(--border-primary)'
+          backgroundColor: 'var(--paper)',
+          borderLeft: '1px solid var(--ink)'
         }}
       >
-        
+
         {/* Header */}
-        <div 
-          className="h-20 backdrop-blur flex items-center px-6 gap-4"
-          style={{
-            backgroundColor: 'var(--bg-glass)',
-            borderBottom: '1px solid var(--border-primary)'
-          }}
+        <div
+          className="h-20 flex items-center px-6 gap-4"
+          style={{ borderBottom: '1px solid var(--rule)' }}
         >
-          <div className={`w-12 h-12 rounded ${colors.bg} border ${colors.border} flex items-center justify-center text-2xl shadow-[0_0_10px_rgba(0,0,0,0.3)]`}>
+          <div
+            className="w-12 h-12 rounded-full border-[1.6px] flex items-center justify-center text-2xl"
+            style={{ borderColor: accent, color: accent, backgroundColor: 'var(--paper2)' }}
+          >
             <span className="material-symbols-outlined">{counselor.icon}</span>
           </div>
           <div className="flex-1">
-            <h2 className="font-bold text-lg leading-none" style={{ color: 'var(--text-primary)' }}>{counselor.name}</h2>
+            <h2 className="font-display text-2xl font-semibold leading-none" style={{ color: 'var(--ink)' }}>{counselor.name}</h2>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`text-xs font-mono ${colors.text} uppercase tracking-wider`}>{counselor.role}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="font-label text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: accent }}>{counselor.role}</span>
             </div>
           </div>
-          <button onClick={handleClose} className="transition-colors" style={{ color: 'var(--text-muted)' }}>
+          <button onClick={handleClose} className="transition-colors hover:text-[var(--ink)]" style={{ color: 'var(--ink2)' }}>
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
         {/* Tabs */}
-        <div 
-          className="flex"
-          style={{
-            backgroundColor: 'var(--bg-tertiary)',
-            borderBottom: '1px solid var(--border-primary)'
-          }}
+        <div
+          className="flex px-6 gap-6"
+          style={{ borderBottom: '1px solid var(--rule)' }}
         >
           {(['INSIGHT', 'PROTOCOL', 'COMMS'] as Tab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-3 text-xs font-mono font-bold transition-colors ${
-                activeTab === tab 
-                  ? `${colors.tabActive} border-b-2` 
-                  : ''
-              }`}
-              style={activeTab !== tab ? { color: 'var(--text-muted)' } : undefined}
+              className="py-3 font-label text-[12px] uppercase tracking-[0.1em] border-b transition-colors"
+              style={{
+                color: activeTab === tab ? 'var(--ink)' : 'var(--ink2)',
+                borderColor: activeTab === tab ? 'var(--ink)' : 'transparent'
+              }}
             >
               {tab}
             </button>
@@ -176,36 +118,28 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide" style={{ backgroundColor: 'var(--bg-primary)' }}>
-          
+        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+
           {activeTab === 'INSIGHT' && (
             <div className="animate-fade-in">
               {dynamicData ? (
                 <>
-                  <div 
-                    className="mb-6 p-4 rounded-lg"
-                    style={{
-                      backgroundColor: 'var(--bg-secondary)',
-                      border: '1px solid var(--border-primary)'
-                    }}
-                  >
-                    <h3 className="text-xs font-mono mb-2 uppercase" style={{ color: 'var(--text-muted)' }}>Impression</h3>
-                    <p className="font-medium italic" style={{ color: 'var(--text-primary)' }}>"{dynamicData.impression}"</p>
+                  <div className="mb-6 pb-5" style={{ borderBottom: '1px solid var(--rule)' }}>
+                    <h3 className="label mb-2">Impression</h3>
+                    <p className="font-display italic text-2xl leading-tight" style={{ color: 'var(--ink)' }}>"{dynamicData.impression}"</p>
                   </div>
 
-                  <div className="prose prose-sm max-w-none leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                  <div className="max-w-none text-base leading-relaxed" style={{ color: 'var(--ink)' }}>
                     <p>{dynamicData.assessment}</p>
                   </div>
 
-                  <div className="mt-8 pt-6" style={{ borderTop: '1px solid var(--border-primary)' }}>
-                    <h3 className="text-xs font-mono mb-4 uppercase" style={{ color: 'var(--text-muted)' }}>Reflection Query</h3>
-                    <div className={`border-l-2 ${colors.border} pl-4 py-1`}>
-                      <p className={`${colors.text} italic`}>"{dynamicData.reflection_q}"</p>
-                    </div>
+                  <div className="mt-8 pt-6" style={{ borderTop: '1px solid var(--rule)' }}>
+                    <h3 className="label mb-3">Reflection Query</h3>
+                    <p className="font-display italic text-[22px] leading-snug" style={{ color: 'var(--ink)' }}>"{dynamicData.reflection_q}"</p>
                   </div>
                 </>
               ) : (
-                <div className="flex items-center justify-center h-full" style={{ color: 'var(--text-muted)' }}>
+                <div className="flex items-center justify-center h-full italic" style={{ color: 'var(--ink2)' }}>
                   No analysis data available.
                 </div>
               )}
@@ -214,137 +148,110 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
 
           {activeTab === 'PROTOCOL' && (
             <div className="animate-fade-in">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xs font-mono uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Optimal Pathway</h3>
-                <span className={`text-[10px] ${colors.text} font-mono opacity-80`}>CONFIDENCE: 94%</span>
+              <div className="flex justify-between items-baseline mb-4">
+                <h3 className="label">Optimal Pathway</h3>
+                <span className="label !text-[10px]">CONFIDENCE: 94%</span>
               </div>
 
-              <div className="relative pl-2">
-                {/* The Circuit Line */}
-                <div className={`absolute left-[11px] top-2 bottom-0 w-0.5 bg-gradient-to-b from-${counselor.color}-500 via-${counselor.color}-500/20 to-transparent opacity-50`}></div>
-
+              <ol>
                 {dynamicData?.action_plan.map((step, idx) => (
-                  <div key={idx} className="relative flex gap-5 mb-8 group last:mb-0">
-                    {/* Node */}
-                    <div 
-                      className={`relative z-10 flex-shrink-0 w-5 h-5 rounded-full border-2 ${colors.border} shadow-[0_0_10px_currentColor] flex items-center justify-center mt-1 group-hover:scale-110 transition-transform`}
-                      style={{ backgroundColor: 'var(--bg-primary)' }}
-                    >
-                      <div className={`w-1.5 h-1.5 rounded-full ${colors.bg.replace('bg-', 'bg-').replace('/50', '-400')}`}></div>
+                  <li key={idx} className="grid grid-cols-[40px_1fr] gap-2 py-4" style={{ borderTop: '1px solid var(--rule)' }}>
+                    <span className="font-display text-2xl font-semibold leading-none" style={{ color: 'var(--seal)' }}>
+                      {['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii'][idx] ?? idx + 1}.
+                    </span>
+                    <div>
+                      <h4 className="label mb-1">
+                        Sequence 0{idx + 1}
+                      </h4>
+                      <p className="text-[15px] leading-relaxed" style={{ color: 'var(--ink)' }}>
+                        {step}
+                      </p>
                     </div>
-                    
-                    {/* Card */}
-                    <div className="relative pl-2 group-hover:pl-3 transition-all duration-300">
-                      <span 
-                        className="absolute left-0 top-0 text-4xl font-thin text-transparent bg-clip-text bg-gradient-to-b opacity-20 group-hover:opacity-40 transition-opacity font-mono select-none -translate-x-2 -translate-y-2"
-                        style={{ backgroundImage: 'linear-gradient(to bottom, var(--text-muted), transparent)' }}
-                      >
-                        0{idx + 1}
-                      </span>
-                      <div 
-                        className="p-4 rounded-lg transition-colors"
-                        style={{ 
-                          borderLeft: '1px solid var(--border-subtle)',
-                          backgroundColor: 'var(--bg-glass)'
-                        }}
-                      >
-                        <h4 className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                          Sequence 0{idx + 1}
-                        </h4>
-                        <p className="text-sm font-light leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                          {step}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ol>
             </div>
           )}
 
           {activeTab === 'COMMS' && (
             <div className="animate-fade-in h-full flex flex-col">
-              <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+              <div className="flex-1 overflow-y-auto space-y-5 pr-2">
                 {chatMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full opacity-50 gap-2">
+                  <div className="flex flex-col items-center justify-center h-full gap-2" style={{ color: 'var(--ink2)' }}>
                     <span className="material-symbols-outlined text-4xl">forum</span>
-                    <p className="text-sm">Start a conversation with {counselor.name}...</p>
+                    <p className="italic">Start a conversation with {counselor.name}...</p>
                   </div>
                 ) : (
                   chatMessages.map((msg) => (
-                    <div 
-                      key={msg.id} 
+                    <div
+                      key={msg.id}
                       className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
-                                                                  <div
-                                                                    className={`rounded-lg p-3 max-w-[85%] text-sm shadow-sm ${
-                                                                      msg.sender === 'user'
-                                                                        ? `bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-secondary)] rounded-br-none animate-slide-in-right`
-                                                                        : `${colors.bg} border ${colors.border} text-[var(--text-secondary)] rounded-bl-none animate-slide-in-left`
-                                                                    }`}
-                                                                  >
-                                                                    <ReactMarkdown
-                                                                      components={{
-                                                                        p: ({children}) => <p className="mb-1 last:mb-0">{children}</p>,
-                                                                        strong: ({children}) => <strong className="font-bold text-[var(--text-primary)]">{children}</strong>,
-                                                                        em: ({children}) => <em className="italic opacity-90">{children}</em>,
-                                                                        ul: ({children}) => <ul className="list-disc list-inside mb-1">{children}</ul>,
-                                                                        ol: ({children}) => <ol className="list-decimal list-inside mb-1">{children}</ol>,
-                                                                        li: ({children}) => <li className="ml-1">{children}</li>
-                                                                      }}
-                                                                    >
-                                                                      {msg.text}
-                                                                    </ReactMarkdown>
-                                                                    {msg.recalled && msg.recalled.length > 0 && (
-                                                                      <details className="mt-2 text-xs text-[var(--text-secondary)] opacity-80">
-                                                                        <summary className="cursor-pointer select-none">Recalled from earlier ({msg.recalled.length})</summary>
-                                                                        <ul className="mt-1 space-y-1">
-                                                                          {msg.recalled.map((r, i) => (
-                                                                            <li key={i}>
-                                                                              <span className="font-semibold">
-                                                                                {r.channel === 'chat' ? `Chat with ${r.counselorId}` : r.channel === 'debate' ? 'Debate' : 'Added context'}:
-                                                                              </span>{' '}
-                                                                              "{r.text}"
-                                                                            </li>
-                                                                          ))}
-                                                                        </ul>
-                                                                      </details>
-                                                                    )}
-                                                                  </div>                    </div>
+                      <div
+                        className={`max-w-[85%] text-[14.5px] leading-normal ${
+                          msg.sender === 'user'
+                            ? 'italic animate-slide-in-right'
+                            : 'animate-slide-in-left'
+                        }`}
+                        style={{ color: 'var(--ink)' }}
+                      >
+                        <div className="label !text-[10.5px] mb-1">{msg.sender === 'user' ? 'You' : counselor.name}</div>
+                        <ReactMarkdown
+                          components={{
+                            p: ({children}) => <p className="mb-1 last:mb-0">{children}</p>,
+                            strong: ({children}) => <strong className="font-semibold">{children}</strong>,
+                            em: ({children}) => <em className="italic">{children}</em>,
+                            ul: ({children}) => <ul className="list-disc list-inside mb-1">{children}</ul>,
+                            ol: ({children}) => <ol className="list-decimal list-inside mb-1">{children}</ol>,
+                            li: ({children}) => <li className="ml-1">{children}</li>
+                          }}
+                        >
+                          {msg.text}
+                        </ReactMarkdown>
+                        {msg.recalled && msg.recalled.length > 0 && (
+                          <details className="mt-2 pt-1.5 text-xs" style={{ color: 'var(--ink2)', borderTop: '1px solid var(--rule)' }}>
+                            <summary className="cursor-pointer select-none">Recalled from earlier ({msg.recalled.length})</summary>
+                            <ul className="mt-1 space-y-1">
+                              {msg.recalled.map((r, i) => (
+                                <li key={i}>
+                                  <span className="font-semibold">
+                                    {r.channel === 'chat' ? `Chat with ${r.counselorId}` : r.channel === 'debate' ? 'Debate' : 'Added context'}:
+                                  </span>{' '}
+                                  "{r.text}"
+                                </li>
+                              ))}
+                            </ul>
+                          </details>
+                        )}
+                      </div>
+                    </div>
                   ))
                 )}
-                
+
                 {isTyping && (
-                   <div className="flex justify-start">
-                     <div className={`${colors.bg} border ${colors.border} rounded-lg rounded-bl-none p-3 flex items-center gap-1`}>
-                       <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce"></span>
-                       <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                       <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.4s]"></span>
-                     </div>
-                   </div>
+                   <p className="italic text-[13.5px]" style={{ color: 'var(--ink2)' }}>
+                     {counselor.name} is writing…
+                   </p>
                 )}
                 <div ref={chatEndRef} />
               </div>
-              
-              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-primary)' }}>
+
+              <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--ink)' }}>
                 <div className="relative">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={`Message ${counselor.name}...`}
-                    className="w-full rounded-lg py-3 px-4 text-sm focus:outline-none transition-colors pr-10"
-                    style={{
-                      backgroundColor: 'var(--bg-secondary)',
-                      border: '1px solid var(--border-primary)',
-                      color: 'var(--text-primary)'
-                    }}
+                    className="w-full bg-transparent py-2 pr-10 italic focus:outline-none placeholder:text-[var(--ink2)]"
+                    style={{ color: 'var(--ink)' }}
                   />
-                  <button 
+                  <button
                     onClick={handleSend}
                     disabled={!inputValue.trim() || isTyping}
-                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded transition-opacity ${inputValue.trim() ? 'opacity-100' : 'opacity-50'} ${colors.text}`}
+                    className={`absolute right-0 top-1/2 -translate-y-1/2 p-1.5 transition-opacity ${inputValue.trim() ? 'opacity-100' : 'opacity-50'}`}
+                    style={{ color: 'var(--seal)' }}
                   >
                     <span className="material-symbols-outlined text-lg">send</span>
                   </button>
@@ -357,16 +264,13 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
 
         {/* Footer Action (Only show on INSIGHT and PROTOCOL tabs) */}
         {activeTab !== 'COMMS' && (
-          <div 
+          <div
             className="p-4"
-            style={{
-              backgroundColor: 'var(--bg-secondary)',
-              borderTop: '1px solid var(--border-primary)'
-            }}
+            style={{ borderTop: '1px solid var(--rule)' }}
           >
-            <button 
+            <button
               onClick={() => setActiveTab('COMMS')}
-              className={`w-full py-3 ${colors.button} text-white font-bold rounded flex items-center justify-center gap-2 transition-colors shadow-lg`}
+              className="btn-seal w-full flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-lg">forum</span>
               INITIATE DIALOGUE

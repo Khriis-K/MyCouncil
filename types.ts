@@ -32,8 +32,6 @@ export interface ReflectionFocusOption {
   value: ReflectionFocus;
   label: string;
   description: string;
-  color: string;
-  badgeColor: string;
 }
 
 export interface TensionPair {
