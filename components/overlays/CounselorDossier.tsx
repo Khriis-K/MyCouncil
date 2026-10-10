@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { CouncilResponse, ChatMessage } from '../../types';
 import { CouncilSeat } from '../../utils/councilSeats';
 import { recallFootnotes } from '../../utils/footnotes';
+import { seatHeading } from '../../utils/seatHeading';
 
 interface CounselorDossierProps {
   seat: CouncilSeat;
@@ -29,12 +30,20 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState('');
   const lettersRef = useRef<HTMLDivElement>(null);
+  const lettersEndRef = useRef<HTMLDivElement>(null);
+  const seen = useRef({ chatMessages, isTyping });
   const name = inSentence(seat.name);
 
-  // Keep the latest letter in view. Only the desktop column scrolls; on a phone the page does.
+  // Keep the latest letter in view. The desktop column opens at its foot; after that a new letter
+  // or the typing line is scrolled into view, which on a phone scrolls the page instead. Not on open,
+  // or a phone would jump past the opinion straight to the correspondence.
   useEffect(() => {
     const letters = lettersRef.current;
     if (letters) letters.scrollTop = letters.scrollHeight;
+    if (seen.current.chatMessages !== chatMessages || seen.current.isTyping !== isTyping) {
+      lettersEndRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    seen.current = { chatMessages, isTyping };
   }, [chatMessages, isTyping]);
 
   const handleSend = () => {
@@ -51,8 +60,6 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
     }
   };
 
-  const byline = [`Seat ${seat.numeral}`, seat.type, seat.role].filter(Boolean).join(' · ');
-
   return (
     <div className="flex-grow min-h-0 overflow-y-auto md:overflow-hidden flex flex-col md:grid md:grid-cols-[1fr_400px] animate-fade-in">
       <article className="px-4 md:pl-24 md:pr-14 pt-7 pb-10 md:overflow-y-auto">
@@ -62,7 +69,7 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
         <h2 className="display mt-3.5 mb-1">
           Opinion of <em>{name}</em>
         </h2>
-        <p className="text-[13.5px] italic text-ink2 mb-[22px]">{byline}.</p>
+        <p className="text-[13.5px] italic text-ink2 mb-[22px]">{seatHeading(seat)}.</p>
 
         {dynamicData ? (
           <>
@@ -138,6 +145,7 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
           })}
 
           {isTyping && <p className="italic text-[13.5px] text-ink2">{seat.name} is writing…</p>}
+          <div ref={lettersEndRef} />
         </div>
 
         <div className="border-t border-ink pt-2.5 flex items-baseline gap-3">

@@ -83,6 +83,7 @@ const App: React.FC = () => {
   const seatOf = (counselor: Counselor | null) => seats.find(s => s.counselor.id === counselor?.id);
   const selectedSeat = seatOf(selectedCounselor);
   const previousSeat = seatOf(previousCounselor);
+  const dossierSeat = activeOverlay === 'COUNSELOR_DOSSIER' ? selectedSeat : undefined;
 
   // --- Handlers ---
 
@@ -133,6 +134,12 @@ const App: React.FC = () => {
   const handleCounselorClick = (counselor: Counselor) => {
     if (selectedCounselor?.id === counselor.id) return; // Don't re-trigger same counselor
     
+    // Switching seats hands off: the open slip plays out as the new one is laid down
+    if (activeOverlay === 'COUNSELOR_IMPRESSION' && selectedCounselor) {
+      setPreviousCounselor(selectedCounselor);
+      setTimeout(() => setPreviousCounselor(null), 300);
+    }
+
     // Lay down the impression slip first
     setSelectedCounselor(counselor);
     setActiveOverlay('COUNSELOR_IMPRESSION');
@@ -325,14 +332,14 @@ const App: React.FC = () => {
             <p className="label">The chamber is empty</p>
             <p className="font-display italic text-2xl text-ink2">Summon the Council to begin reflection.</p>
           </div>
-        ) : activeOverlay === 'COUNSELOR_DOSSIER' && selectedCounselor && selectedSeat && councilData ? (
+        ) : dossierSeat && councilData ? (
           <CounselorDossier
-            seat={selectedSeat}
-            dynamicData={councilData.counselors.find(c => c.id === selectedCounselor.id)}
+            seat={dossierSeat}
+            dynamicData={councilData.counselors.find(c => c.id === dossierSeat.counselor.id)}
             onClose={closeOverlay}
-            chatMessages={chatHistory[selectedCounselor.id] || []}
-            isTyping={isTyping[selectedCounselor.id] || false}
-            onSendMessage={(msg) => sendMessage(selectedCounselor.id, msg, dilemma, selectedMBTI, memorySources)}
+            chatMessages={chatHistory[dossierSeat.counselor.id] || []}
+            isTyping={isTyping[dossierSeat.counselor.id] || false}
+            onSendMessage={(msg) => sendMessage(dossierSeat.counselor.id, msg, dilemma, selectedMBTI, memorySources)}
           />
         ) : (
           <Chamber
@@ -368,7 +375,7 @@ const App: React.FC = () => {
         )}
 
         {/* Bottom Bar (the dossier has its own compose line) */}
-        {activeOverlay !== 'COUNSELOR_DOSSIER' && (
+        {!dossierSeat && (
         <BottomBar
           isDebateMode={isDebateMode}
           toggleDebateMode={() => setIsDebateMode(!isDebateMode)}
@@ -386,7 +393,7 @@ const App: React.FC = () => {
 
       {/* 3. Global Overlays Layer (Full Screen) */}
 
-      {/* Counselor impression slip (step 1). The outgoing slip plays out before the next is laid down. */}
+      {/* Counselor impression slip (step 1). The outgoing slip plays out as the next is laid down. */}
       {previousSeat && (
         <ImpressionSlip
           key={`exiting-${previousSeat.counselor.id}`}
@@ -397,7 +404,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {activeOverlay === 'COUNSELOR_IMPRESSION' && selectedSeat && !previousCounselor && (
+      {activeOverlay === 'COUNSELOR_IMPRESSION' && selectedSeat && (
         <ImpressionSlip
           key={`active-${selectedSeat.counselor.id}`}
           seat={selectedSeat}
