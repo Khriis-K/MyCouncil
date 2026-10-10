@@ -35,12 +35,15 @@ const Choice: React.FC<{
   children: React.ReactNode;
   note?: React.ReactNode;
 }> = ({ name, checked, disabled, onChange, children, note }) => (
-  <label className={`grid grid-cols-[14px_1fr] gap-x-2 items-baseline text-[15px] ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
-    <input type="radio" name={name} checked={checked} disabled={disabled} onChange={onChange} className="peer sr-only" />
-    <span className={`w-[9px] h-[9px] rounded-full border border-ink -translate-y-px peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 ${checked ? 'bg-ink' : ''}`} />
-    <span>{children}</span>
+  <div className={`grid grid-cols-[14px_1fr] gap-x-2 text-[15px] ${disabled ? 'opacity-50' : ''}`}>
+    <label className={`col-span-2 grid grid-cols-[14px_1fr] gap-x-2 items-baseline ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+      <input type="radio" name={name} checked={checked} disabled={disabled} onChange={onChange} className="peer sr-only" />
+      <span className={`w-[9px] h-[9px] rounded-full border border-ink -translate-y-px peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 ${checked ? 'bg-ink' : ''}`} />
+      <span>{children}</span>
+    </label>
+    {/* Outside the label, so a link in the note isn't nested in the radio's label */}
     {note && <small className="col-start-2 block text-[12.5px] italic text-ink2 -mt-0.5">{note}</small>}
-  </label>
+  </div>
 );
 
 const SetupPage: React.FC<SetupPageProps> = ({

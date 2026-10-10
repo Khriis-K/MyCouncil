@@ -50,7 +50,7 @@ const TypeTable: React.FC<TypeTableProps> = ({ initialType, onClose, onConfirm }
     setStatements(drawStatements(details.validationQuestions));
     setAnswers({});
     setOpenSection(null);
-  }, [selectedType]);
+  }, [details]);
 
   // Each answer moves confidence 5% per step away from neutral, starting from 50%.
   const confidence = Math.min(99, Math.max(1,
@@ -197,7 +197,7 @@ const TypeTable: React.FC<TypeTableProps> = ({ initialType, onClose, onConfirm }
           {selectedType ? (
             <>
               <div className="flex justify-between items-baseline gap-4 mb-3.5">
-                <div className="label">Not sure? Check against four statements</div>
+                <div className="label">Not sure? Check against these statements</div>
                 <div className="label !text-ink shrink-0">Confidence {confidence}%</div>
               </div>
               {statements.map((statement, i) => (
@@ -231,7 +231,7 @@ const TypeTable: React.FC<TypeTableProps> = ({ initialType, onClose, onConfirm }
             </>
           ) : (
             <>
-              <p className="text-[13px] italic text-ink2">Pick a type to check it against four statements.</p>
+              <p className="text-[13px] italic text-ink2">Pick a type to check it against a few statements.</p>
               <div className="mt-[18px]">
                 <button className="btn-link" onClick={onClose}>Back</button>
               </div>

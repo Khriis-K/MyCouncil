@@ -291,7 +291,7 @@ const App: React.FC = () => {
       <Masthead
         page={page}
         onNavigate={(next) => {
-          if (activeOverlay === 'MBTI_SELECTION') closeOverlay();
+          closeOverlay(); // Panels belong to the page they were opened on
           setPage(next);
         }}
         onOpenRecord={handleCenterClick}
