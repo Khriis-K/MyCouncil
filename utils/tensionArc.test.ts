@@ -29,6 +29,9 @@ const boxDistance = (box: Box, p: Point) =>
     p.y - Math.max(box.y, Math.min(p.y, box.y + box.height))
   );
 
+const boxesTouch = (a: Box, b: Box) =>
+  a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
 const pairs = (count: number) =>
   Array.from({ length: count }, (_, i) => Array.from({ length: count - i - 1 }, (_, k) => [i, i + k + 1])).flat();
 
@@ -45,6 +48,31 @@ describe('tensionArc', () => {
     const arc = tensionArc(layout, 0, 6);
     const nearest = Math.min(...samples(parseQuad(arc.d)).map(p => distance(p, arc.label)));
     expect(nearest).toBeLessThan(1);
+  });
+
+  describe.each([740, 820, 1000])('with a label on a %ipx floor', width => {
+    test.each([3, 4, 5, 6, 7])('every label in a council of %i sits beside its curve, clear of it, the seats, names and the panel', count => {
+      const layout = chamberLayout(count, width);
+      expect(layout.labelled).toBe(true);
+      for (const [from, to] of pairs(count)) {
+        const arc = tensionArc(layout, from, to, 170);
+        const box = arc.labelBox!;
+        expect(box.width).toBe(170);
+        // Set beside the middle of its curve, never adrift from it, and never across it
+        expect(boxDistance(box, arc.label)).toBeGreaterThan(0);
+        expect(boxDistance(box, arc.label)).toBeLessThan(12);
+        for (const p of samples(parseQuad(arc.d))) expect(boxDistance(box, p)).toBeGreaterThan(0);
+        for (const seat of layout.seats) {
+          expect(boxDistance(box, seat)).toBeGreaterThan(layout.seatRadius);
+          expect(boxesTouch(box, seat.label!)).toBe(false);
+        }
+        expect(boxesTouch(box, layout.well)).toBe(false);
+      }
+    });
+  });
+
+  test('an arc with no label has no label box', () => {
+    expect(tensionArc(chamberLayout(5, 820), 0, 4).labelBox).toBeNull();
   });
 
   describe.each([820, 1000, 600, 360])('on a %ipx floor', width => {

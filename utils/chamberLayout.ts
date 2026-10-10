@@ -33,12 +33,12 @@ const LAST_ANGLE = 15;
 const EDGE = Math.cos(((180 - FIRST_ANGLE) * Math.PI) / 180); // How far out the end seats reach, as a share of the radius
 const CLEARANCE = 4;
 
-// Labels are sized for the longest name ("Entrepreneur", in 19px display type) over the longest role line
-// ("VII · CONSIGLIERE"). Text can't be measured in a pure function, so this is an estimate: check it in the preview.
-const LABEL = { width: 124, height: 38, gap: 8 };
+// Labels are sized for the longest role line ("VII · CONSIGLIERE", 106px) over the longest name ("Entrepreneur",
+// 101px), as measured in the browser with the app's fonts. Text can't be measured here, so this is fixed.
+const LABEL = { width: 112, height: 38, gap: 8 };
 
 const FULL = { seatRadius: 33, wellRise: 40, wellWidth: 360, minWellWidth: 260, wellHeight: 110 };
-const COMPACT = { seatRadius: 22, wellWidth: 420, wellHeight: 100 };
+const COMPACT = { seatRadius: 22, maxRadius: 240, wellWidth: 420, wellHeight: 100 };
 
 // Where each seat, its label and the dilemma panel sit, for a council of `count` on a floor `width` pixels wide.
 // Names are shown when they fit without colliding; otherwise the floor turns compact (seats only).
@@ -68,7 +68,7 @@ function labelledLayout(count: number, width: number): ChamberLayout {
 
 function compactLayout(count: number, width: number): ChamberLayout {
   const { seatRadius } = COMPACT;
-  const radius = Math.min(MAX_RADIUS, (width / 2 - PAD - seatRadius) / EDGE);
+  const radius = Math.min(COMPACT.maxRadius, (width / 2 - PAD - seatRadius) / EDGE);
   const center = { x: width / 2, y: PAD + seatRadius + radius };
   const seats = seatPoints(count, center, radius).map(p => ({ ...p, label: null }));
   // The panel sits below the end seats, across the whole floor.

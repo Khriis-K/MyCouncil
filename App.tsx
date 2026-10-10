@@ -3,16 +3,17 @@ import React, { useState, useEffect } from 'react';
 import Masthead, { Page, ThemeMode } from './components/Masthead';
 import SetupPage from './components/SetupPage';
 import TypeTable from './components/TypeTable';
-import ReflectionSphere from './components/ReflectionSphere';
+import Chamber from './components/Chamber';
 import BottomBar from './components/BottomBar';
 import InsightBar from './components/overlays/InsightBar';
 import CounselorDossier from './components/overlays/CounselorDossier';
 import DebateOverlay from './components/overlays/DebateOverlay';
 import DilemmaHistoryOverlay from './components/overlays/DilemmaHistoryOverlay';
 import { Counselor, TensionPair, OverlayType, CouncilResponse, ReflectionFocus, DebateInterjection } from './types';
-import { COUNSELORS, TENSION_PAIRS } from './constants';
 import { fetchCouncilAnalysis } from './services/CouncilService';
-import { buildCounselorsFromResponse, buildTensionPairs } from './utils/counselorMapper';
+import { buildCounselorsFromResponse } from './utils/counselorMapper';
+import { councilSeats } from './utils/councilSeats';
+import { councilRoll } from './utils/councilRoll';
 import { useChat } from './hooks/useChat';
 import { buildMemorySources } from './utils/memorySources';
 
@@ -31,7 +32,7 @@ const App: React.FC = () => {
   const [councilSize, setCouncilSize] = useState<number>(4);
   const [reflectionFocus, setReflectionFocus] = useState<ReflectionFocus>('Decision-Making');
   const [page, setPage] = useState<Page>('matter');
-  const [viewState, setViewState] = useState<'INITIAL' | 'SPHERE'>('INITIAL');
+  const [viewState, setViewState] = useState<'INITIAL' | 'SEATED'>('INITIAL');
   const [isDebateMode, setIsDebateMode] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false); // Loading state
   
@@ -63,8 +64,7 @@ const App: React.FC = () => {
   const [contextSummary, setContextSummary] = useState<string>(''); // AI-generated summary of previous refinements
   const [isRefining, setIsRefining] = useState(false);
   const [originalSummary, setOriginalSummary] = useState<string>(''); // Store initial summary, never changes
-  const [isInitialRender, setIsInitialRender] = useState(false); // For initial counselor animation
-  const [loadingMessage, setLoadingMessage] = useState<string>(''); // For center bubble during refinement
+  const [sitting, setSitting] = useState(0); // Counts each council answer, to replay the seating animation
   const [refinementHistory, setRefinementHistory] = useState<{ text: string; timestamp: number }[]>([]); // Track all refinement contexts
   const [debateLog, setDebateLog] = useState<DebateInterjection[]>([]); // User interjections across all debates, for memory
   const memorySources = buildMemorySources({ chatHistory, refinements: refinementHistory, debateLog });
@@ -113,14 +113,8 @@ const App: React.FC = () => {
 
       setCouncilData(data);
       setOriginalSummary(data.summary); // Store the original summary
-      setViewState('SPHERE');
-      setIsInitialRender(true); // Trigger initial animation
-      
-      // Reset animation flag after staggered animations complete
-      // Reset animation flag after staggered animations complete
-      setTimeout(() => {
-        setIsInitialRender(false);
-      }, 9700); // Allow enough time for center fade (800ms) + max stagger (4 * 200ms) + expansion (600ms)
+      setViewState('SEATED');
+      setSitting(n => n + 1);
 
     } catch (error) {
       console.error("Error generating council:", error);
@@ -147,8 +141,8 @@ const App: React.FC = () => {
 
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // Check if click is on InsightBar or counselor spheres
-      if (target.closest('[data-insight-bar]') || target.closest('[data-counselor-sphere]')) {
+      // Check if click is on InsightBar or a counselor's seat
+      if (target.closest('[data-insight-bar]') || target.closest('[data-counselor-seat]')) {
         return;
       }
       // Close the insight bar
@@ -197,18 +191,8 @@ const App: React.FC = () => {
         setContextSummary(data.context_summary);
       }
       
-      // Clear loading message
-      setLoadingMessage('');
-      
-      // Update council data (triggers fade transition)
       setCouncilData(data);
-      
-      // Trigger slide-in animation
-      setIsInitialRender(true);
-      // Reset animation flag after staggered animations complete
-      setTimeout(() => {
-        setIsInitialRender(false);
-      }, 9700);
+      setSitting(n => n + 1);
       
       // Clear additional context input
       setAdditionalContext('');
@@ -220,7 +204,6 @@ const App: React.FC = () => {
       console.error("Error refining perspective:", error);
       const message = error instanceof Error ? error.message : "Failed to refine perspective. Please try again.";
       alert(message);
-      setLoadingMessage(''); // Clear loading message on error
     } finally {
       setIsRefining(false);
     }
@@ -295,7 +278,7 @@ const App: React.FC = () => {
           setPage(next);
         }}
         onOpenRecord={handleCenterClick}
-        hasCouncil={viewState === 'SPHERE'}
+        hasCouncil={viewState === 'SEATED'}
         theme={theme}
         setThemeMode={setTheme}
       />
@@ -323,7 +306,7 @@ const App: React.FC = () => {
               onRestart={handleRestartScenario}
               estimatedSeconds={Math.round(estimateLoadTime(dilemma.length, councilSize) / 1000)}
               isGenerating={isGenerating}
-              hasCouncil={viewState === 'SPHERE'}
+              hasCouncil={viewState === 'SEATED'}
               isHighlighted={isSetupHighlighted}
             />
           )}
@@ -331,40 +314,28 @@ const App: React.FC = () => {
       ) : (
       <main className="relative flex-grow min-h-0 flex flex-col">
 
-        {/* View Content */}
-        <div className="flex-grow flex items-center justify-center relative z-10">
-          {viewState === 'INITIAL' ? (
-            <div className="text-center space-y-2 px-6">
-              {isGenerating ? (
-                <>
-                  <p className="label">The council is being seated</p>
-                  <p className="font-display italic text-2xl text-ink2">About {Math.round(estimatedTimeMs / 1000)} seconds</p>
-                </>
-              ) : (
-                <>
-                  <p className="label">The chamber is empty</p>
-                  <p className="font-display italic text-2xl text-ink2">Summon the Council to begin reflection.</p>
-                </>
-              )}
-            </div>
-          ) : (
-            <ReflectionSphere
-              dilemma={dilemma}
-              dilemmaSummary={originalSummary || councilData?.summary || ''}
-              contextSummary={loadingMessage || contextSummary}
-              counselors={buildCounselorsFromResponse(selectedMBTI, councilSize, councilData)}
-              councilData={councilData}
-              isDebateMode={isDebateMode}
-              tensionPairs={buildTensionPairs(councilData)}
-              onCounselorClick={handleCounselorClick}
-              onTensionClick={handleTensionClick}
-              onCenterClick={handleCenterClick}
-              isInitialRender={isInitialRender}
-              isRefining={isRefining}
-              reflectionFocus={reflectionFocus}
-            />
-          )}
-        </div>
+        {viewState === 'INITIAL' && !isGenerating ? (
+          <div className="flex-grow flex flex-col items-center justify-center text-center space-y-2 px-6">
+            <p className="label">The chamber is empty</p>
+            <p className="font-display italic text-2xl text-ink2">Summon the Council to begin reflection.</p>
+          </div>
+        ) : (
+          <Chamber
+            status={viewState === 'INITIAL' ? 'summoning' : isRefining ? 'refining' : 'sitting'}
+            roll={councilRoll(selectedMBTI, councilSize)}
+            seats={councilSeats(selectedMBTI, councilSize, councilData)}
+            tensions={councilData?.tensions ?? []}
+            sitting={sitting}
+            estimatedMs={estimatedTimeMs}
+            showTensions={isDebateMode}
+            selectedId={selectedCounselor?.id ?? null}
+            summary={originalSummary || councilData?.summary || ''}
+            amendment={contextSummary}
+            onSeatClick={handleCounselorClick}
+            onTensionClick={handleTensionClick}
+            onOpenRecord={handleCenterClick}
+          />
+        )}
 
         {/* Debate/Tension Details */}
         {activeOverlay === 'DEBATE_DIALOGUE' && selectedTensionPair && councilData && (
