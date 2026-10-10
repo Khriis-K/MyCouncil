@@ -61,56 +61,46 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
     <>
       {/* Veil */}
       <div
-        className="fixed inset-0 z-40"
-        style={{ backgroundColor: 'var(--veil)' }}
+        className="fixed inset-0 z-40 bg-veil"
+        
         onClick={handleClose}
       />
 
       {/* Panel */}
       <div
-        className={`fixed inset-y-0 right-0 z-50 w-full max-w-[450px] h-full flex flex-col ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}
-        style={{
-          backgroundColor: 'var(--paper)',
-          borderLeft: '1px solid var(--ink)'
-        }}
+        className={`fixed inset-y-0 right-0 z-50 w-full max-w-[450px] h-full flex flex-col ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'} bg-paper border-l border-ink`}
       >
 
         {/* Header */}
         <div
-          className="h-20 flex items-center px-6 gap-4"
-          style={{ borderBottom: '1px solid var(--rule)' }}
+          className="h-20 flex items-center px-6 gap-4 border-b border-rule"
         >
           <div
-            className="w-12 h-12 rounded-full border-[1.6px] flex items-center justify-center text-2xl"
-            style={{ borderColor: accent, color: accent, backgroundColor: 'var(--paper2)' }}
+            className="w-12 h-12 rounded-full border-[1.6px] flex items-center justify-center text-2xl bg-paper2"
+            style={{ borderColor: accent, color: accent }}
           >
             <span className="material-symbols-outlined">{counselor.icon}</span>
           </div>
           <div className="flex-1">
-            <h2 className="font-display text-2xl font-semibold leading-none" style={{ color: 'var(--ink)' }}>{counselor.name}</h2>
+            <h2 className="font-display text-2xl font-semibold leading-none text-ink">{counselor.name}</h2>
             <div className="flex items-center gap-2 mt-1">
-              <span className="font-label text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: accent }}>{counselor.role}</span>
+              <span className="label" style={{ color: accent }}>{counselor.role}</span>
             </div>
           </div>
-          <button onClick={handleClose} className="transition-colors hover:text-[var(--ink)]" style={{ color: 'var(--ink2)' }}>
+          <button onClick={handleClose} className="transition-colors hover:text-ink text-ink2">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
         {/* Tabs */}
         <div
-          className="flex px-6 gap-6"
-          style={{ borderBottom: '1px solid var(--rule)' }}
+          className="flex px-6 gap-6 border-b border-rule"
         >
           {(['INSIGHT', 'PROTOCOL', 'COMMS'] as Tab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className="py-3 font-label text-[12px] uppercase tracking-[0.1em] border-b transition-colors"
-              style={{
-                color: activeTab === tab ? 'var(--ink)' : 'var(--ink2)',
-                borderColor: activeTab === tab ? 'var(--ink)' : 'transparent'
-              }}
+              className={`caps py-3 border-b transition-colors ${activeTab === tab ? 'text-ink border-ink' : 'text-ink2 border-transparent'}`}
             >
               {tab}
             </button>
@@ -124,22 +114,22 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
             <div className="animate-fade-in">
               {dynamicData ? (
                 <>
-                  <div className="mb-6 pb-5" style={{ borderBottom: '1px solid var(--rule)' }}>
+                  <div className="mb-6 pb-5 border-b border-rule">
                     <h3 className="label mb-2">Impression</h3>
-                    <p className="font-display italic text-2xl leading-tight" style={{ color: 'var(--ink)' }}>"{dynamicData.impression}"</p>
+                    <p className="font-display italic text-2xl leading-tight text-ink">"{dynamicData.impression}"</p>
                   </div>
 
-                  <div className="max-w-none text-base leading-relaxed" style={{ color: 'var(--ink)' }}>
+                  <div className="max-w-none text-base leading-relaxed text-ink">
                     <p>{dynamicData.assessment}</p>
                   </div>
 
-                  <div className="mt-8 pt-6" style={{ borderTop: '1px solid var(--rule)' }}>
+                  <div className="mt-8 pt-6 border-t border-rule">
                     <h3 className="label mb-3">Reflection Query</h3>
-                    <p className="font-display italic text-[22px] leading-snug" style={{ color: 'var(--ink)' }}>"{dynamicData.reflection_q}"</p>
+                    <p className="font-display italic text-[22px] leading-snug text-ink">"{dynamicData.reflection_q}"</p>
                   </div>
                 </>
               ) : (
-                <div className="flex items-center justify-center h-full italic" style={{ color: 'var(--ink2)' }}>
+                <div className="flex items-center justify-center h-full italic text-ink2">
                   No analysis data available.
                 </div>
               )}
@@ -155,15 +145,15 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
 
               <ol>
                 {dynamicData?.action_plan.map((step, idx) => (
-                  <li key={idx} className="grid grid-cols-[40px_1fr] gap-2 py-4" style={{ borderTop: '1px solid var(--rule)' }}>
-                    <span className="font-display text-2xl font-semibold leading-none" style={{ color: 'var(--seal)' }}>
+                  <li key={idx} className="grid grid-cols-[40px_1fr] gap-2 py-4 border-t border-rule">
+                    <span className="font-display text-2xl font-semibold leading-none text-seal">
                       {['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii'][idx] ?? idx + 1}.
                     </span>
                     <div>
                       <h4 className="label mb-1">
                         Sequence 0{idx + 1}
                       </h4>
-                      <p className="text-[15px] leading-relaxed" style={{ color: 'var(--ink)' }}>
+                      <p className="text-[15px] leading-relaxed text-ink">
                         {step}
                       </p>
                     </div>
@@ -177,7 +167,7 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
             <div className="animate-fade-in h-full flex flex-col">
               <div className="flex-1 overflow-y-auto space-y-5 pr-2">
                 {chatMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full gap-2" style={{ color: 'var(--ink2)' }}>
+                  <div className="flex flex-col items-center justify-center h-full gap-2 text-ink2">
                     <span className="material-symbols-outlined text-4xl">forum</span>
                     <p className="italic">Start a conversation with {counselor.name}...</p>
                   </div>
@@ -192,8 +182,7 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
                           msg.sender === 'user'
                             ? 'italic animate-slide-in-right'
                             : 'animate-slide-in-left'
-                        }`}
-                        style={{ color: 'var(--ink)' }}
+                        } text-ink`}
                       >
                         <div className="label !text-[10.5px] mb-1">{msg.sender === 'user' ? 'You' : counselor.name}</div>
                         <ReactMarkdown
@@ -209,7 +198,7 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
                           {msg.text}
                         </ReactMarkdown>
                         {msg.recalled && msg.recalled.length > 0 && (
-                          <details className="mt-2 pt-1.5 text-xs" style={{ color: 'var(--ink2)', borderTop: '1px solid var(--rule)' }}>
+                          <details className="mt-2 pt-1.5 text-xs text-ink2 border-t border-rule">
                             <summary className="cursor-pointer select-none">Recalled from earlier ({msg.recalled.length})</summary>
                             <ul className="mt-1 space-y-1">
                               {msg.recalled.map((r, i) => (
@@ -229,14 +218,14 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
                 )}
 
                 {isTyping && (
-                   <p className="italic text-[13.5px]" style={{ color: 'var(--ink2)' }}>
+                   <p className="italic text-[13.5px] text-ink2">
                      {counselor.name} is writing…
                    </p>
                 )}
                 <div ref={chatEndRef} />
               </div>
 
-              <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--ink)' }}>
+              <div className="mt-4 pt-3 border-t border-ink">
                 <div className="relative">
                   <input
                     type="text"
@@ -244,14 +233,13 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={`Message ${counselor.name}...`}
-                    className="w-full bg-transparent py-2 pr-10 italic focus:outline-none placeholder:text-[var(--ink2)]"
-                    style={{ color: 'var(--ink)' }}
+                    className="w-full bg-transparent py-2 pr-10 italic focus:outline-none placeholder:text-ink2 text-ink"
+                    
                   />
                   <button
                     onClick={handleSend}
                     disabled={!inputValue.trim() || isTyping}
-                    className={`absolute right-0 top-1/2 -translate-y-1/2 p-1.5 transition-opacity ${inputValue.trim() ? 'opacity-100' : 'opacity-50'}`}
-                    style={{ color: 'var(--seal)' }}
+                    className={`absolute right-0 top-1/2 -translate-y-1/2 p-1.5 transition-opacity ${inputValue.trim() ? 'opacity-100' : 'opacity-50'} text-seal`}
                   >
                     <span className="material-symbols-outlined text-lg">send</span>
                   </button>
@@ -265,8 +253,7 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
         {/* Footer Action (Only show on INSIGHT and PROTOCOL tabs) */}
         {activeTab !== 'COMMS' && (
           <div
-            className="p-4"
-            style={{ borderTop: '1px solid var(--rule)' }}
+            className="p-4 border-t border-rule"
           >
             <button
               onClick={() => setActiveTab('COMMS')}

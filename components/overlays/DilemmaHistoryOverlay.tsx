@@ -45,21 +45,21 @@ const DilemmaHistoryOverlay: React.FC<DilemmaHistoryOverlayProps> = ({
     <>
       {/* Full-screen veil - click to close */}
       <div
-        className="fixed inset-0 bg-[var(--veil)] z-40"
+        className="fixed inset-0 bg-veil z-40"
         onClick={handleClose}
       ></div>
 
       {/* Side Panel */}
-      <div className={`fixed inset-y-0 right-0 z-50 w-full max-w-xl h-full bg-[var(--paper)] border-l border-[var(--ink)] flex flex-col ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
+      <div className={`fixed inset-y-0 right-0 z-50 w-full max-w-xl h-full bg-paper border-l border-ink flex flex-col ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
 
         {/* Header */}
-        <header className="flex items-start px-8 pt-8 pb-5 border-b border-[var(--rule)]">
+        <header className="flex items-start px-8 pt-8 pb-5 border-b border-rule">
           <div className="flex-grow">
             <p className="label">The record</p>
             <h3 className="display !text-[34px] mt-1">Your Dilemma &amp; History</h3>
-            <p className="text-[13px] italic text-[var(--ink2)] mt-1">Original situation and refinement context</p>
+            <p className="text-[13px] italic text-ink2 mt-1">Original situation and refinement context</p>
           </div>
-          <button onClick={handleClose} className="text-[var(--ink2)] hover:text-[var(--ink)] transition-colors">
+          <button onClick={handleClose} className="text-ink2 hover:text-ink transition-colors">
             <span className="material-symbols-outlined">close</span>
           </button>
         </header>
@@ -69,11 +69,11 @@ const DilemmaHistoryOverlay: React.FC<DilemmaHistoryOverlayProps> = ({
           {/* Original Situation */}
           <div>
             <h4 className="label mb-3">Original Situation</h4>
-            <p className="text-[var(--ink)] leading-relaxed whitespace-pre-wrap">{dilemma}</p>
+            <p className="text-ink leading-relaxed whitespace-pre-wrap">{dilemma}</p>
             {originalSummary && (
-              <div className="mt-4 pl-4 border-l-2 border-[var(--rule)]">
+              <div className="mt-4 pl-4 border-l-2 border-rule">
                 <p className="label !text-[10px] mb-1">AI Summary</p>
-                <p className="font-display italic text-lg leading-snug text-[var(--ink)]">{originalSummary}</p>
+                <p className="font-display italic text-lg leading-snug text-ink">{originalSummary}</p>
               </div>
             )}
           </div>
@@ -86,9 +86,9 @@ const DilemmaHistoryOverlay: React.FC<DilemmaHistoryOverlayProps> = ({
               </h4>
               <ul>
                 {refinementHistory.map((context, idx) => (
-                  <li key={idx} className="grid grid-cols-[96px_1fr] gap-3 py-3 border-t border-[var(--rule)]">
-                    <span className="text-[13px] italic text-[var(--ink2)]">Update {idx + 1}</span>
-                    <p className="text-[14.5px] text-[var(--ink)] leading-relaxed">{context}</p>
+                  <li key={idx} className="grid grid-cols-[96px_1fr] gap-3 py-3 border-t border-rule">
+                    <span className="text-[13px] italic text-ink2">Update {idx + 1}</span>
+                    <p className="text-[14.5px] text-ink leading-relaxed">{context}</p>
                   </li>
                 ))}
               </ul>
@@ -97,7 +97,7 @@ const DilemmaHistoryOverlay: React.FC<DilemmaHistoryOverlayProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="px-8 py-6 border-t border-[var(--rule)] space-y-3">
+        <div className="px-8 py-6 border-t border-rule space-y-3">
           <button
             onClick={handleAddMoreContext}
             className="btn-seal w-full flex items-center justify-center"
@@ -119,10 +119,10 @@ const DilemmaHistoryOverlay: React.FC<DilemmaHistoryOverlayProps> = ({
       {/* Restart Confirmation Dialog */}
       {showRestartConfirm && (
         <>
-          <div className="fixed inset-0 bg-[var(--veil)] z-[60]" onClick={() => setShowRestartConfirm(false)}></div>
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-[calc(100%-2rem)] max-w-md bg-[var(--paper2)] border border-[var(--ink)] p-6 animate-fade-in">
-            <h3 className="font-display text-2xl font-semibold text-[var(--ink)] mb-2">Restart Scenario?</h3>
-            <p className="text-[14.5px] text-[var(--ink)] mb-6">
+          <div className="fixed inset-0 bg-veil z-[60]" onClick={() => setShowRestartConfirm(false)}></div>
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-[calc(100%-2rem)] max-w-md bg-paper2 border border-ink p-6 animate-fade-in">
+            <h3 className="font-display text-2xl font-semibold text-ink mb-2">Restart Scenario?</h3>
+            <p className="text-[14.5px] text-ink mb-6">
               This will clear your current dilemma, all counselor insights, and refinement history. You'll start fresh with a new scenario.
             </p>
             <div className="flex gap-3">

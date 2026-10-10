@@ -123,9 +123,9 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
       <div className="flex items-center justify-between text-xs py-1 w-full">
         <LabelDisplay text={labelLeft} isActive={isLeft} align="right" />
 
-        <div className="mx-3 flex-grow h-1.5 bg-[var(--paper2)] border border-[var(--rule)] relative overflow-hidden">
+        <div className="mx-3 flex-grow h-1.5 bg-paper2 border border-rule relative overflow-hidden">
           {/* Center marker */}
-          <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-[var(--rule)] z-10 -translate-x-1/2"></div>
+          <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-rule z-10 -translate-x-1/2"></div>
           {/* Value Bar */}
           <div
             className="absolute top-0 bottom-0 transition-all duration-500 ease-out"
@@ -142,14 +142,14 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
     <div className="absolute inset-0 z-50 flex flex-col">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 transition-all"
-        style={{ backgroundColor: 'var(--veil)' }}
+        className="absolute inset-0 transition-all bg-veil"
+        
         onClick={selectedType ? () => setSelectedType(null) : onClose}
       ></div>
 
       {/* Grid Content Container */}
       <div className={`relative z-10 flex-grow flex flex-col items-center justify-center p-4 overflow-y-auto scrollbar-hide transition-all duration-500 ${selectedType ? 'pointer-events-none' : ''}`}>
-        <div className={`w-full max-w-5xl flex flex-col items-center animate-fade-in my-auto px-6 py-8 ${selectedType ? '[&>*]:opacity-40' : ''}`} style={{ backgroundColor: 'var(--paper)', border: '1px solid var(--ink)' }}>
+        <div className={`w-full max-w-5xl flex flex-col items-center animate-fade-in my-auto px-6 py-8 ${selectedType ? '[&>*]:opacity-40' : ''} bg-paper border border-ink`}>
           <h2 className="display mb-8 text-center">Select Your <em>MBTI</em> Type</h2>
 
           <div className="grid grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
@@ -159,11 +159,11 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
                 <button
                   key={type.code}
                   onClick={() => handleTypeClick(type)}
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-[1.6px] flex flex-col items-center justify-center transition-colors duration-300 hover:bg-[var(--paper2)]"
-                  style={{ borderColor: color, backgroundColor: 'var(--paper)' }}
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-[1.6px] flex flex-col items-center justify-center transition-colors duration-300 hover:bg-paper2 bg-paper"
+                  style={{ borderColor: color }}
                 >
-                  <span className="font-label text-sm sm:text-base font-semibold tracking-[0.08em] text-[var(--ink)]">{type.code}</span>
-                  <span className="font-display text-[13px] sm:text-[15px] font-semibold mt-0.5 text-[var(--ink)]">{type.name}</span>
+                  <span className="font-label text-sm sm:text-base font-semibold tracking-[0.08em] text-ink">{type.code}</span>
+                  <span className="font-display text-[13px] sm:text-[15px] font-semibold mt-0.5 text-ink">{type.name}</span>
                 </button>
               );
             })}
@@ -174,21 +174,16 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
       {/* Right Sidebar for Type Details */}
       {selectedType && accent && (
         <aside 
-          className="fixed top-0 right-0 h-full w-full max-w-[500px] z-50 border-l overflow-hidden animate-slide-in-right flex flex-col"
-          style={{
-            backgroundColor: 'var(--paper)',
-            borderColor: 'var(--ink)'
-          }}
+          className="fixed top-0 right-0 h-full w-full max-w-[500px] z-50 border-l overflow-hidden animate-slide-in-right flex flex-col bg-paper border-ink"
         >
           {/* Header - Compact */}
           <header 
-            className="flex items-center justify-between px-6 py-3 shrink-0 border-b"
-            style={{ borderColor: 'var(--rule)' }}
+            className="flex items-center justify-between px-6 py-3 shrink-0 border-b border-rule"
           >
             <h2 className="font-display text-2xl font-semibold truncate">About {selectedType.code} - {selectedType.name}</h2>
             <button
               onClick={() => setSelectedType(null)}
-              className="p-1.5 text-[var(--ink2)] hover:text-[var(--ink)] transition-colors"
+              className="p-1.5 text-ink2 hover:text-ink transition-colors"
             >
               <span className="material-symbols-outlined text-xl">close</span>
             </button>
@@ -199,12 +194,11 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
 
             {/* Profile Identity - Hero */}
             <div 
-              className="flex items-center gap-5 shrink-0 border-b pb-4"
-              style={{ borderColor: 'var(--rule)' }}
+              className="flex items-center gap-5 shrink-0 border-b pb-4 border-rule"
             >
               <div 
-                className="w-28 h-28 rounded-full flex items-center justify-center shrink-0 overflow-hidden border-[1.6px]"
-                style={{ backgroundColor: 'var(--paper2)', borderColor: accent }}
+                className="w-28 h-28 rounded-full flex items-center justify-center shrink-0 overflow-hidden border-[1.6px] bg-paper2"
+                style={{ borderColor: accent }}
               >
                 <img
                   src={AVATAR_URLS[selectedType.code] || AVATAR_URLS.INTJ}
@@ -213,10 +207,10 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <p className="text-[14.5px] text-[var(--ink)] leading-relaxed">
+                <p className="text-[14.5px] text-ink leading-relaxed">
                   {details.description}
                 </p>
-                <div className="font-display text-base italic text-[var(--ink2)] border-l-2 border-[var(--rule)] pl-3">
+                <div className="font-display text-base italic text-ink2 border-l-2 border-rule pl-3">
                   "{details.quote}"
                 </div>
               </div>
@@ -226,14 +220,10 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
             {clickedSection && (
               <div className="shrink-0 mb-4 animate-fade-in">
                 <div 
-                  className="p-3 border relative max-h-[200px] overflow-y-auto scrollbar-hide"
-                  style={{ 
-                    backgroundColor: 'var(--paper2)',
-                    borderColor: 'var(--rule)'
-                  }}
+                  className="p-3 border relative max-h-[200px] overflow-y-auto scrollbar-hide bg-paper2 border-rule"
                 >
                   <div className="flex items-start gap-2 mb-2">
-                    <span className="material-symbols-outlined text-lg text-[var(--ink2)] shrink-0">
+                    <span className="material-symbols-outlined text-lg text-ink2 shrink-0">
                       {clickedSection === 'traits' ? 'psychology' : clickedSection === 'dichotomies' ? 'info' : clickedSection === 'behaviors' ? 'psychology_alt' : 'warning'}
                     </span>
                     <h4 className="font-display text-lg font-semibold flex-1">
@@ -244,52 +234,52 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
                     </h4>
                     <button
                       onClick={() => setClickedSection(null)}
-                      className="shrink-0 text-[var(--ink2)] hover:text-[var(--ink)] transition-colors"
+                      className="shrink-0 text-ink2 hover:text-ink transition-colors"
                     >
                       <span className="material-symbols-outlined text-sm">close</span>
                     </button>
                   </div>
                   <div className="space-y-2 text-[13px]">
                     {clickedSection === 'traits' && details.traits.map(trait => (
-                      <div key={trait} className="border-l-2 border-[var(--rule)] pl-2">
-                        <p className="font-semibold text-[var(--ink)]">{trait}</p>
-                        <p className="text-[var(--ink)] leading-relaxed">{TRAIT_DEFINITIONS[trait] || trait}</p>
+                      <div key={trait} className="border-l-2 border-rule pl-2">
+                        <p className="font-semibold text-ink">{trait}</p>
+                        <p className="text-ink leading-relaxed">{TRAIT_DEFINITIONS[trait] || trait}</p>
                       </div>
                     ))}
                     {clickedSection === 'dichotomies' && (
                       <>
-                        <div className="border-l-2 border-[var(--rule)] pl-2">
-                          <p className="font-semibold text-[var(--ink)]">Introversion (I) vs Extraversion (E)</p>
-                          <p className="text-[var(--ink)] leading-relaxed mb-1">{DICHOTOMY_DEFINITIONS["Introversion (I)"]}</p>
-                          <p className="text-[var(--ink)] leading-relaxed">{DICHOTOMY_DEFINITIONS["Extraversion (E)"]}</p>
+                        <div className="border-l-2 border-rule pl-2">
+                          <p className="font-semibold text-ink">Introversion (I) vs Extraversion (E)</p>
+                          <p className="text-ink leading-relaxed mb-1">{DICHOTOMY_DEFINITIONS["Introversion (I)"]}</p>
+                          <p className="text-ink leading-relaxed">{DICHOTOMY_DEFINITIONS["Extraversion (E)"]}</p>
                         </div>
-                        <div className="border-l-2 border-[var(--rule)] pl-2">
-                          <p className="font-semibold text-[var(--ink)]">Sensing (S) vs Intuition (N)</p>
-                          <p className="text-[var(--ink)] leading-relaxed mb-1">{DICHOTOMY_DEFINITIONS["Sensing (S)"]}</p>
-                          <p className="text-[var(--ink)] leading-relaxed">{DICHOTOMY_DEFINITIONS["Intuition (N)"]}</p>
+                        <div className="border-l-2 border-rule pl-2">
+                          <p className="font-semibold text-ink">Sensing (S) vs Intuition (N)</p>
+                          <p className="text-ink leading-relaxed mb-1">{DICHOTOMY_DEFINITIONS["Sensing (S)"]}</p>
+                          <p className="text-ink leading-relaxed">{DICHOTOMY_DEFINITIONS["Intuition (N)"]}</p>
                         </div>
-                        <div className="border-l-2 border-[var(--rule)] pl-2">
-                          <p className="font-semibold text-[var(--ink)]">Thinking (T) vs Feeling (F)</p>
-                          <p className="text-[var(--ink)] leading-relaxed mb-1">{DICHOTOMY_DEFINITIONS["Thinking (T)"]}</p>
-                          <p className="text-[var(--ink)] leading-relaxed">{DICHOTOMY_DEFINITIONS["Feeling (F)"]}</p>
+                        <div className="border-l-2 border-rule pl-2">
+                          <p className="font-semibold text-ink">Thinking (T) vs Feeling (F)</p>
+                          <p className="text-ink leading-relaxed mb-1">{DICHOTOMY_DEFINITIONS["Thinking (T)"]}</p>
+                          <p className="text-ink leading-relaxed">{DICHOTOMY_DEFINITIONS["Feeling (F)"]}</p>
                         </div>
-                        <div className="border-l-2 border-[var(--rule)] pl-2">
-                          <p className="font-semibold text-[var(--ink)]">Judging (J) vs Perceiving (P)</p>
-                          <p className="text-[var(--ink)] leading-relaxed mb-1">{DICHOTOMY_DEFINITIONS["Judging (J)"]}</p>
-                          <p className="text-[var(--ink)] leading-relaxed">{DICHOTOMY_DEFINITIONS["Perceiving (P)"]}</p>
+                        <div className="border-l-2 border-rule pl-2">
+                          <p className="font-semibold text-ink">Judging (J) vs Perceiving (P)</p>
+                          <p className="text-ink leading-relaxed mb-1">{DICHOTOMY_DEFINITIONS["Judging (J)"]}</p>
+                          <p className="text-ink leading-relaxed">{DICHOTOMY_DEFINITIONS["Perceiving (P)"]}</p>
                         </div>
                       </>
                     )}
                     {clickedSection === 'behaviors' && details.commonBehaviors.map(behavior => (
-                      <div key={behavior} className="border-l-2 border-[var(--rule)] pl-2">
-                        <p className="font-semibold text-[var(--ink)]">{behavior}</p>
-                        <p className="text-[var(--ink)] leading-relaxed">{BEHAVIOR_DEFINITIONS[behavior] || behavior}</p>
+                      <div key={behavior} className="border-l-2 border-rule pl-2">
+                        <p className="font-semibold text-ink">{behavior}</p>
+                        <p className="text-ink leading-relaxed">{BEHAVIOR_DEFINITIONS[behavior] || behavior}</p>
                       </div>
                     ))}
                     {clickedSection === 'weaknesses' && details.weaknesses.map(weakness => (
-                      <div key={weakness} className="border-l-2 border-[var(--seal)] pl-2">
-                        <p className="font-semibold text-[var(--ink)]">{weakness}</p>
-                        <p className="text-[var(--ink)] leading-relaxed">{WEAKNESS_DEFINITIONS[weakness] || weakness}</p>
+                      <div key={weakness} className="border-l-2 border-seal pl-2">
+                        <p className="font-semibold text-ink">{weakness}</p>
+                        <p className="text-ink leading-relaxed">{WEAKNESS_DEFINITIONS[weakness] || weakness}</p>
                       </div>
                     ))}
                   </div>
@@ -302,11 +292,11 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
 
               {/* Traits */}
               <div className="col-span-1 flex flex-col gap-2">
-                <div className="flex items-center justify-between border-b border-[var(--rule)] pb-1">
+                <div className="flex items-center justify-between border-b border-rule pb-1">
                   <h3 className="label !text-[10px]" style={{ color: accent }}>Key Traits</h3>
                   <button
                     onClick={() => setClickedSection(clickedSection === 'traits' ? null : 'traits')}
-                    className={`hover:text-[var(--ink)] transition-colors ${clickedSection === 'traits' ? 'text-[var(--ink)]' : 'text-[var(--ink2)]'}`}
+                    className={`hover:text-ink transition-colors ${clickedSection === 'traits' ? 'text-ink' : 'text-ink2'}`}
                   >
                     <span className="material-symbols-outlined text-sm">help</span>
                   </button>
@@ -315,8 +305,8 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
                   {details.traits.map(trait => (
                     <span
                       key={trait}
-                      className="px-2.5 py-0.5 rounded-full text-[12px] border whitespace-nowrap"
-                      style={{ borderColor: accent, color: 'var(--ink)' }}
+                      className="px-2.5 py-0.5 rounded-full text-[12px] border whitespace-nowrap text-ink"
+                      style={{ borderColor: accent }}
                     >
                       {trait}
                     </span>
@@ -326,11 +316,11 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
 
               {/* Dichotomies */}
               <div className="col-span-1 flex flex-col gap-2">
-                <div className="flex items-center justify-between border-b border-[var(--rule)] pb-1">
+                <div className="flex items-center justify-between border-b border-rule pb-1">
                   <h3 className="label !text-[10px]" style={{ color: accent }}>Dichotomies</h3>
                   <button
                     onClick={() => setClickedSection(clickedSection === 'dichotomies' ? null : 'dichotomies')}
-                    className={`hover:text-[var(--ink)] transition-colors ${clickedSection === 'dichotomies' ? 'text-[var(--ink)]' : 'text-[var(--ink2)]'}`}
+                    className={`hover:text-ink transition-colors ${clickedSection === 'dichotomies' ? 'text-ink' : 'text-ink2'}`}
                   >
                     <span className="material-symbols-outlined text-sm">help</span>
                   </button>
@@ -345,11 +335,11 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
 
               {/* Common Behaviors */}
               <div className="col-span-1 flex flex-col gap-2 mt-2">
-                <div className="flex items-center justify-between border-b border-[var(--rule)] pb-1">
+                <div className="flex items-center justify-between border-b border-rule pb-1">
                   <h3 className="label !text-[10px]">Common Behaviors</h3>
                   <button
                     onClick={() => setClickedSection(clickedSection === 'behaviors' ? null : 'behaviors')}
-                    className={`hover:text-[var(--ink)] transition-colors ${clickedSection === 'behaviors' ? 'text-[var(--ink)]' : 'text-[var(--ink2)]'}`}
+                    className={`hover:text-ink transition-colors ${clickedSection === 'behaviors' ? 'text-ink' : 'text-ink2'}`}
                   >
                     <span className="material-symbols-outlined text-sm">help</span>
                   </button>
@@ -358,9 +348,9 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
                   {details.commonBehaviors.map(b => (
                     <li 
                       key={b} 
-                      className="text-[13px] text-[var(--ink)] flex items-start gap-2"
+                      className="text-[13px] text-ink flex items-start gap-2"
                     >
-                      <span className="material-symbols-outlined text-[14px] text-[var(--ink2)]">psychology_alt</span>
+                      <span className="material-symbols-outlined text-[14px] text-ink2">psychology_alt</span>
                       {b}
                     </li>
                   ))}
@@ -369,11 +359,11 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
 
               {/* Weaknesses */}
               <div className="col-span-1 flex flex-col gap-2 mt-2">
-                <div className="flex items-center justify-between border-b border-[var(--rule)] pb-1">
-                  <h3 className="label !text-[10px] !text-[var(--seal)]">Weaknesses</h3>
+                <div className="flex items-center justify-between border-b border-rule pb-1">
+                  <h3 className="label !text-[10px] !text-seal">Weaknesses</h3>
                   <button
                     onClick={() => setClickedSection(clickedSection === 'weaknesses' ? null : 'weaknesses')}
-                    className={`hover:text-[var(--ink)] transition-colors ${clickedSection === 'weaknesses' ? 'text-[var(--ink)]' : 'text-[var(--ink2)]'}`}
+                    className={`hover:text-ink transition-colors ${clickedSection === 'weaknesses' ? 'text-ink' : 'text-ink2'}`}
                   >
                     <span className="material-symbols-outlined text-sm">help</span>
                   </button>
@@ -382,9 +372,9 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
                   {details.weaknesses.map(w => (
                     <li 
                       key={w} 
-                      className="text-[13px] text-[var(--ink)] flex items-start gap-2"
+                      className="text-[13px] text-ink flex items-start gap-2"
                     >
-                      <span className="material-symbols-outlined text-[14px] text-[var(--seal)]">cancel</span>
+                      <span className="material-symbols-outlined text-[14px] text-seal">cancel</span>
                       {w}
                     </li>
                   ))}
@@ -396,16 +386,12 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
 
           {/* Bottom Validation Section - Compact & Integrated */}
           <div 
-            className="px-6 py-5 border-t shrink-0 flex flex-col gap-4"
-            style={{ 
-              backgroundColor: 'var(--paper)',
-              borderColor: 'var(--rule)'
-            }}
+            className="px-6 py-5 border-t shrink-0 flex flex-col gap-4 bg-paper border-rule"
           >
             <div className="flex justify-between items-center">
               <h3 className="label">Validate Profile</h3>
               <span
-                className="font-label text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--ink)]"
+                className="label !text-ink"
               >
                 Confidence: {confidence}%
               </span>
@@ -419,7 +405,7 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
 
             <div>
               {/* Labels */}
-              <div className="flex justify-between text-[12px] italic text-[var(--ink2)] mb-2 px-1">
+              <div className="flex justify-between text-[12px] italic text-ink2 mb-2 px-1">
                 <span>Strongly Disagree</span>
                 <span>Strongly Agree</span>
               </div>
@@ -432,7 +418,7 @@ const MBTIOverlay: React.FC<MBTIOverlayProps> = ({ onClose, onConfirm }) => {
                   if (val === 1 || val === 5) sizeClass = "w-12 h-12"; // Extremes
                   if (val === 3) sizeClass = "w-8 h-8"; // Neutral
 
-                  const colorClass = "border-[var(--ink2)] text-[var(--ink2)] hover:bg-[var(--seal)] hover:border-[var(--seal)] hover:text-[var(--on-seal)]";
+                  const colorClass = "border-ink2 text-ink2 hover:bg-seal hover:border-seal hover:text-on-seal";
 
                   return (
                     <button

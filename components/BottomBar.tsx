@@ -37,11 +37,7 @@ const BottomBar: React.FC<BottomBarProps> = ({
 
   return (
     <footer 
-      className={`absolute bottom-0 left-0 right-0 p-3 md:p-4 z-40 transition-all duration-300 ${isDisabled ? 'opacity-50 pointer-events-none' : 'opacity-100'} ${isHighlighted ? 'ring-2 ring-inset ring-seal' : ''}`}
-      style={{
-        backgroundColor: 'var(--paper)',
-        borderTop: '1px solid var(--rule)'
-      }}
+      className={`absolute bottom-0 left-0 right-0 p-3 md:p-4 z-40 transition-all duration-300 ${isDisabled ? 'opacity-50 pointer-events-none' : 'opacity-100'} ${isHighlighted ? 'ring-2 ring-inset ring-seal' : ''} bg-paper border-t border-rule`}
     >
       <div className={`max-w-screen-2xl mx-auto ${isMobile ? 'flex flex-col space-y-3' : 'flex items-center space-x-4'}`}>
         
@@ -54,15 +50,12 @@ const BottomBar: React.FC<BottomBarProps> = ({
             onChange={(e) => setAdditionalContext(e.target.value)}
             onKeyPress={handleKeyPress}
             maxLength={300}
-            className="w-full bg-transparent border-b pl-0 pr-16 py-2 italic text-[15px] focus:outline-none focus:border-[var(--ink)] placeholder:text-[var(--ink2)]"
-            style={{
-              borderColor: 'var(--rule)',
-              color: 'var(--ink)'
-            }}
+            className="w-full bg-transparent border-b pl-0 pr-16 py-2 italic text-[15px] focus:outline-none focus:border-ink placeholder:text-ink2 border-rule text-ink"
+            
             disabled={isDisabled || isRefining}
           />
           {additionalContext.length > 0 && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'var(--ink2)' }}>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink2">
               {additionalContext.length}/300
             </span>
           )}
@@ -71,8 +64,8 @@ const BottomBar: React.FC<BottomBarProps> = ({
         {/* Mobile: Row with toggle and button */}
         <div className={`${isMobile ? 'flex items-center justify-between' : 'flex items-center space-x-4'}`}>
           {/* Debate Toggle */}
-          <div className={`flex items-center space-x-2 md:space-x-3 ${isMobile ? '' : 'px-4'}`} style={!isMobile ? { borderRight: '1px solid var(--rule)' } : undefined}>
-            <label htmlFor="debate-mode" className="font-label text-[12px] uppercase tracking-[0.1em] cursor-pointer select-none whitespace-nowrap" style={{ color: 'var(--ink)' }}>
+          <div className={`flex items-center space-x-2 md:space-x-3 ${isMobile ? '' : 'px-4 border-r border-rule'}`}>
+            <label htmlFor="debate-mode" className="caps cursor-pointer select-none whitespace-nowrap text-ink">
               {isMobile ? 'Debate' : 'Debate Mode'}
             </label>
             <button
@@ -80,14 +73,12 @@ const BottomBar: React.FC<BottomBarProps> = ({
               onClick={toggleDebateMode}
               disabled={isRefining}
               aria-pressed={isDebateMode}
-              className={`relative inline-flex h-4 w-[30px] items-center rounded-full border transition-colors ${isRefining ? 'opacity-50 cursor-not-allowed' : ''}`}
-              style={{ borderColor: isDebateMode ? 'var(--ink)' : 'var(--rule)' }}
+              className={`relative inline-flex h-4 w-[30px] items-center rounded-full border transition-colors ${isDebateMode ? 'border-ink' : 'border-rule'} ${isRefining ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span
                 className={`inline-block h-2.5 w-2.5 transform rounded-full transition-transform ${
-                  isDebateMode ? 'translate-x-[15px]' : 'translate-x-[2px]'
+                  isDebateMode ? 'translate-x-[15px] bg-seal' : 'translate-x-[2px] bg-ink2'
                 }`}
-                style={{ backgroundColor: isDebateMode ? 'var(--seal)' : 'var(--ink2)' }}
               />
             </button>
           </div>

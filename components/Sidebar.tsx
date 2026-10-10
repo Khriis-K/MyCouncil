@@ -13,8 +13,7 @@ const THEME_MODES: { id: ThemeMode; label: string }[] = [
 ];
 
 // Shared look for the setup fields: flat paper, ruled border, square corners.
-const fieldClass = 'w-full border p-3 text-[15px] focus:outline-none focus:border-[var(--ink)]';
-const fieldStyle: React.CSSProperties = { backgroundColor: 'var(--paper2)', borderColor: 'var(--rule)', color: 'var(--ink)' };
+const fieldClass = 'w-full border p-3 text-[15px] bg-paper2 text-ink focus:outline-none focus:border-ink';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -151,8 +150,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile Backdrop Overlay */}
       {isMobile && isOpen && (
         <div
-          className="fixed inset-0 z-[55]"
-          style={{ backgroundColor: 'var(--veil)' }}
+          className="fixed inset-0 z-[55] bg-veil"
+          
           onClick={toggleSidebar}
         />
       )}
@@ -160,17 +159,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       <aside
         className={`fixed inset-y-0 left-0 z-[60] transition-all duration-300 ease-in-out flex flex-col ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-        style={{
-          width: isMobile ? '100vw' : 'var(--sidebar-width)',
-          maxWidth: isMobile ? '100vw' : '360px',
-          backgroundColor: 'var(--paper)',
-          borderRight: isMobile ? 'none' : `1px solid var(--rule)`
-        }}
+        } bg-paper ${isMobile ? 'w-screen' : 'w-[var(--sidebar-width)] max-w-[360px] border-r border-rule'}`}
       >
         <div className="p-6 space-y-8 flex-grow overflow-y-auto scrollbar-hide">
           {/* Masthead */}
-          <header className="space-y-3 pb-5" style={{ borderBottom: '1px solid var(--rule)' }}>
+          <header className="space-y-3 pb-5 border-b border-rule">
             <h1 className="wordmark">My<em>Council</em></h1>
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <span className="docket">{sittingDate}</span>
@@ -180,11 +173,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     key={mode.id}
                     onClick={() => setThemeMode(mode.id)}
                     aria-pressed={theme === mode.id}
-                    className="font-label text-[11px] uppercase tracking-[0.1em] underline-offset-[3px]"
-                    style={{
-                      color: theme === mode.id ? 'var(--ink)' : 'var(--ink2)',
-                      textDecorationLine: theme === mode.id ? 'underline' : 'none'
-                    }}
+                    className={`caps !text-[11px] underline-offset-[3px] ${theme === mode.id ? 'text-ink underline' : 'text-ink2'}`}
                     title={`Switch to ${mode.label} mode`}
                   >
                     {mode.label}
@@ -204,8 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 ref={textareaRef}
                 id="dilemma"
                 rows={5}
-                className={`${fieldClass} resize-none transition-all ${isHighlighted ? 'ring-2 ring-seal' : ''} ${hasCouncil ? 'opacity-50 cursor-not-allowed' : ''}`}
-                style={fieldStyle}
+                className={`${fieldClass} border-rule resize-none transition-all ${isHighlighted ? 'ring-2 ring-seal' : ''} ${hasCouncil ? 'opacity-50 cursor-not-allowed' : ''}`}
                 placeholder="I've been offered a new job in a different city. It's a great career opportunity but..."
                 value={dilemma}
                 onChange={(e) => setDilemma(e.target.value)}
@@ -221,19 +209,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                   value={reflectionFocus}
                   onChange={handleReflectionFocusChange}
                   disabled={hasCouncil}
-                  className={`${fieldClass} appearance-none ${hasCouncil ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  style={fieldStyle}
+                  className={`${fieldClass} appearance-none border-rule ${hasCouncil ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {REFLECTION_FOCUS_OPTIONS.map(option => (
                     <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>
-                <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-sm" style={{ color: 'var(--ink2)' }}>
+                <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-sm text-ink2">
                   expand_more
                 </span>
               </div>
               {currentFocusOption && (
-                <p className="text-[13px] italic mt-2 animate-fade-in" style={{ color: 'var(--ink2)' }}>
+                <p className="text-[13px] italic mt-2 animate-fade-in text-ink2">
                   {currentFocusOption.description}
                 </p>
               )}
@@ -247,8 +234,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   value={isMBTIOverlayOpen ? 'TRIGGER' : (selectedMBTI === 'BALANCED' ? 'BALANCED' : (selectedMBTI || 'BALANCED'))}
                   onChange={handleCognitiveStyleChange}
                   disabled={hasCouncil}
-                  className={`${fieldClass} appearance-none ${hasCouncil ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  style={{ ...fieldStyle, borderColor: selectedMBTI && selectedMBTI !== 'BALANCED' ? 'var(--ink)' : 'var(--rule)' }}
+                  className={`${fieldClass} appearance-none ${selectedMBTI && selectedMBTI !== 'BALANCED' ? 'border-ink' : 'border-rule'} ${hasCouncil ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <option value="BALANCED">Balanced (Default)</option>
                   {selectedMBTI && selectedMBTI !== 'BALANCED' && (
@@ -256,7 +242,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   )}
                   <option value="TRIGGER">Select MBTI Type...</option>
                 </select>
-                <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-sm" style={{ color: 'var(--ink2)' }}>
+                <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-sm text-ink2">
                   expand_more
                 </span>
               </div>
@@ -268,17 +254,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <label className="label block">
                   Council Size
                 </label>
-                <span className="text-[13px] italic" style={{ color: 'var(--ink2)' }}>
+                <span className="text-[13px] italic text-ink2">
                   {councilSize} Counselors
                 </span>
               </div>
 
               <div className="relative h-12 flex items-center select-none">
                 {/* Track Lines */}
-                <div className="absolute left-0 right-0 h-px z-0" style={{ backgroundColor: 'var(--rule)' }}></div>
+                <div className="absolute left-0 right-0 h-px z-0 bg-rule"></div>
                 <div
-                  className="absolute left-0 h-px z-0 transition-all duration-300 ease-out"
-                  style={{ width: `${((councilSize - 3) / 4) * 100}%`, backgroundColor: 'var(--ink)' }}
+                  className="absolute left-0 h-px z-0 transition-all duration-300 ease-out bg-ink"
+                  style={{ width: `${((councilSize - 3) / 4) * 100}%` }}
                 ></div>
 
                 {/* Steps */}
@@ -288,12 +274,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                       key={size}
                       onClick={() => !hasCouncil && setCouncilSize(size)}
                       disabled={hasCouncil}
-                      className={`w-[30px] h-[30px] rounded-full flex items-center justify-center font-display text-[17px] border transition-colors duration-200 ${hasCouncil ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      style={{
-                        backgroundColor: size === councilSize ? 'var(--ink)' : 'var(--paper)',
-                        borderColor: size <= councilSize ? 'var(--ink)' : 'var(--rule)',
-                        color: size === councilSize ? 'var(--paper)' : (size < councilSize ? 'var(--ink)' : 'var(--ink2)')
-                      }}
+                      className={`w-[30px] h-[30px] rounded-full flex items-center justify-center font-display text-[17px] border transition-colors duration-200 ${
+                        size === councilSize ? 'bg-ink border-ink text-paper'
+                        : size < councilSize ? 'bg-paper border-ink text-ink'
+                        : 'bg-paper border-rule text-ink2'
+                      } ${hasCouncil ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {size}
                     </button>
@@ -309,22 +294,20 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Footer with Summon/Restart Button */}
-        <div className="p-6" style={{ borderTop: '1px solid var(--rule)' }}>
+        <div className="p-6 border-t border-rule">
           {!hasCouncil ? (
             <button
               onClick={onSummon}
               disabled={isGenerating}
-              className="btn-seal relative overflow-hidden w-full flex items-center justify-center disabled:!opacity-100"
-              style={isGenerating ? { backgroundColor: 'var(--paper2)', color: 'var(--ink2)', outline: '1px solid var(--rule)', outlineOffset: '-1px' } : undefined}
+              className={`btn-seal relative overflow-hidden w-full flex items-center justify-center disabled:!opacity-100 ${isGenerating ? '!bg-paper2 !text-ink2 outline outline-1 -outline-offset-1 outline-rule' : ''}`}
             >
               {/* Progressive Loading Bar */}
               {isGenerating && (
                 <div
-                  className="absolute left-0 top-0 bottom-0 transition-all ease-out"
+                  className="absolute left-0 top-0 bottom-0 transition-all ease-out bg-rule"
                   style={{
                     width: `${currentProgress}%`,
                     transitionDuration: `${estimatedLoadDuration || 0}ms`, // Use estimated duration for CSS transition
-                    backgroundColor: 'var(--rule)'
                   }}
                 />
               )}
@@ -332,7 +315,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <div className="relative z-10 flex items-center">
                 {isGenerating ? (
                   <>
-                    <span className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin mr-2" style={{ borderColor: 'var(--ink2)', borderTopColor: 'transparent' }}></span>
+                    <span className="w-4 h-4 border-2 border-ink2 border-t-transparent rounded-full animate-spin mr-2"></span>
                     Consulting...
                   </>
                 ) : (
@@ -368,19 +351,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       >
         <button
           onClick={toggleSidebar}
-          className={`flex items-center justify-center transition-colors hover:text-[var(--ink)] ${
+          className={`flex items-center justify-center transition-colors bg-paper text-ink2 hover:text-ink border-rule ${
             isMobile
-              ? 'h-12 w-12 rounded-full'
-              : 'h-16 w-6'
+              ? 'h-12 w-12 rounded-full border'
+              : 'h-16 w-6 border border-l-0'
           }`}
-          style={{
-            backgroundColor: 'var(--paper)',
-            color: 'var(--ink2)',
-            // React clears a longhand set to undefined, which would wipe the shorthand, so set one or the other
-            ...(isMobile
-              ? { border: '1px solid var(--rule)' }
-              : { borderTop: '1px solid var(--rule)', borderRight: '1px solid var(--rule)', borderBottom: '1px solid var(--rule)' })
-          }}
         >
           <span className="material-symbols-outlined text-xl">
             {isMobile

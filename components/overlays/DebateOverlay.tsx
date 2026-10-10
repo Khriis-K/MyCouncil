@@ -217,18 +217,18 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
    return (
       <div className="absolute inset-0 z-50 flex items-center justify-center p-4 font-body">
          {/* Backdrop */}
-         <div className="absolute inset-0 bg-[var(--veil)]" onClick={onClose}></div>
+         <div className="absolute inset-0 bg-veil" onClick={onClose}></div>
 
          {/* Main Container */}
-         <div className="relative w-full max-w-5xl h-[85vh] bg-[var(--paper)] border border-[var(--ink)] flex flex-col overflow-hidden animate-fade-in">
+         <div className="relative w-full max-w-5xl h-[85vh] bg-paper border border-ink flex flex-col overflow-hidden animate-fade-in">
             
             {/* Header */}
-            <header className="relative z-20 flex items-center justify-between gap-4 px-8 py-6 border-b border-[var(--rule)] bg-[var(--paper)]">
+            <header className="relative z-20 flex items-center justify-between gap-4 px-8 py-6 border-b border-rule bg-paper">
                <div className="flex flex-col">
-                  <h2 className="display !text-[34px] text-[var(--ink)]">
+                  <h2 className="display !text-[34px] text-ink">
                      {showMatrix ? 'Decision Matrix' : 'Council Clash'}
                   </h2>
-                  <p className="italic text-[var(--ink2)] mt-1">
+                  <p className="italic text-ink2 mt-1">
                      Conflict: {dynamicData?.core_issue || "Analyzing Tension..."}
                   </p>
                </div>
@@ -242,7 +242,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                   </button>
                   <button 
                      onClick={onClose}
-                     className="w-10 h-10 flex items-center justify-center transition-colors text-[var(--ink2)] hover:text-[var(--ink)]"
+                     className="w-10 h-10 flex items-center justify-center transition-colors text-ink2 hover:text-ink"
                   >
                      <span className="material-symbols-outlined">close</span>
                   </button>
@@ -258,7 +258,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                            if (turn.speaker === 'user') {
                               return (
                                  <div key={idx} className="flex justify-center w-full animate-fade-in">
-                                    <div className="border-l-2 border-[var(--seal)] text-[var(--ink)] pl-4 py-1 italic max-w-2xl">
+                                    <div className="border-l-2 border-seal text-ink pl-4 py-1 italic max-w-2xl">
                                        <span className="label not-italic mr-2">You</span>
                                        {turn.text}
                                     </div>
@@ -281,8 +281,8 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                               >
                                  {/* Avatar */}
                                  <div
-                                    className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center border-[1.6px]"
-                                    style={{ borderColor: color, color, backgroundColor: 'var(--paper2)' }}
+                                    className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center border-[1.6px] bg-paper2"
+                                    style={{ borderColor: color, color }}
                                  >
                                     <span className="material-symbols-outlined">
                                        {speaker.icon}
@@ -294,7 +294,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                                     <div className="label mb-1" style={{ color }}>
                                        {speaker.name.replace(/^The /, '')}
                                     </div>
-                                    <div className="py-3 text-[15px] leading-relaxed text-[var(--ink)] border-t border-[var(--rule)]">
+                                    <div className="py-3 text-[15px] leading-relaxed text-ink border-t border-rule">
                                        <ReactMarkdown
                                           components={{
                                              p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>,
@@ -316,9 +316,9 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                      {isSending && (
                         <div className="flex justify-center w-full py-4">
                            <div className="flex space-x-2">
-                              <div className="w-2 h-2 bg-[var(--ink2)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                              <div className="w-2 h-2 bg-[var(--ink2)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                              <div className="w-2 h-2 bg-[var(--ink2)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                              <div className="w-2 h-2 bg-ink2 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                              <div className="w-2 h-2 bg-ink2 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                              <div className="w-2 h-2 bg-ink2 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                            </div>
                         </div>
                      )}
@@ -338,10 +338,10 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
 
                         {/* Criteria Rows */}
                         {matrixState.criteria.map((criterion, index) => (
-                           <div key={criterion.id} className="grid grid-cols-12 gap-4 items-center px-4 py-3 border-t border-[var(--rule)] hover:bg-[var(--paper2)] transition-colors group relative">
+                           <div key={criterion.id} className="grid grid-cols-12 gap-4 items-center px-4 py-3 border-t border-rule hover:bg-paper2 transition-colors group relative">
                               
                               {/* Tooltip for Reasoning */}
-                              <div className={`absolute left-1/2 -translate-x-1/2 bg-[var(--ink)] text-[var(--paper)] text-[13px] p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-80 text-center z-[60] ${
+                              <div className={`absolute left-1/2 -translate-x-1/2 bg-ink text-paper text-[13px] p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-80 text-center z-[60] ${
                                  index < 2 
                                     ? 'top-full mt-3' 
                                     : 'bottom-full mb-3'
@@ -352,12 +352,12 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                                  {/* Arrow */}
                                  <div className={`absolute left-1/2 -translate-x-1/2 border-8 border-transparent ${
                                     index < 2
-                                       ? 'bottom-full border-b-[var(--ink)]'
-                                       : 'top-full border-t-[var(--ink)]'
+                                       ? 'bottom-full border-b-ink'
+                                       : 'top-full border-t-ink'
                                  }`}></div>
                               </div>
 
-                              <div className="col-span-4 font-display text-xl font-semibold leading-tight text-[var(--ink)]">{criterion.label}</div>
+                              <div className="col-span-4 font-display text-xl font-semibold leading-tight text-ink">{criterion.label}</div>
                               
                               <div className="col-span-3 flex items-center gap-2">
                                  <input 
@@ -379,7 +379,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                               <div className="col-span-1 flex justify-end">
                                  <button 
                                     onClick={() => handleRemoveCriterion(criterion.id)}
-                                    className="text-[var(--ink2)] hover:text-[var(--seal)] transition-colors p-1"
+                                    className="text-ink2 hover:text-seal transition-colors p-1"
                                     title="Remove Criterion"
                                  >
                                     <span className="material-symbols-outlined text-sm">delete</span>
@@ -389,14 +389,14 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                         ))}
 
                         {/* Add New Criterion Row */}
-                        <div className="grid grid-cols-12 gap-4 items-center px-4 py-3 border-y border-[var(--rule)]">
+                        <div className="grid grid-cols-12 gap-4 items-center px-4 py-3 border-y border-rule">
                            <div className="col-span-7">
                               <input
                                  type="text"
                                  value={newCriterion}
                                  onChange={(e) => setNewCriterion(e.target.value)}
                                  placeholder="Add your own criterion..."
-                                 className="w-full bg-transparent border-none italic text-[var(--ink)] placeholder-[var(--ink2)] focus:outline-none"
+                                 className="w-full bg-transparent border-none italic text-ink placeholder-ink2 focus:outline-none"
                                  onKeyDown={(e) => e.key === 'Enter' && handleAddCriterion()}
                               />
                            </div>
@@ -412,7 +412,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                         </div>
 
                         {/* Total Score */}
-                        <div className="grid grid-cols-12 gap-4 mt-8 pt-6 border-t border-[var(--ink)]">
+                        <div className="grid grid-cols-12 gap-4 mt-8 pt-6 border-t border-ink">
                            <div className="col-span-7 label !text-[13px] flex items-center justify-end h-full">
                               Weighted Alignment
                            </div>
@@ -427,11 +427,11 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                         
                         <div className="mt-8 text-center animate-fade-in">
                            {isBalanced ? (
-                              <p className="text-[var(--ink)]">
-                                 <span className="font-semibold text-[var(--brass)]">Balanced Approach:</span> Both perspectives align closely with your priorities. Consider a synthesis.
+                              <p className="text-ink">
+                                 <span className="font-semibold text-brass">Balanced Approach:</span> Both perspectives align closely with your priorities. Consider a synthesis.
                               </p>
                            ) : (
-                              <p className="text-[var(--ink)]">
+                              <p className="text-ink">
                                  Based on your priorities, <span className="font-semibold" style={{ color: c1Percent > c2Percent ? c1Color : c2Color }}>
                                     {c1Percent > c2Percent ? c1.name.replace(/^The /, '') : c2.name.replace(/^The /, '')}'s
                                  </span> approach aligns better with your goals.
@@ -445,7 +445,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
 
             {/* Input Area - Only visible in Dialogue Mode */}
             {!showMatrix && (
-               <div className="relative z-20 px-8 py-5 border-t border-[var(--ink)] bg-[var(--paper)]">
+               <div className="relative z-20 px-8 py-5 border-t border-ink bg-paper">
                   <div className="flex flex-col sm:flex-row gap-4">
                      <input
                         type="text"
@@ -454,7 +454,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                         onKeyDown={handleKeyDown}
                         disabled={isSending}
                         placeholder={isSending ? "The Council is deliberating..." : "Inject your comment or question..."}
-                        className="flex-grow bg-transparent border-b border-[var(--rule)] py-2 italic text-[var(--ink)] focus:outline-none focus:border-[var(--ink)] placeholder-[var(--ink2)] transition-all disabled:opacity-50"
+                        className="flex-grow bg-transparent border-b border-rule py-2 italic text-ink focus:outline-none focus:border-ink placeholder-ink2 transition-all disabled:opacity-50"
                      />
                      <button 
                         onClick={handleSend}

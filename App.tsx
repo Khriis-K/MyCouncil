@@ -300,7 +300,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden font-body" style={{ backgroundColor: 'var(--paper)', color: 'var(--ink)' }}>
+    <div className="flex h-screen w-screen overflow-hidden font-body bg-paper text-ink">
 
       {/* 1. Sidebar Configuration */}
       <Sidebar
@@ -339,7 +339,7 @@ const App: React.FC = () => {
           {viewState === 'INITIAL' ? (
             <div className="text-center space-y-2 px-6">
               <p className="label">The chamber is empty</p>
-              <p className="font-display italic text-2xl" style={{ color: 'var(--ink2)' }}>Summon the Council to begin reflection.</p>
+              <p className="font-display italic text-2xl text-ink2">Summon the Council to begin reflection.</p>
             </div>
           ) : (
             <ReflectionSphere

@@ -180,6 +180,14 @@ body {
   color: var(--ink2);
 }
 
+/* Small caps for controls: tabs, toggles, the theme switch */
+.caps {
+  font-family: var(--font-label);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 /* Section and overlay titles */
 .display {
   font-family: var(--font-display);

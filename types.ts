@@ -1,9 +1,9 @@
 export interface Counselor {
   id: string;
   name: string;
-  role: string;
+  role: string; // The counselor's MBTI code from the matrix (e.g. 'INTJ'), or 'BALANCED'
   icon: string;
-  color: string; // Tailwind color class prefix (e.g., 'blue', 'green')
+  color: string; // The matrix's colour name; the UI colours counselors by MBTI group instead (utils/groupColor)
   description: string;
   highlight: string; // Short summary for debate mode
 }

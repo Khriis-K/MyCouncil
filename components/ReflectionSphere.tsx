@@ -204,23 +204,21 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
       {/* Floating Orb Focus Indicator - hidden on landscape, moves left when debate panel visible */}
       {currentFocusOption && !isLandscape && (
         <div 
-          className={`absolute z-20 flex items-center gap-2 px-3 py-2 border ${isMobile ? 'scale-90' : ''}`}
+          className={`absolute z-20 flex items-center gap-2 px-3 py-2 border ${isMobile ? 'scale-90' : ''} bg-paper border-rule`}
           style={{
             top: '1rem',
             // Move to left side when debate mode is on and we're not constrained (legend is showing on right)
             right: (isDebateMode && !isConstrained) ? 'auto' : '1rem',
-            left: (isDebateMode && !isConstrained) ? '1rem' : 'auto',
-            backgroundColor: 'var(--paper)',
-            borderColor: 'var(--rule)'
+            left: (isDebateMode && !isConstrained) ? '1rem' : 'auto'
           }}
         >
-          <span className="material-symbols-outlined text-lg" style={{ color: 'var(--ink2)' }}>visibility</span>
+          <span className="material-symbols-outlined text-lg text-ink2">visibility</span>
           <div className="flex flex-col">
-            <span className="label !text-[var(--ink)]">
+            <span className="label !text-ink">
               {currentFocusOption.label.split(' ')[0]} Lens
             </span>
             {!isMobile && (
-              <span className="text-[12px] italic leading-none mt-0.5" style={{ color: 'var(--ink2)' }}>
+              <span className="text-[12px] italic leading-none mt-0.5 text-ink2">
                 {currentFocusOption.label.split(' ').slice(1).join(' ') || 'Perspective'}
               </span>
             )}
@@ -322,12 +320,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                     w-9 h-9 rounded-full flex items-center justify-center
                     font-display text-lg font-semibold
                     transition-all duration-200
-                    ${isHovered ? 'scale-125' : 'scale-100'}
-                  `}
-                  style={{
-                    backgroundColor: tensionColor(pair.type),
-                    color: 'var(--on-seal)',
-                  }}
+                    ${isHovered ? 'scale-125' : 'scale-100'} text-on-seal`}
+                  style={{ backgroundColor: tensionColor(pair.type) }}
                 >
                   {markerNumber}
                 </div>
@@ -339,25 +333,21 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
           {/* Unconstrained: Panel positioned relative to container, not viewport */}
           {!isConstrained && (
             <div 
-              className="absolute top-4 right-4 w-80 max-w-[35%] p-4 z-30 animate-fade-in"
-              style={{
-                backgroundColor: 'var(--paper)',
-                border: '1px solid var(--rule)'
-              }}
+              className="absolute top-4 right-4 w-80 max-w-[35%] p-4 z-30 animate-fade-in bg-paper border border-rule"
             >
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b" style={{ borderColor: 'var(--rule)' }}>
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-rule">
               <h3 className="label">
                 Tensions
               </h3>
               {/* Legend Key */}
               <div className="ml-auto flex items-center gap-4 text-xs">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-5 border-t-2" style={{ borderColor: 'var(--seal)' }}></span>
-                  <span style={{ color: 'var(--ink2)' }}>Conflict</span>
+                  <span className="w-5 border-t-2 border-seal"></span>
+                  <span className="text-ink2">Conflict</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-5 border-t-2 border-dashed" style={{ borderColor: 'var(--brass)' }}></span>
-                  <span style={{ color: 'var(--ink2)' }}>Synthesis</span>
+                  <span className="w-5 border-t-2 border-dashed border-brass"></span>
+                  <span className="text-ink2">Synthesis</span>
                 </div>
               </div>
             </div>
@@ -376,13 +366,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                 return (
                   <li 
                     key={idx} 
-                    className={`
-                      p-3 cursor-pointer transition-all duration-200
-                    `}
-                    style={{
-                      backgroundColor: isHovered ? 'var(--paper2)' : 'transparent',
-                      border: `1px solid ${isHovered ? tensionColor(pair.type) : 'transparent'}`,
-                    }}
+                    className={`p-3 cursor-pointer border transition-all duration-200 ${isHovered ? 'bg-paper2' : 'border-transparent'}`}
+                    style={isHovered ? { borderColor: tensionColor(pair.type) } : undefined}
                     onClick={() => onTensionClick(pair)}
                     onMouseEnter={() => setHoveredTensionIdx(idx)}
                     onMouseLeave={() => setHoveredTensionIdx(null)}
@@ -390,8 +375,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                     <div className="flex items-start gap-3">
                       {/* Numbered Badge */}
                       <div 
-                        className="w-6 h-6 rounded-full flex items-center justify-center font-display text-sm font-semibold flex-shrink-0 mt-0.5"
-                        style={{ backgroundColor: tensionColor(pair.type), color: 'var(--on-seal)' }}
+                        className="w-6 h-6 rounded-full flex items-center justify-center font-display text-sm font-semibold flex-shrink-0 mt-0.5 text-on-seal"
+                        style={{ backgroundColor: tensionColor(pair.type) }}
                       >
                         {idx + 1}
                       </div>
@@ -399,15 +384,14 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                       <div className="flex-1 min-w-0">
                         {/* Counselor Names */}
                         <div className="flex items-center gap-2 font-display text-lg font-semibold leading-tight mb-1">
-                          <span style={{ color: 'var(--ink)' }}>{c1.name}</span>
+                          <span className="text-ink">{c1.name}</span>
                           <span style={{ color: tensionColor(pair.type) }}>↔</span>
-                          <span style={{ color: 'var(--ink)' }}>{c2.name}</span>
+                          <span className="text-ink">{c2.name}</span>
                         </div>
                         
                         {/* Core Issue */}
                         <p
-                          className="text-[13px] italic leading-snug"
-                          style={{ color: 'var(--ink2)' }}
+                          className="text-[13px] italic leading-snug text-ink2"
                         >
                           {coreIssue}
                         </p>
@@ -424,18 +408,14 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
           {isConstrained && (
             <button
               onClick={() => setIsTensionDrawerOpen(!isTensionDrawerOpen)}
-              className="fixed bottom-24 right-4 z-40 w-12 h-12 rounded-full flex items-center justify-center transition-all"
-              style={{
-                backgroundColor: 'var(--paper)',
-                border: '1px solid var(--rule)'
-              }}
+              className="fixed bottom-24 right-4 z-40 w-12 h-12 rounded-full flex items-center justify-center transition-all bg-paper border border-rule"
             >
-              <span className="material-symbols-outlined" style={{ color: 'var(--ink)' }}>
+              <span className="material-symbols-outlined text-ink">
                 {isTensionDrawerOpen ? 'close' : 'electric_bolt'}
               </span>
               {/* Badge showing tension count */}
               {!isTensionDrawerOpen && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[11px] font-label font-semibold flex items-center justify-center" style={{ backgroundColor: 'var(--seal)', color: 'var(--on-seal)' }}>
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[11px] font-label font-semibold flex items-center justify-center bg-seal text-on-seal">
                   {activeTensions.length}
                 </span>
               )}
@@ -447,32 +427,27 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
             <div 
               className={`fixed bottom-0 left-0 right-0 z-30 transition-transform duration-300 ${
                 isTensionDrawerOpen ? 'translate-y-0' : 'translate-y-full'
-              }`}
-              style={{
-                backgroundColor: 'var(--paper)',
-                border: '1px solid var(--rule)',
-                borderBottom: 'none',
-                maxHeight: isLandscape ? '70vh' : '50vh'
-              }}
+              } bg-paper border border-rule`}
+              style={{ borderBottom: 'none', maxHeight: isLandscape ? '70vh' : '50vh' }}
             >
             {/* Drawer Handle */}
             <div className="flex justify-center py-2">
-              <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'var(--rule)' }}></div>
+              <div className="w-10 h-1 rounded-full bg-rule"></div>
             </div>
             
             {/* Drawer Header */}
-            <div className="flex items-center gap-2 px-4 pb-3 border-b" style={{ borderColor: 'var(--rule)' }}>
+            <div className="flex items-center gap-2 px-4 pb-3 border-b border-rule">
               <h3 className="label">
                 Tensions
               </h3>
               <div className="ml-auto flex items-center gap-3 text-[11px]">
                 <div className="flex items-center gap-1">
-                  <span className="w-4 border-t-2" style={{ borderColor: 'var(--seal)' }}></span>
-                  <span style={{ color: 'var(--ink2)' }}>Conflict</span>
+                  <span className="w-4 border-t-2 border-seal"></span>
+                  <span className="text-ink2">Conflict</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="w-4 border-t-2 border-dashed" style={{ borderColor: 'var(--brass)' }}></span>
-                  <span style={{ color: 'var(--ink2)' }}>Synthesis</span>
+                  <span className="w-4 border-t-2 border-dashed border-brass"></span>
+                  <span className="text-ink2">Synthesis</span>
                 </div>
               </div>
             </div>
@@ -492,11 +467,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                   return (
                     <li 
                       key={idx} 
-                      className="p-3 cursor-pointer active:scale-[0.98] transition-all"
-                      style={{
-                        backgroundColor: 'var(--paper2)',
-                        border: `1px solid ${tensionColor(pair.type)}`,
-                      }}
+                      className="p-3 cursor-pointer border bg-paper2 active:scale-[0.98] transition-all"
+                      style={{ borderColor: tensionColor(pair.type) }}
                       onClick={() => {
                         onTensionClick(pair);
                         setIsTensionDrawerOpen(false);
@@ -504,24 +476,24 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                     >
                       <div className="flex items-start gap-3">
                         <div 
-                          className="w-6 h-6 rounded-full flex items-center justify-center font-display text-sm font-semibold flex-shrink-0"
-                          style={{ backgroundColor: tensionColor(pair.type), color: 'var(--on-seal)' }}
+                          className="w-6 h-6 rounded-full flex items-center justify-center font-display text-sm font-semibold flex-shrink-0 text-on-seal"
+                          style={{ backgroundColor: tensionColor(pair.type) }}
                         >
                           {idx + 1}
                         </div>
                         
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 font-display text-lg font-semibold leading-tight mb-1">
-                            <span style={{ color: 'var(--ink)' }}>{c1.name}</span>
+                            <span className="text-ink">{c1.name}</span>
                             <span style={{ color: tensionColor(pair.type) }}>↔</span>
-                            <span style={{ color: 'var(--ink)' }}>{c2.name}</span>
+                            <span className="text-ink">{c2.name}</span>
                           </div>
-                          <p className="text-[13px] italic leading-snug" style={{ color: 'var(--ink2)' }}>
+                          <p className="text-[13px] italic leading-snug text-ink2">
                             {coreIssue}
                           </p>
                         </div>
                         
-                        <span className="material-symbols-outlined text-lg" style={{ color: 'var(--ink2)' }}>
+                        <span className="material-symbols-outlined text-lg text-ink2">
                           chevron_right
                         </span>
                       </div>
@@ -536,7 +508,7 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
           {/* Drawer Backdrop */}
           {isConstrained && isTensionDrawerOpen && (
             <div 
-              className="fixed inset-0 z-20 bg-[var(--veil)]"
+              className="fixed inset-0 z-20 bg-veil"
               onClick={() => setIsTensionDrawerOpen(false)}
             />
           )}
@@ -553,26 +525,23 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
       >
         <button
           onClick={onCenterClick}
-          className="rounded-full border flex flex-col items-center justify-center text-center group transition-all duration-500 cursor-pointer overflow-hidden"
+          className="rounded-full border border-ink bg-paper flex flex-col items-center justify-center text-center group transition-all duration-500 cursor-pointer overflow-hidden"
           style={{
             width: `${layout.centerSize}px`,
             height: `${layout.centerSize}px`,
             padding: isMobile ? '0.75rem' : '1rem',
-            backgroundColor: 'var(--paper)',
-            borderColor: 'var(--ink)'
           }}
         >
           <span 
-            className="font-label font-semibold uppercase tracking-[0.14em] mb-1 group-hover:!text-[var(--seal)] transition-colors flex-shrink-0"
-            style={{ fontSize: `${layout.centerLabelSize}px`, color: 'var(--ink2)' }}
+            className="label mb-1 group-hover:text-seal transition-colors flex-shrink-0"
+            style={{ fontSize: `${layout.centerLabelSize}px` }}
           >
             {animationPhase === 'center-pulse' ? 'Status' : 'Your Dilemma'}
           </span>
           <p 
-            className="font-display italic leading-snug break-words w-full overflow-hidden text-ellipsis transition-opacity duration-500"
-            style={{ 
+            className="font-display italic leading-snug break-words w-full overflow-hidden text-ellipsis transition-opacity duration-500 text-ink"
+            style={{
               fontSize: `clamp(12px, ${layout.centerSize * 0.08}px, ${layout.centerFontSize}px)`,
-              color: 'var(--ink)',
               display: '-webkit-box',
               WebkitLineClamp: 4,
               WebkitBoxOrient: 'vertical',
@@ -587,10 +556,9 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
           {/* Subtitle: Context Summary */}
           {contextSummary && animationPhase !== 'center-pulse' && (
             <span 
-              className="mt-2 italic leading-tight px-3 break-words flex-shrink-0 overflow-hidden text-ellipsis opacity-80"
-              style={{ 
+              className="mt-2 italic leading-tight px-3 break-words flex-shrink-0 overflow-hidden text-ellipsis opacity-80 text-ink"
+              style={{
                 fontSize: `${Math.max(10, layout.centerLabelSize - 1)}px`, 
-                color: 'var(--ink)',
                 maxHeight: `${layout.centerSize * 0.15}px`,
                 display: '-webkit-box',
                 WebkitLineClamp: 2,
@@ -667,11 +635,10 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
         }
 
         // Button styles for appearance
-        let buttonClass = `w-full h-full rounded-full border-[1.6px] flex flex-col items-center justify-center transition-transform duration-300`;
+        let buttonClass = `w-full h-full rounded-full border-[1.6px] bg-paper2 flex flex-col items-center justify-center transition-transform duration-300`;
         let buttonStyle: React.CSSProperties = {
           borderColor: accent,
           color: accent,
-          backgroundColor: 'var(--paper2)',
           padding: isMobile ? '0.25rem' : '0.5rem',
         };
 
@@ -704,8 +671,8 @@ const ReflectionSphere: React.FC<ReflectionSphereProps> = ({
                 {counselor.icon}
               </span>
               <span 
-                className="font-display font-semibold text-center leading-tight"
-                style={{ fontSize: `${layout.nodeFontSize + 3}px`, color: 'var(--ink)' }}
+                className="font-display font-semibold text-center leading-tight text-ink"
+                style={{ fontSize: `${layout.nodeFontSize + 3}px` }}
               >
                 {counselor.name.replace(/^The /, '')}
               </span>

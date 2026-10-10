@@ -25,8 +25,7 @@ const InsightBar: React.FC<InsightBarProps> = ({ counselor, dynamicData, onViewF
       onClick={(e) => e.stopPropagation()}
     >
       <div
-        className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5 px-4 sm:px-6 py-3 sm:py-4 border"
-        style={{ backgroundColor: 'var(--paper2)', borderColor: 'var(--ink)' }}
+        className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5 px-4 sm:px-6 py-3 sm:py-4 border bg-paper2 border-ink"
       >
         {/* Top row on mobile: Icon, Name, Close */}
         <div className="flex items-center gap-3 w-full sm:w-auto">
