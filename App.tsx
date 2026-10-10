@@ -5,7 +5,7 @@ import SetupPage from './components/SetupPage';
 import TypeTable from './components/TypeTable';
 import Chamber from './components/Chamber';
 import BottomBar from './components/BottomBar';
-import InsightBar from './components/overlays/InsightBar';
+import ImpressionSlip from './components/overlays/ImpressionSlip';
 import CounselorDossier from './components/overlays/CounselorDossier';
 import DebateOverlay from './components/overlays/DebateOverlay';
 import DilemmaHistoryOverlay from './components/overlays/DilemmaHistoryOverlay';
@@ -79,6 +79,11 @@ const App: React.FC = () => {
   const [previousCounselor, setPreviousCounselor] = useState<Counselor | null>(null);
   const [selectedTensionPair, setSelectedTensionPair] = useState<TensionPair | null>(null);
 
+  const seats = councilSeats(selectedMBTI, councilSize, councilData);
+  const seatOf = (counselor: Counselor | null) => seats.find(s => s.counselor.id === counselor?.id);
+  const selectedSeat = seatOf(selectedCounselor);
+  const previousSeat = seatOf(previousCounselor);
+
   // --- Handlers ---
 
   const handleOpenMBTI = () => {
@@ -128,28 +133,32 @@ const App: React.FC = () => {
   const handleCounselorClick = (counselor: Counselor) => {
     if (selectedCounselor?.id === counselor.id) return; // Don't re-trigger same counselor
     
-    // Open the Insight Bar (Preview) first
+    // Lay down the impression slip first
     setSelectedCounselor(counselor);
-    setActiveOverlay('COUNSELOR_INSIGHT_BAR');
+    setActiveOverlay('COUNSELOR_IMPRESSION');
   };
 
-  // Handle clicks outside InsightBar to close it
+  // Play the slip out, then clear it
+  const dismissImpression = () => {
+    setPreviousCounselor(selectedCounselor);
+    setSelectedCounselor(null); // Clear immediately
+    setTimeout(() => {
+      setPreviousCounselor(null);
+      setActiveOverlay('NONE');
+    }, 300);
+  };
+
+  // Handle clicks outside the slip to close it
   useEffect(() => {
-    if (activeOverlay !== 'COUNSELOR_INSIGHT_BAR') return;
+    if (activeOverlay !== 'COUNSELOR_IMPRESSION') return;
 
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // Check if click is on InsightBar or a counselor's seat
-      if (target.closest('[data-insight-bar]') || target.closest('[data-counselor-seat]')) {
+      // Check if click is on the slip or a counselor's seat
+      if (target.closest('[data-impression-slip]') || target.closest('[data-counselor-seat]')) {
         return;
       }
-      // Close the insight bar
-      setPreviousCounselor(selectedCounselor);
-      setSelectedCounselor(null); // Clear immediately
-      setTimeout(() => {
-        setPreviousCounselor(null);
-        setActiveOverlay('NONE');
-      }, 300);
+      dismissImpression();
     };
 
     // Use capture phase to ensure this runs before button onClick handlers
@@ -206,8 +215,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleViewFullPanel = () => {
-    setActiveOverlay('COUNSELOR_PANEL');
+  const handleReadOpinion = () => {
+    setActiveOverlay('COUNSELOR_DOSSIER');
   };
 
   const handleTensionClick = (pair: TensionPair) => {
@@ -316,11 +325,20 @@ const App: React.FC = () => {
             <p className="label">The chamber is empty</p>
             <p className="font-display italic text-2xl text-ink2">Summon the Council to begin reflection.</p>
           </div>
+        ) : activeOverlay === 'COUNSELOR_DOSSIER' && selectedCounselor && selectedSeat && councilData ? (
+          <CounselorDossier
+            seat={selectedSeat}
+            dynamicData={councilData.counselors.find(c => c.id === selectedCounselor.id)}
+            onClose={closeOverlay}
+            chatMessages={chatHistory[selectedCounselor.id] || []}
+            isTyping={isTyping[selectedCounselor.id] || false}
+            onSendMessage={(msg) => sendMessage(selectedCounselor.id, msg, dilemma, selectedMBTI, memorySources)}
+          />
         ) : (
           <Chamber
             status={viewState === 'INITIAL' ? 'summoning' : isRefining ? 'refining' : 'sitting'}
             roll={councilRoll(selectedMBTI, councilSize)}
-            seats={councilSeats(selectedMBTI, councilSize, councilData)}
+            seats={seats}
             tensions={councilData?.tensions ?? []}
             estimatedMs={estimatedTimeMs}
             showTensions={isDebateMode}
@@ -349,7 +367,8 @@ const App: React.FC = () => {
           />
         )}
 
-        {/* Bottom Bar */}
+        {/* Bottom Bar (the dossier has its own compose line) */}
+        {activeOverlay !== 'COUNSELOR_DOSSIER' && (
         <BottomBar
           isDebateMode={isDebateMode}
           toggleDebateMode={() => setIsDebateMode(!isDebateMode)}
@@ -360,43 +379,30 @@ const App: React.FC = () => {
           isRefining={isRefining}
           isHighlighted={isBottomBarHighlighted}
         />
+        )}
 
       </main>
       )}
 
       {/* 3. Global Overlays Layer (Full Screen) */}
 
-      {/* Counselor Insight Bar (Step 1) - Show exiting bar if transitioning */}
-      {previousCounselor && councilData && (
-        <InsightBar
-          key={`exiting-${previousCounselor.id}`}
-          counselor={previousCounselor}
-          dynamicData={councilData.counselors.find(c => c.id === previousCounselor.id)}
-          onViewFull={handleViewFullPanel}
+      {/* Counselor impression slip (step 1). The outgoing slip plays out before the next is laid down. */}
+      {previousSeat && (
+        <ImpressionSlip
+          key={`exiting-${previousSeat.counselor.id}`}
+          seat={previousSeat}
+          onViewFull={handleReadOpinion}
           onClose={closeOverlay}
           isExiting={true}
         />
       )}
-      
-      {activeOverlay === 'COUNSELOR_INSIGHT_BAR' && selectedCounselor && councilData && !previousCounselor && (
-        <InsightBar
-          key={`active-${selectedCounselor.id}`}
-          counselor={selectedCounselor}
-          dynamicData={councilData.counselors.find(c => c.id === selectedCounselor.id)}
-          onViewFull={handleViewFullPanel}
-          onClose={closeOverlay}
-        />
-      )}
 
-      {/* Counselor Side Panel (Step 2) */}
-      {activeOverlay === 'COUNSELOR_PANEL' && selectedCounselor && councilData && (
-        <CounselorDossier
-          counselor={selectedCounselor}
-          dynamicData={councilData.counselors.find(c => c.id === selectedCounselor.id)}
-          onClose={closeOverlay}
-          chatMessages={chatHistory[selectedCounselor.id] || []}
-          isTyping={isTyping[selectedCounselor.id] || false}
-          onSendMessage={(msg) => sendMessage(selectedCounselor.id, msg, dilemma, selectedMBTI, memorySources)}
+      {activeOverlay === 'COUNSELOR_IMPRESSION' && selectedSeat && !previousCounselor && (
+        <ImpressionSlip
+          key={`active-${selectedSeat.counselor.id}`}
+          seat={selectedSeat}
+          onViewFull={handleReadOpinion}
+          onClose={dismissImpression}
         />
       )}
 
