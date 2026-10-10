@@ -4,6 +4,7 @@ import { TensionPair, Counselor, CouncilResponse, DebateInterjection, MemorySour
 import { injectIntoDebate } from '../../services/CouncilService';
 import { debateInjectionText, interjectionFrom, DebateRequest } from '../../utils/debateInterjection';
 import { groupColor } from '../../utils/groupColor';
+import { higherScore, debateTitle } from '../../utils/pointsOfContention';
 
 interface DebateOverlayProps {
    pair: TensionPair;
@@ -16,7 +17,6 @@ interface DebateOverlayProps {
 }
 
 const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamicData, onClose, dilemma, memorySources, onInterjection }) => {
-   const [showMatrix, setShowMatrix] = useState(false);
    const [dialogue, setDialogue] = useState<{speaker: string, text: string}[]>(dynamicData?.dialogue || []);
    
    // Matrix State
@@ -25,7 +25,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
 
    const [userInput, setUserInput] = useState('');
    const [isSending, setIsSending] = useState(false);
-   const scrollRef = useRef<HTMLDivElement>(null);
+   const linesEndRef = useRef<HTMLDivElement>(null);
 
    const [newCriterion, setNewCriterion] = useState('');
    const [isAddingCriterion, setIsAddingCriterion] = useState(false);
@@ -70,15 +70,13 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
       }
    }, [visibleCount, dialogue]);
 
-   // Auto-scroll to bottom when new message becomes visible
+   // Keep the latest line in view: the transcript column scrolls on a desktop, the page on a phone.
+   // 'nearest' leaves the view alone while the line is already showing, so a phone doesn't jump on open.
    useEffect(() => {
-      if (scrollRef.current) {
-         scrollRef.current.scrollTo({
-            top: scrollRef.current.scrollHeight,
-            behavior: 'smooth'
-         });
+      if (visibleCount > 0 || isSending) {
+         linesEndRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
-   }, [visibleCount]);
+   }, [visibleCount, isSending]);
 
    if (!c1 || !c2) return null;
 
@@ -101,7 +99,8 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
          maxPossible += 10 * weight;
       });
 
-      if (maxPossible === 0) return { c1Percent: 0, c2Percent: 0 };
+      // Nothing to weigh (no criteria, or every weight at zero): no verdict, rather than a "balanced" 0% v. 0%
+      if (maxPossible === 0) return null;
 
       return {
          c1Percent: Math.round((c1Total / maxPossible) * 100),
@@ -109,8 +108,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
       };
    };
 
-   const { c1Percent, c2Percent } = calculateScores();
-   const isBalanced = Math.abs(c1Percent - c2Percent) <= 5;
+   const scores = calculateScores();
 
    const handleAddCriterion = async () => {
       if (!newCriterion.trim() || isAddingCriterion || !dynamicData) return;
@@ -214,263 +212,186 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
       }
    };
 
+   const title = debateTitle(c1.name, c2.name, pair.type);
+   const shortName = (c: Counselor) => c.name.replace(/^The /, '');
+   // Oxblood marks conflict, brass marks synthesis
+   const markColor = pair.type === 'synthesis' ? 'text-brass' : 'text-seal';
+
+   // A debate set as a transcript, with the points of contention beside it (below it on a phone).
    return (
-      <div className="absolute inset-0 z-50 flex items-center justify-center p-4 font-body">
-         {/* Backdrop */}
-         <div className="absolute inset-0 bg-veil" onClick={onClose}></div>
+      <div className="flex-grow min-h-0 overflow-y-auto md:overflow-hidden flex flex-col md:grid md:grid-cols-[1fr_430px] animate-fade-in">
+         <section className="px-4 md:pl-24 md:pr-12 pt-7 flex flex-col md:min-h-0">
+            <button type="button" onClick={onClose} className="caps text-ink2 hover:text-ink self-start">
+               ← Back to the chamber
+            </button>
+            <h2 className="display !text-[34px] mt-2.5 mb-0.5">
+               {title.first} <em>{title.joiner}</em> {title.second}
+            </h2>
+            <p className="italic text-ink2 mb-4">{dynamicData?.core_issue || 'Analyzing Tension...'}</p>
 
-         {/* Main Container */}
-         <div className="relative w-full max-w-5xl h-[85vh] bg-paper border border-ink flex flex-col overflow-hidden animate-fade-in">
-            
-            {/* Header */}
-            <header className="relative z-20 flex items-center justify-between gap-4 px-8 py-6 border-b border-rule bg-paper">
-               <div className="flex flex-col">
-                  <h2 className="display !text-[34px] text-ink">
-                     {showMatrix ? 'Decision Matrix' : 'Council Clash'}
-                  </h2>
-                  <p className="italic text-ink2 mt-1">
-                     Conflict: {dynamicData?.core_issue || "Analyzing Tension..."}
-                  </p>
-               </div>
-               
-               <div className="flex items-center gap-4">
-                  <button
-                     onClick={() => setShowMatrix(!showMatrix)}
-                     className="btn-link whitespace-nowrap"
-                  >
-                     {showMatrix ? 'View Dialogue' : 'View Matrix'}
-                  </button>
-                  <button 
-                     onClick={onClose}
-                     className="w-10 h-10 flex items-center justify-center transition-colors text-ink2 hover:text-ink"
-                  >
-                     <span className="material-symbols-outlined">close</span>
-                  </button>
-               </div>
-            </header>
-
-            {/* Content Body */}
-            <div ref={scrollRef} className="relative z-10 flex-grow overflow-y-auto overflow-x-hidden scroll-smooth">
-               {!showMatrix ? (
-                  /* Council Clash Dialogue View */
-                  <div className="p-8 space-y-8 min-h-full">
-                     {dialogue.slice(0, visibleCount).map((turn, idx) => {
-                           if (turn.speaker === 'user') {
-                              return (
-                                 <div key={idx} className="flex justify-center w-full animate-fade-in">
-                                    <div className="border-l-2 border-seal text-ink pl-4 py-1 italic max-w-2xl">
-                                       <span className="label not-italic mr-2">You</span>
-                                       {turn.text}
-                                    </div>
-                                 </div>
-                              );
-                           }
-
-                           const speaker = counselors.find(c => c.id === turn.speaker);
-                           if (!speaker) {
-                              return null;
-                           }
-                           
-                           const isC1 = speaker.id === c1.id;
-                           const color = isC1 ? c1Color : c2Color;
-                           
-                           return (
-                              <div 
-                                 key={idx} 
-                                 className={`flex items-start gap-4 w-full md:w-2/3 ${isC1 ? 'animate-slide-in-left' : 'ml-auto flex-row-reverse animate-slide-in-right'}`}
-                              >
-                                 {/* Avatar */}
-                                 <div
-                                    className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center border-[1.6px] bg-paper2"
-                                    style={{ borderColor: color, color }}
-                                 >
-                                    <span className="material-symbols-outlined">
-                                       {speaker.icon}
-                                    </span>
-                                 </div>
-
-                                 {/* Message Bubble */}
-                                 <div className={`flex-1 min-w-0 ${isC1 ? 'text-left' : 'text-right'}`}>
-                                    <div className="label mb-1" style={{ color }}>
-                                       {speaker.name.replace(/^The /, '')}
-                                    </div>
-                                    <div className="py-3 text-[15px] leading-relaxed text-ink border-t border-rule">
-                                       <ReactMarkdown
-                                          components={{
-                                             p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>,
-                                             strong: ({children}) => <strong className="font-semibold">{children}</strong>,
-                                             em: ({children}) => <em className="italic">{children}</em>,
-                                             ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                                             ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
-                                             li: ({children}) => <li className="ml-2">{children}</li>
-                                          }}
-                                       >
-                                          {turn.text}
-                                       </ReactMarkdown>
-                                    </div>
-                                 </div>
-                              </div>
-                           );
-                        })}
-                     
-                     {isSending && (
-                        <div className="flex justify-center w-full py-4">
-                           <div className="flex space-x-2">
-                              <div className="w-2 h-2 bg-ink2 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                              <div className="w-2 h-2 bg-ink2 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                              <div className="w-2 h-2 bg-ink2 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                           </div>
+            {/* Reaches 14px into the gutter so the interjection rule, hung there, isn't clipped by the scroll box */}
+            <div className="flex-1 flex flex-col gap-3 md:overflow-y-auto md:min-h-0 md:-ml-3.5 md:pl-3.5 pb-4">
+               {dialogue.slice(0, visibleCount).map((turn, idx) => {
+                  if (turn.speaker === 'user') {
+                     return (
+                        <div key={idx} className="grid md:grid-cols-[130px_1fr] gap-x-3.5 gap-y-0.5 text-[15px] leading-[1.5] border-l-2 border-seal pl-3 md:-ml-3.5 animate-fade-in">
+                           <span className="label !text-seal pt-1">You, interjecting</span>
+                           <p className="italic">{turn.text}</p>
                         </div>
-                     )}
-                  </div>
-               ) : (
-                  /* Decision Matrix View */
-                  <div className="p-8 flex flex-col items-center min-h-full">
-                     <div className="w-full max-w-4xl">
-                        {/* Header Row */}
-                        <div className="grid grid-cols-12 gap-4 mb-6 text-center px-4">
-                           <div className="col-span-4 text-left label">Criteria</div>
-                           <div className="col-span-3 label">Your Priority (Weight)</div>
-                           <div className="col-span-2 label" style={{ color: c1Color }}>{c1.name.replace(/^The /, '')}</div>
-                           <div className="col-span-2 label" style={{ color: c2Color }}>{c2.name.replace(/^The /, '')}</div>
-                           <div className="col-span-1"></div>
-                        </div>
+                     );
+                  }
 
-                        {/* Criteria Rows */}
-                        {matrixState.criteria.map((criterion, index) => (
-                           <div key={criterion.id} className="grid grid-cols-12 gap-4 items-center px-4 py-3 border-t border-rule hover:bg-paper2 transition-colors group relative">
-                              
-                              {/* Tooltip for Reasoning */}
-                              <div className={`absolute left-1/2 -translate-x-1/2 bg-ink text-paper text-[13px] p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-80 text-center z-[60] ${
-                                 index < 2 
-                                    ? 'top-full mt-3' 
-                                    : 'bottom-full mb-3'
-                              }`}>
-                                 <div className="font-display text-lg font-semibold mb-1">{criterion.label}</div>
-                                 <div className="leading-relaxed">{criterion.reasoning}</div>
-                                 
-                                 {/* Arrow */}
-                                 <div className={`absolute left-1/2 -translate-x-1/2 border-8 border-transparent ${
-                                    index < 2
-                                       ? 'bottom-full border-b-ink'
-                                       : 'top-full border-t-ink'
-                                 }`}></div>
-                              </div>
+                  const speaker = counselors.find(c => c.id === turn.speaker);
+                  if (!speaker) return null;
 
-                              <div className="col-span-4 font-display text-xl font-semibold leading-tight text-ink">{criterion.label}</div>
-                              
-                              <div className="col-span-3 flex items-center gap-2">
-                                 <input 
-                                    type="range" 
-                                    min="0" 
-                                    max="100" 
-                                    value={userWeights[criterion.id] ?? 50} 
-                                    onChange={(e) => handleWeightChange(criterion.id, e.target.value)}
-                                    className="w-full h-1 bg-transparent cursor-pointer" 
-                                 />
-                              </div>
-                              
-                              <div className="col-span-2 text-center font-display text-[22px] font-semibold tabular-nums" style={{ color: c1Color }}>
-                                 {criterion.c1_score}
-                              </div>
-                              <div className="col-span-2 text-center font-display text-[22px] font-semibold tabular-nums" style={{ color: c2Color }}>
-                                 {criterion.c2_score}
-                              </div>
-                              <div className="col-span-1 flex justify-end">
-                                 <button 
-                                    onClick={() => handleRemoveCriterion(criterion.id)}
-                                    className="text-ink2 hover:text-seal transition-colors p-1"
-                                    title="Remove Criterion"
-                                 >
-                                    <span className="material-symbols-outlined text-sm">delete</span>
-                                 </button>
-                              </div>
-                           </div>
-                        ))}
-
-                        {/* Add New Criterion Row */}
-                        <div className="grid grid-cols-12 gap-4 items-center px-4 py-3 border-y border-rule">
-                           <div className="col-span-7">
-                              <input
-                                 type="text"
-                                 value={newCriterion}
-                                 onChange={(e) => setNewCriterion(e.target.value)}
-                                 placeholder="Add your own criterion..."
-                                 className="w-full bg-transparent border-none italic text-ink placeholder-ink2 focus:outline-none"
-                                 onKeyDown={(e) => e.key === 'Enter' && handleAddCriterion()}
-                              />
-                           </div>
-                           <div className="col-span-5 flex justify-end">
-                              <button
-                                 onClick={handleAddCriterion}
-                                 disabled={!newCriterion.trim() || isAddingCriterion}
-                                 className="btn-link"
-                              >
-                                 {isAddingCriterion ? 'Scoring...' : 'Score'}
-                              </button>
-                           </div>
-                        </div>
-
-                        {/* Total Score */}
-                        <div className="grid grid-cols-12 gap-4 mt-8 pt-6 border-t border-ink">
-                           <div className="col-span-7 label !text-[13px] flex items-center justify-end h-full">
-                              Weighted Alignment
-                           </div>
-                           <div className="col-span-2 text-center font-display text-[28px] font-semibold tabular-nums" style={{ color: c1Color }}>
-                              {c1Percent}%
-                           </div>
-                           <div className="col-span-2 text-center font-display text-[28px] font-semibold tabular-nums" style={{ color: c2Color }}>
-                              {c2Percent}%
-                           </div>
-                           <div className="col-span-1"></div>
-                        </div>
-                        
-                        <div className="mt-8 text-center animate-fade-in">
-                           {isBalanced ? (
-                              <p className="text-ink">
-                                 <span className="font-semibold text-brass">Balanced Approach:</span> Both perspectives align closely with your priorities. Consider a synthesis.
-                              </p>
-                           ) : (
-                              <p className="text-ink">
-                                 Based on your priorities, <span className="font-semibold" style={{ color: c1Percent > c2Percent ? c1Color : c2Color }}>
-                                    {c1Percent > c2Percent ? c1.name.replace(/^The /, '') : c2.name.replace(/^The /, '')}'s
-                                 </span> approach aligns better with your goals.
-                              </p>
-                           )}
+                  return (
+                     <div key={idx} className="grid md:grid-cols-[130px_1fr] gap-x-3.5 gap-y-0.5 text-[15px] leading-[1.5] animate-fade-in">
+                        <span className="label pt-1" style={{ color: speaker.id === c1.id ? c1Color : c2Color }}>
+                           {shortName(speaker)}
+                        </span>
+                        <div className="min-w-0">
+                           <ReactMarkdown
+                              components={{
+                                 p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>,
+                                 strong: ({children}) => <strong className="font-semibold">{children}</strong>,
+                                 em: ({children}) => <em className="italic">{children}</em>,
+                                 ul: ({children}) => <ul className="list-disc list-inside mb-2 last:mb-0 space-y-1">{children}</ul>,
+                                 ol: ({children}) => <ol className="list-decimal list-inside mb-2 last:mb-0 space-y-1">{children}</ol>,
+                                 li: ({children}) => <li className="ml-2">{children}</li>
+                              }}
+                           >
+                              {turn.text}
+                           </ReactMarkdown>
                         </div>
                      </div>
-                  </div>
+                  );
+               })}
+
+               {isSending && (
+                  <p className="italic text-[13.5px] text-ink2">{title.first} and {title.second} are conferring…</p>
                )}
+               <div ref={linesEndRef} />
             </div>
 
-            {/* Input Area - Only visible in Dialogue Mode */}
-            {!showMatrix && (
-               <div className="relative z-20 px-8 py-5 border-t border-ink bg-paper">
-                  <div className="flex flex-col sm:flex-row gap-4">
-                     <input
-                        type="text"
-                        value={userInput}
-                        onChange={(e) => setUserInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        disabled={isSending}
-                        placeholder={isSending ? "The Council is deliberating..." : "Inject your comment or question..."}
-                        className="flex-grow bg-transparent border-b border-rule py-2 italic text-ink focus:outline-none focus:border-ink placeholder-ink2 transition-all disabled:opacity-50"
-                     />
-                     <button 
-                        onClick={handleSend}
-                        disabled={isSending || !userInput.trim()}
-                        className="btn-seal whitespace-nowrap"
-                     >
-                        {isSending ? 'Sending...' : 'Send to Council'}
-                     </button>
-                  </div>
-               </div>
-            )}
+            <div className="border-t border-ink pt-3 pb-5 flex items-baseline gap-3">
+               <input
+                  type="text"
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={isSending}
+                  placeholder="Interject. Put your own view to both of them."
+                  aria-label="Interject"
+                  className="flex-1 min-w-0 bg-transparent py-1 italic text-ink focus:outline-none placeholder:text-ink2 disabled:opacity-50"
+               />
+               <button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={isSending || !userInput.trim()}
+                  className="btn-link"
+               >
+                  {isSending ? 'Sending…' : 'Send'}
+               </button>
+            </div>
+         </section>
 
-         </div>
+         <aside className="border-t md:border-t-0 md:border-l border-rule px-4 md:px-[30px] pt-[26px] pb-8 md:overflow-y-auto md:min-h-0">
+            <h3 className="label">Points of contention</h3>
+            <table className="w-full mt-2 border-collapse">
+               <thead>
+                  <tr className="border-b border-rule">
+                     <th className="label !text-[10.5px] text-left py-[11px]">Criterion</th>
+                     <th className="label !text-[10.5px] text-center py-[11px] px-1">{shortName(c1)}</th>
+                     <th className="label !text-[10.5px] text-center py-[11px] px-1">{shortName(c2)}</th>
+                     <th className="w-6"><span className="sr-only">Remove</span></th>
+                  </tr>
+               </thead>
+               <tbody>
+                  {matrixState.criteria.map(criterion => {
+                     const marked = higherScore(criterion.c1_score, criterion.c2_score);
+                     return (
+                        <tr key={criterion.id} className="border-b border-rule align-top text-[14px]">
+                           <td className="py-[11px] pr-2">
+                              {criterion.label}
+                              <small className="block text-ink2 italic text-[12.5px] leading-[1.4] mt-0.5">{criterion.reasoning}</small>
+                              <label className="flex items-center gap-2.5 mt-2">
+                                 <span className="label !text-[10px] whitespace-nowrap">Your weight</span>
+                                 <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={userWeights[criterion.id] ?? 50}
+                                    onChange={(e) => handleWeightChange(criterion.id, e.target.value)}
+                                    className="cursor-pointer"
+                                 />
+                              </label>
+                           </td>
+                           <td className={`py-[11px] w-[52px] text-center font-display text-[22px] font-semibold tabular-nums ${marked === 'c1' ? markColor : ''}`}>
+                              {criterion.c1_score}
+                           </td>
+                           <td className={`py-[11px] w-[52px] text-center font-display text-[22px] font-semibold tabular-nums ${marked === 'c2' ? markColor : ''}`}>
+                              {criterion.c2_score}
+                           </td>
+                           <td className="py-[11px] text-right">
+                              <button
+                                 type="button"
+                                 onClick={() => handleRemoveCriterion(criterion.id)}
+                                 className="text-ink2 hover:text-seal"
+                                 title="Remove criterion"
+                                 aria-label={`Remove ${criterion.label}`}
+                              >
+                                 <span className="material-symbols-outlined text-sm">close</span>
+                              </button>
+                           </td>
+                        </tr>
+                     );
+                  })}
+               </tbody>
+            </table>
+
+            <div className="border-b border-rule py-2.5 flex items-baseline gap-3">
+               <input
+                  type="text"
+                  value={newCriterion}
+                  onChange={(e) => setNewCriterion(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddCriterion()}
+                  placeholder="Add your own criterion"
+                  aria-label="Add your own criterion"
+                  className="flex-1 min-w-0 bg-transparent py-1 italic text-[14px] text-ink focus:outline-none placeholder:text-ink2"
+               />
+               <button
+                  type="button"
+                  onClick={handleAddCriterion}
+                  disabled={!newCriterion.trim() || isAddingCriterion}
+                  className="btn-link"
+               >
+                  {isAddingCriterion ? 'Scoring…' : 'Score'}
+               </button>
+            </div>
+
+            <p className="text-[12.5px] italic text-ink2 mt-3">Scores out of ten. The higher score in each row is marked.</p>
+
+            {scores && (
+               <>
+                  <div className="mt-6 pt-3 border-t border-ink grid grid-cols-[1fr_52px_52px_24px] items-baseline">
+                     <span className="label">Weighted alignment</span>
+                     <span className="text-center font-display text-[22px] font-semibold tabular-nums" style={{ color: c1Color }}>{scores.c1Percent}%</span>
+                     <span className="text-center font-display text-[22px] font-semibold tabular-nums" style={{ color: c2Color }}>{scores.c2Percent}%</span>
+                  </div>
+                  <p className="text-[14px] mt-3">
+                     {Math.abs(scores.c1Percent - scores.c2Percent) <= 5 ? (
+                        <><span className="font-semibold text-brass">Balanced approach:</span> both perspectives align closely with your priorities. Consider a synthesis.</>
+                     ) : (
+                        <>Based on your priorities, <span className="font-semibold" style={{ color: scores.c1Percent > scores.c2Percent ? c1Color : c2Color }}>
+                           {shortName(scores.c1Percent > scores.c2Percent ? c1 : c2)}'s
+                        </span> approach aligns better with your goals.</>
+                     )}
+                  </p>
+               </>
+            )}
+         </aside>
       </div>
    );
 };
-
 
 export default DebateOverlay;
