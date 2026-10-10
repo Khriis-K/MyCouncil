@@ -1,0 +1,20 @@
+import { describe, expect, test } from 'vitest';
+import { arcLabel } from './arcLabel';
+
+describe('arcLabel', () => {
+  test('a short issue is kept whole', () => {
+    expect(arcLabel('Career or family?')).toBe('Career or family?');
+  });
+
+  test('a long issue is cut at a word boundary and marked with an ellipsis', () => {
+    expect(arcLabel('Is this a career decision or a family decision?')).toBe('Is this a career decision…');
+  });
+
+  test('punctuation left at the cut is dropped before the ellipsis', () => {
+    expect(arcLabel('Weighing safety, security, and the chance of a lifetime')).toBe('Weighing safety, security…');
+  });
+
+  test('one very long word is cut mid-word rather than left too long', () => {
+    expect(arcLabel('Antidisestablishmentarianismically speaking')).toBe('Antidisestablishmentariani…');
+  });
+});
