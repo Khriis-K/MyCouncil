@@ -84,6 +84,7 @@ const App: React.FC = () => {
   const selectedSeat = seatOf(selectedCounselor);
   const previousSeat = seatOf(previousCounselor);
   const dossierSeat = activeOverlay === 'COUNSELOR_DOSSIER' ? selectedSeat : undefined;
+  const debatePair = activeOverlay === 'DEBATE_DIALOGUE' ? selectedTensionPair : null;
 
   // --- Handlers ---
 
@@ -341,6 +342,19 @@ const App: React.FC = () => {
             isTyping={isTyping[dossierSeat.counselor.id] || false}
             onSendMessage={(msg) => sendMessage(dossierSeat.counselor.id, msg, dilemma, selectedMBTI, memorySources)}
           />
+        ) : debatePair && councilData ? (
+          <DebateOverlay
+            pair={debatePair}
+            counselors={buildCounselorsFromResponse(selectedMBTI, councilSize, councilData)}
+            dynamicData={councilData.tensions.find(t =>
+              (t.counselor_ids[0] === debatePair.counselor1 && t.counselor_ids[1] === debatePair.counselor2) ||
+              (t.counselor_ids[0] === debatePair.counselor2 && t.counselor_ids[1] === debatePair.counselor1)
+            )}
+            onClose={closeOverlay}
+            dilemma={dilemma}
+            memorySources={memorySources}
+            onInterjection={i => setDebateLog(prev => [...prev, i])}
+          />
         ) : (
           <Chamber
             status={viewState === 'INITIAL' ? 'summoning' : isRefining ? 'refining' : 'sitting'}
@@ -358,24 +372,8 @@ const App: React.FC = () => {
           />
         )}
 
-        {/* Debate/Tension Details */}
-        {activeOverlay === 'DEBATE_DIALOGUE' && selectedTensionPair && councilData && (
-          <DebateOverlay
-            pair={selectedTensionPair}
-            counselors={buildCounselorsFromResponse(selectedMBTI, councilSize, councilData)}
-            dynamicData={councilData.tensions.find(t =>
-              (t.counselor_ids[0] === selectedTensionPair.counselor1 && t.counselor_ids[1] === selectedTensionPair.counselor2) ||
-              (t.counselor_ids[0] === selectedTensionPair.counselor2 && t.counselor_ids[1] === selectedTensionPair.counselor1)
-            )}
-            onClose={closeOverlay}
-            dilemma={dilemma}
-            memorySources={memorySources}
-            onInterjection={i => setDebateLog(prev => [...prev, i])}
-          />
-        )}
-
-        {/* Bottom Bar (the dossier has its own compose line) */}
-        {!dossierSeat && (
+        {/* Bottom Bar (the dossier and the debate have their own compose lines) */}
+        {!dossierSeat && !debatePair && (
         <BottomBar
           isDebateMode={isDebateMode}
           toggleDebateMode={() => setIsDebateMode(!isDebateMode)}
