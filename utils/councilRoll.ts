@@ -7,7 +7,7 @@ export interface RollSeat {
   role: string;
 }
 
-const NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+export const NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 
 const ROLE_LABELS: Record<CounselorRole['role'], string> = {
   mirror: 'Mirror',

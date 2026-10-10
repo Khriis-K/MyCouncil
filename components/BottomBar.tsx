@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
 interface BottomBarProps {
   isDebateMode: boolean;
@@ -11,96 +11,66 @@ interface BottomBarProps {
   isHighlighted?: boolean;
 }
 
-const BottomBar: React.FC<BottomBarProps> = ({ 
-  isDebateMode, 
-  toggleDebateMode, 
-  isDisabled, 
-  onRefine, 
-  additionalContext, 
+const CONTEXT_MAX = 300;
+
+// Under the chamber floor: add to the record and refine, and show or hide the disagreements.
+const BottomBar: React.FC<BottomBarProps> = ({
+  isDebateMode,
+  toggleDebateMode,
+  isDisabled,
+  onRefine,
+  additionalContext,
   setAdditionalContext,
   isRefining,
   isHighlighted = false
 }) => {
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && additionalContext.trim() && !isDisabled && !isRefining) {
-      onRefine();
-    }
-  };
+  const canRefine = !isDisabled && !isRefining && additionalContext.trim().length > 0;
 
   return (
-    <footer 
-      className={`absolute bottom-0 left-0 right-0 p-3 md:p-4 z-40 transition-all duration-300 ${isDisabled ? 'opacity-50 pointer-events-none' : 'opacity-100'} ${isHighlighted ? 'ring-2 ring-inset ring-seal' : ''} bg-paper border-t border-rule`}
+    <footer
+      className={`flex-none flex flex-wrap md:flex-nowrap items-center gap-x-5 gap-y-3 px-4 md:px-9 py-3 md:h-16 bg-paper border-t border-rule transition-opacity ${
+        isDisabled ? 'opacity-50 pointer-events-none' : ''
+      } ${isHighlighted ? 'ring-2 ring-inset ring-seal' : ''}`}
     >
-      <div className={`max-w-screen-2xl mx-auto ${isMobile ? 'flex flex-col space-y-3' : 'flex items-center space-x-4'}`}>
-        
-        {/* Context Input */}
-        <div className="flex-grow relative">
-           <input
-            type="text"
-            placeholder="Add more context..."
-            value={additionalContext}
-            onChange={(e) => setAdditionalContext(e.target.value)}
-            onKeyPress={handleKeyPress}
-            maxLength={300}
-            className="w-full bg-transparent border-b pl-0 pr-16 py-2 italic text-[15px] focus:outline-none focus:border-ink placeholder:text-ink2 border-rule text-ink"
-            
-            disabled={isDisabled || isRefining}
-          />
-          {additionalContext.length > 0 && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink2">
-              {additionalContext.length}/300
-            </span>
-          )}
-        </div>
-
-        {/* Mobile: Row with toggle and button */}
-        <div className={`${isMobile ? 'flex items-center justify-between' : 'flex items-center space-x-4'}`}>
-          {/* Debate Toggle */}
-          <div className={`flex items-center space-x-2 md:space-x-3 ${isMobile ? '' : 'px-4 border-r border-rule'}`}>
-            <label htmlFor="debate-mode" className="caps cursor-pointer select-none whitespace-nowrap text-ink">
-              {isMobile ? 'Debate' : 'Debate Mode'}
-            </label>
-            <button
-              id="debate-mode"
-              onClick={toggleDebateMode}
-              disabled={isRefining}
-              aria-pressed={isDebateMode}
-              className={`relative inline-flex h-4 w-[30px] items-center rounded-full border transition-colors ${isDebateMode ? 'border-ink' : 'border-rule'} ${isRefining ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <span
-                className={`inline-block h-2.5 w-2.5 transform rounded-full transition-transform ${
-                  isDebateMode ? 'translate-x-[15px] bg-seal' : 'translate-x-[2px] bg-ink2'
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Action Button */}
-          <button 
-            onClick={onRefine}
-            disabled={isRefining || (!additionalContext.trim())}
-            className={`btn-seal !py-2.5 !px-5 whitespace-nowrap flex items-center gap-2 ${
-              isRefining ? 'cursor-wait' : ''
-            }`}
-          >
-            {isRefining && (
-              <span className="material-symbols-outlined animate-spin text-lg">refresh</span>
-            )}
-            {isMobile 
-              ? (isDebateMode ? 'Refresh' : 'Refine')
-              : (isDebateMode ? 'Refresh Debate' : 'Refine Perspective')
-            }
-          </button>
-        </div>
+      <div className="relative basis-full md:basis-auto md:flex-1">
+        <input
+          type="text"
+          aria-label="Add to the record"
+          placeholder="Add to the record. Something new since you began?"
+          value={additionalContext}
+          onChange={e => setAdditionalContext(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && canRefine && onRefine()}
+          maxLength={CONTEXT_MAX}
+          disabled={isDisabled || isRefining}
+          className="w-full bg-transparent border-b border-rule py-1.5 pr-16 italic text-[15px] text-ink placeholder:text-ink2 focus:outline-none focus:border-ink"
+        />
+        {additionalContext.length > 0 && (
+          <span className="absolute right-0 top-1/2 -translate-y-1/2 text-xs text-ink2">
+            {additionalContext.length}/{CONTEXT_MAX}
+          </span>
+        )}
       </div>
+
+      <button type="button" onClick={onRefine} disabled={!canRefine} className={`btn-link ${isRefining ? 'cursor-wait' : ''}`}>
+        {isRefining ? 'Refining…' : 'Refine'}
+      </button>
+
+      <button
+        type="button"
+        onClick={toggleDebateMode}
+        disabled={isRefining}
+        aria-pressed={isDebateMode}
+        className="ml-auto md:ml-0 flex items-center gap-2 caps text-ink disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <span className={`relative w-[30px] h-4 rounded-full border ${isDebateMode ? 'border-ink' : 'border-rule'}`}>
+          <span
+            className={`absolute top-[2px] w-2.5 h-2.5 rounded-full transition-[left] ${
+              isDebateMode ? 'left-[15px] bg-seal' : 'left-[2px] bg-ink2'
+            }`}
+          />
+        </span>
+        Show disagreements
+      </button>
     </footer>
   );
 };

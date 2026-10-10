@@ -1,4 +1,4 @@
-import { Counselor, CouncilResponse } from '../types';
+import { Counselor, CouncilResponse, TensionPair } from '../types';
 import { selectCouncilors } from '../data/counselorMatrix';
 
 // Icon mapping for counselor roles
@@ -49,15 +49,7 @@ export function buildCounselorsFromResponse(
   });
 }
 
-/**
- * Builds tension pairs from the council response
- */
-export function buildTensionPairs(councilData: CouncilResponse | null) {
-  if (!councilData) return [];
-
-  return councilData.tensions.map(t => ({
-    counselor1: t.counselor_ids[0],
-    counselor2: t.counselor_ids[1],
-    type: t.type as 'conflict' | 'challenge' | 'synthesis',
-  }));
+// The two counselors in a tension, as the debate overlay and its click handlers expect them.
+export function tensionPair(tension: CouncilResponse['tensions'][number]): TensionPair {
+  return { counselor1: tension.counselor_ids[0], counselor2: tension.counselor_ids[1], type: tension.type };
 }

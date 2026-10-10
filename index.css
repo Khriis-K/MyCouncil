@@ -60,74 +60,79 @@
 }
 
 /* ============================================
-   SPHERE CONTAINER QUERIES
-   Container queries for component-level responsiveness
+   CHAMBER FLOOR
    ============================================ */
-
-/* Define the sphere as a container */
-.sphere-container {
-  container-type: size;
-  container-name: sphere;
+.seat-code {
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
 }
 
-/* Container query breakpoints for sphere content */
-@container sphere (max-width: 430px) {
-  /* Mobile: very compact */
-  .sphere-node-size {
-    --computed-node-size: 48px;
-    --computed-center-size: 120px;
-    --computed-font-size: 10px;
-    --computed-icon-size: 18px;
-  }
+.seat-name {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
 }
 
-@container sphere (min-width: 431px) and (max-width: 767px) {
-  /* Large mobile / small tablet */
-  .sphere-node-size {
-    --computed-node-size: 64px;
-    --computed-center-size: 140px;
-    --computed-font-size: 11px;
-    --computed-icon-size: 20px;
-  }
+.seat-role {
+  font-family: var(--font-label);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
 }
 
-@container sphere (min-width: 768px) and (max-width: 1023px) {
-  /* Tablet */
-  .sphere-node-size {
-    --computed-node-size: 80px;
-    --computed-center-size: 180px;
-    --computed-font-size: 11px;
-    --computed-icon-size: 22px;
-  }
+/* Seats dim while the council confers. They take their places one after another only as the council
+   is summoned, so filled seats don't vanish and fade back in when its answer arrives. */
+.seat {
+  transition: opacity 0.6s ease;
 }
 
-@container sphere (min-width: 1024px) and (max-width: 1279px) {
-  /* Small desktop / large tablet */
-  .sphere-node-size {
-    --computed-node-size: 96px;
-    --computed-center-size: 200px;
-    --computed-font-size: 12px;
-    --computed-icon-size: 24px;
-  }
+.seat-enter {
+  animation: seat-in 0.6s ease-out backwards;
 }
 
-@container sphere (min-width: 1280px) {
-  /* Desktop */
-  .sphere-node-size {
-    --computed-node-size: 112px;
-    --computed-center-size: 224px;
-    --computed-font-size: 12px;
-    --computed-icon-size: 26px;
-  }
+@keyframes seat-in {
+  from { opacity: 0; }
 }
 
-/* Constrained height handling */
-@container sphere (max-height: 500px) {
-  .sphere-node-size {
-    --computed-node-size: 56px;
-    --computed-center-size: 120px;
-    --computed-font-size: 10px;
-    --computed-icon-size: 18px;
+/* Tension arcs: oxblood for conflict, dashed brass for synthesis, both drifting slowly */
+.tension-arc {
+  fill: none;
+  animation: arc-drift 4s linear infinite;
+}
+
+.tension-conflict {
+  stroke: var(--seal);
+  stroke-width: 1.8;
+  stroke-dasharray: 22 3;
+}
+
+.tension-synthesis {
+  stroke: var(--brass);
+  stroke-width: 1.6;
+  stroke-dasharray: 5 5;
+}
+
+.group:hover .tension-arc,
+.group:focus-visible .tension-arc {
+  stroke-width: 3;
+}
+
+/* A whole number of periods of both dash patterns (25 and 10), so the loop is seamless */
+@keyframes arc-drift {
+  to { stroke-dashoffset: -50; }
+}
+
+.arc-label {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seat-enter,
+  .tension-arc {
+    animation: none;
   }
 }
 

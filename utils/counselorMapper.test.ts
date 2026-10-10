@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { CouncilResponse } from '../types';
-import { buildTensionPairs } from './counselorMapper';
+import { tensionPair } from './counselorMapper';
 
 const tension = (counselor_ids: [string, string], type: 'conflict' | 'synthesis') => ({
   pair_id: `${counselor_ids[0]}-${counselor_ids[1]}`,
@@ -11,21 +10,20 @@ const tension = (counselor_ids: [string, string], type: 'conflict' | 'synthesis'
   dialogue: [],
 });
 
-describe('buildTensionPairs', () => {
-  test('returns no pairs without a council response', () => {
-    expect(buildTensionPairs(null)).toEqual([]);
+describe('tensionPair', () => {
+  test('a conflict becomes its two counselors, in order', () => {
+    expect(tensionPair(tension(['mirror', 'advisor'], 'conflict'))).toEqual({
+      counselor1: 'mirror',
+      counselor2: 'advisor',
+      type: 'conflict',
+    });
   });
 
-  test('maps each tension to a counselor pair, keeping order and type', () => {
-    const council: CouncilResponse = {
-      summary: '',
-      counselors: [],
-      tensions: [tension(['mirror', 'advisor'], 'conflict'), tension(['playmate', 'teammate'], 'synthesis')],
-    };
-
-    expect(buildTensionPairs(council)).toEqual([
-      { counselor1: 'mirror', counselor2: 'advisor', type: 'conflict' },
-      { counselor1: 'playmate', counselor2: 'teammate', type: 'synthesis' },
-    ]);
+  test('a synthesis keeps its type', () => {
+    expect(tensionPair(tension(['playmate', 'teammate'], 'synthesis'))).toEqual({
+      counselor1: 'playmate',
+      counselor2: 'teammate',
+      type: 'synthesis',
+    });
   });
 });
