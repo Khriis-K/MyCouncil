@@ -74,6 +74,8 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
 
         {dynamicData ? (
           <>
+            <p className="font-display italic text-[22px] leading-[1.3] max-w-[40ch] mb-[18px]">{dynamicData.impression}</p>
+
             <p className="text-[16px] leading-[1.6] max-w-[62ch] first-letter:font-display first-letter:text-[56px] first-letter:float-left first-letter:leading-[0.85] first-letter:pt-1.5 first-letter:pr-2">
               {dynamicData.assessment}
             </p>
