@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { CouncilResponse, ChatMessage } from '../../types';
 import { CouncilSeat } from '../../utils/councilSeats';
 import { recallFootnotes } from '../../utils/footnotes';
+import { remarkFootnoteMarker } from '../../utils/footnoteMarker';
 import { seatHeading } from '../../utils/seatHeading';
 
 interface CounselorDossierProps {
@@ -113,22 +114,21 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
             return (
               <div key={msg.id} className="animate-fade-in">
                 <div className="label !text-[11px] mb-[3px]">{fromYou ? 'You' : seat.name}</div>
-                <div className={`text-[14.5px] leading-[1.5] ${fromYou ? 'italic' : ''} [&>p:last-of-type]:inline`}>
+                <div className={`text-[14.5px] leading-[1.5] ${fromYou ? 'italic' : ''}`}>
                   <ReactMarkdown
+                    remarkPlugins={notes.length > 0 ? [[remarkFootnoteMarker, notes.map(n => n.number).join(',')]] : []}
                     components={{
-                      p: ({children}) => <p className="mb-1.5">{children}</p>,
+                      p: ({children}) => <p className="mb-1.5 last:mb-0">{children}</p>,
                       strong: ({children}) => <strong className="font-semibold">{children}</strong>,
                       em: ({children}) => <em className="italic">{children}</em>,
-                      ul: ({children}) => <ul className="list-disc list-inside mb-1.5">{children}</ul>,
-                      ol: ({children}) => <ol className="list-decimal list-inside mb-1.5">{children}</ol>,
-                      li: ({children}) => <li className="ml-1">{children}</li>
+                      ul: ({children}) => <ul className="list-disc list-inside mb-1.5 last:mb-0">{children}</ul>,
+                      ol: ({children}) => <ol className="list-decimal list-inside mb-1.5 last:mb-0">{children}</ol>,
+                      li: ({children}) => <li className="ml-1">{children}</li>,
+                      sup: ({children}) => <sup className="not-italic text-seal font-semibold ml-0.5">{children}</sup>
                     }}
                   >
                     {msg.text}
                   </ReactMarkdown>
-                  {notes.length > 0 && (
-                    <sup className="text-seal font-semibold ml-0.5">{notes.map(n => n.number).join(',')}</sup>
-                  )}
                 </div>
                 {notes.length > 0 && (
                   <ol className="text-[12px] text-ink2 border-t border-rule pt-1.5 mt-2 space-y-1">
