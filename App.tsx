@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import Sidebar from './components/Sidebar';
+import Masthead, { Page, ThemeMode } from './components/Masthead';
+import SetupPage from './components/SetupPage';
+import TypeTable from './components/TypeTable';
 import ReflectionSphere from './components/ReflectionSphere';
 import BottomBar from './components/BottomBar';
-import MBTIOverlay from './components/overlays/MBTIOverlay';
 import InsightBar from './components/overlays/InsightBar';
 import CounselorDossier from './components/overlays/CounselorDossier';
 import DebateOverlay from './components/overlays/DebateOverlay';
@@ -29,30 +30,15 @@ const App: React.FC = () => {
   const [selectedMBTI, setSelectedMBTI] = useState<string | null>('BALANCED');
   const [councilSize, setCouncilSize] = useState<number>(4);
   const [reflectionFocus, setReflectionFocus] = useState<ReflectionFocus>('Decision-Making');
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
+  const [page, setPage] = useState<Page>('matter');
   const [viewState, setViewState] = useState<'INITIAL' | 'SPHERE'>('INITIAL');
   const [isDebateMode, setIsDebateMode] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false); // Loading state
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   
   const { chatHistory, isTyping, sendMessage } = useChat();
 
-  // Track screen size for responsive behavior
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      // Auto-close sidebar on mobile
-      if (mobile && sidebarOpen) {
-        setSidebarOpen(false);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [sidebarOpen]);
-  
   // Theme state - syncs with localStorage and OS preference
-  const [theme, setTheme] = useState<'light' | 'dark' | 'amoled'>(() => {
+  const [theme, setTheme] = useState<ThemeMode>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('mycouncil-theme');
       if (stored === 'light' || stored === 'dark' || stored === 'amoled') return stored;
@@ -86,7 +72,7 @@ const App: React.FC = () => {
   
   // Highlight states
   const [isBottomBarHighlighted, setIsBottomBarHighlighted] = useState(false);
-  const [isSidebarHighlighted, setIsSidebarHighlighted] = useState(false);
+  const [isSetupHighlighted, setIsSetupHighlighted] = useState(false);
 
   // Overlay Management
   const [activeOverlay, setActiveOverlay] = useState<OverlayType>('NONE');
@@ -115,6 +101,7 @@ const App: React.FC = () => {
 
     console.log("Setting isGenerating to true");
     setIsGenerating(true);
+    setPage('chamber');
     const timeEstimate = estimateLoadTime(dilemma.length, councilSize);
     setEstimatedTimeMs(timeEstimate);
     // removed setLoadingMessage to avoid subtitle on initial summon
@@ -135,13 +122,11 @@ const App: React.FC = () => {
         setIsInitialRender(false);
       }, 9700); // Allow enough time for center fade (800ms) + max stagger (4 * 200ms) + expansion (600ms)
 
-      // On mobile/tablet you might close sidebar here, keeping open for desktop
-      if (window.innerWidth < 1024) setSidebarOpen(false);
-
     } catch (error) {
       console.error("Error generating council:", error);
       const message = error instanceof Error ? error.message : "Failed to summon the council. Please try again.";
       alert(message);
+      setPage('matter');
     } finally {
       console.log("Finally block - resetting isGenerating");
       setIsGenerating(false);
@@ -256,6 +241,7 @@ const App: React.FC = () => {
 
   const handleAddMoreContext = () => {
     setActiveOverlay('NONE');
+    setPage('chamber');
     // Highlight bottom bar after panel closes (400ms animation)
     setTimeout(() => {
       setIsBottomBarHighlighted(true);
@@ -282,12 +268,12 @@ const App: React.FC = () => {
     setIsDebateMode(false);
     setReflectionFocus('Decision-Making');
     
-    // Open sidebar and highlight textarea
-    setSidebarOpen(true);
+    // Back to setup, with the dilemma field highlighted
+    setPage('matter');
     setTimeout(() => {
-      setIsSidebarHighlighted(true);
+      setIsSetupHighlighted(true);
       setTimeout(() => {
-        setIsSidebarHighlighted(false);
+        setIsSetupHighlighted(false);
       }, 2000); // Highlight for 2 seconds
     }, 400); // After panel slides out
   };
@@ -300,46 +286,66 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden font-body bg-paper text-ink">
+    <div className="flex flex-col h-screen w-screen overflow-hidden font-body bg-paper text-ink">
 
-      {/* 1. Sidebar Configuration */}
-      <Sidebar
-        isOpen={sidebarOpen}
-        toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        dilemma={dilemma}
-        setDilemma={setDilemma}
-        selectedMBTI={selectedMBTI}
-        councilSize={councilSize}
-        setCouncilSize={setCouncilSize}
-        reflectionFocus={reflectionFocus}
-        setReflectionFocus={setReflectionFocus}
-        onOpenMBTI={handleOpenMBTI}
-        onSelectMBTI={(val) => {
-          setSelectedMBTI(val);
-          if (val === 'BALANCED') setActiveOverlay('NONE');
+      <Masthead
+        page={page}
+        onNavigate={(next) => {
+          closeOverlay(); // Panels belong to the page they were opened on
+          setPage(next);
         }}
-        onSummon={handleSummonCouncil}
-        onRestart={handleRestartScenario}
-        isGenerating={isGenerating}
-        isMBTIOverlayOpen={activeOverlay === 'MBTI_SELECTION'}
-              isHighlighted={isSidebarHighlighted}
-              hasCouncil={viewState === 'SPHERE'}
-              theme={theme}
-              setThemeMode={setTheme}
-              estimatedLoadDuration={estimatedTimeMs}      />
+        onOpenRecord={handleCenterClick}
+        hasCouncil={viewState === 'SPHERE'}
+        theme={theme}
+        setThemeMode={setTheme}
+      />
 
-      {/* 2. Main Content Area */}
-      <main 
-        className={`relative transition-all duration-300 h-full flex flex-col ${sidebarOpen && !isMobile ? 'lg:ml-[var(--sidebar-width)]' : 'ml-0'}`}
-        style={{ width: sidebarOpen && !isMobile ? 'calc(100% - var(--sidebar-width))' : '100%' }}
-      >
+      {page === 'matter' ? (
+        <main className="relative flex-grow min-h-0">
+          {activeOverlay === 'MBTI_SELECTION' ? (
+            <TypeTable
+              initialType={selectedMBTI}
+              onClose={closeOverlay}
+              onConfirm={handleConfirmMBTI}
+            />
+          ) : (
+            <SetupPage
+              dilemma={dilemma}
+              setDilemma={setDilemma}
+              reflectionFocus={reflectionFocus}
+              setReflectionFocus={setReflectionFocus}
+              selectedMBTI={selectedMBTI}
+              onSelectBalanced={() => setSelectedMBTI('BALANCED')}
+              onOpenMBTI={handleOpenMBTI}
+              councilSize={councilSize}
+              setCouncilSize={setCouncilSize}
+              onSummon={handleSummonCouncil}
+              onRestart={handleRestartScenario}
+              estimatedSeconds={Math.round(estimateLoadTime(dilemma.length, councilSize) / 1000)}
+              isGenerating={isGenerating}
+              hasCouncil={viewState === 'SPHERE'}
+              isHighlighted={isSetupHighlighted}
+            />
+          )}
+        </main>
+      ) : (
+      <main className="relative flex-grow min-h-0 flex flex-col">
 
         {/* View Content */}
         <div className="flex-grow flex items-center justify-center relative z-10">
           {viewState === 'INITIAL' ? (
             <div className="text-center space-y-2 px-6">
-              <p className="label">The chamber is empty</p>
-              <p className="font-display italic text-2xl text-ink2">Summon the Council to begin reflection.</p>
+              {isGenerating ? (
+                <>
+                  <p className="label">The council is being seated</p>
+                  <p className="font-display italic text-2xl text-ink2">About {Math.round(estimatedTimeMs / 1000)} seconds</p>
+                </>
+              ) : (
+                <>
+                  <p className="label">The chamber is empty</p>
+                  <p className="font-display italic text-2xl text-ink2">Summon the Council to begin reflection.</p>
+                </>
+              )}
             </div>
           ) : (
             <ReflectionSphere
@@ -360,15 +366,7 @@ const App: React.FC = () => {
           )}
         </div>
 
-        {/* MBTI Selection Overlay - Inside Main to respect Sidebar */}
-        {activeOverlay === 'MBTI_SELECTION' && (
-          <MBTIOverlay
-            onClose={closeOverlay}
-            onConfirm={handleConfirmMBTI}
-          />
-        )}
-
-        {/* Debate/Tension Details - Inside Main to respect Sidebar */}
+        {/* Debate/Tension Details */}
         {activeOverlay === 'DEBATE_DIALOGUE' && selectedTensionPair && councilData && (
           <DebateOverlay
             pair={selectedTensionPair}
@@ -397,6 +395,7 @@ const App: React.FC = () => {
         />
 
       </main>
+      )}
 
       {/* 3. Global Overlays Layer (Full Screen) */}
 
