@@ -52,10 +52,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({
    const c1 = counselors.find(c => c.id === pair.counselor1);
    const c2 = counselors.find(c => c.id === pair.counselor2);
 
-   // Escape closes, unless an interjection or a criterion is half written, so a stray keypress mid-sentence doesn't shut the debate
-   useEscapeKey(() => {
-      if (!interjectionDraft.trim() && !criterionDraft.trim()) onClose();
-   });
+   useEscapeKey(onClose); // Safe even mid-sentence: the drafts are kept by the caller
 
    // Initialize weights
    useEffect(() => {
