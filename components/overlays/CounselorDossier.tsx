@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 import ReactMarkdown from 'react-markdown';
 import { CouncilResponse, ChatMessage } from '../../types';
 import { CouncilSeat } from '../../utils/councilSeats';
@@ -34,6 +35,7 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
   const lettersEndRef = useRef<HTMLDivElement>(null);
   const seen = useRef({ chatMessages, isTyping });
   const name = inSentence(seat.name);
+  useEscapeKey(onClose);
 
   // Keep the latest letter in view. The desktop column opens at its foot; after that a new letter
   // or the typing line is scrolled into view, which on a phone scrolls the page instead. Not on open,
