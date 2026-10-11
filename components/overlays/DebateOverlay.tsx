@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 import ReactMarkdown from 'react-markdown';
 import { TensionPair, Counselor, CouncilResponse, DebateInterjection, MemorySource } from '../../types';
 import { injectIntoDebate } from '../../services/CouncilService';
@@ -35,6 +36,8 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
 
    const c1 = counselors.find(c => c.id === pair.counselor1);
    const c2 = counselors.find(c => c.id === pair.counselor2);
+
+   useEscapeKey(onClose);
 
    // Initialize weights
    useEffect(() => {
