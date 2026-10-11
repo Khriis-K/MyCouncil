@@ -5,7 +5,7 @@ import { TensionPair, Counselor, CouncilResponse, DebateInterjection, MemorySour
 import { injectIntoDebate } from '../../services/CouncilService';
 import { debateInjectionText, interjectionFrom, DebateRequest } from '../../utils/debateInterjection';
 import { groupColor } from '../../utils/groupColor';
-import { higherScore, debateTitle } from '../../utils/pointsOfContention';
+import { higherScore, debateTitle, weightedAlignment, DEFAULT_WEIGHT } from '../../utils/pointsOfContention';
 
 interface DebateOverlayProps {
    pair: TensionPair;
@@ -62,7 +62,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({
             let changed = false;
             matrixState.criteria.forEach(c => {
                if (next[c.id] === undefined) {
-                  next[c.id] = 50;
+                  next[c.id] = DEFAULT_WEIGHT;
                   changed = true;
                }
             });
@@ -105,28 +105,9 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({
       setUserWeights(prev => ({ ...prev, [id]: parseInt(val) }));
    };
 
-   const calculateScores = () => {
-      let c1Total = 0;
-      let c2Total = 0;
-      let maxPossible = 0;
-
-      matrixState.criteria.forEach(c => {
-         const weight = userWeights[c.id] ?? 50;
-         c1Total += c.c1_score * weight;
-         c2Total += c.c2_score * weight;
-         maxPossible += 10 * weight;
-      });
-
-      // Nothing to weigh (no criteria, or every weight at zero): no verdict, rather than a "balanced" 0% v. 0%
-      if (maxPossible === 0) return null;
-
-      return {
-         c1Percent: Math.round((c1Total / maxPossible) * 100),
-         c2Percent: Math.round((c2Total / maxPossible) * 100)
-      };
-   };
-
-   const scores = calculateScores();
+   const scores = weightedAlignment(matrixState.criteria, userWeights);
+   // A lone criterion has nothing to be weighed against, so it gets no slider
+   const canWeigh = matrixState.criteria.length > 1;
 
    const handleAddCriterion = async () => {
       if (!criterionDraft.trim() || isAddingCriterion || !dynamicData) return;
@@ -332,17 +313,19 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({
                            <td className="py-[11px] pr-2">
                               {criterion.label}
                               <small className="block text-ink2 italic text-[12.5px] leading-[1.4] mt-0.5">{criterion.reasoning}</small>
-                              <label className="flex items-center gap-2.5 mt-2">
-                                 <span className="label !text-[10px] whitespace-nowrap">Your weight</span>
-                                 <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={userWeights[criterion.id] ?? 50}
-                                    onChange={(e) => handleWeightChange(criterion.id, e.target.value)}
-                                    className="cursor-pointer"
-                                 />
-                              </label>
+                              {canWeigh && (
+                                 <label className="flex items-center gap-2.5 mt-2">
+                                    <span className="label !text-[10px] whitespace-nowrap">Your weight</span>
+                                    <input
+                                       type="range"
+                                       min="0"
+                                       max="100"
+                                       value={userWeights[criterion.id] ?? DEFAULT_WEIGHT}
+                                       onChange={(e) => handleWeightChange(criterion.id, e.target.value)}
+                                       className="cursor-pointer"
+                                    />
+                                 </label>
+                              )}
                            </td>
                            <td className={`py-[11px] w-[52px] text-center font-display text-[22px] font-semibold tabular-nums ${marked === 'c1' ? markColor : ''}`}>
                               {criterion.c1_score}
@@ -387,7 +370,10 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({
                </button>
             </div>
 
-            <p className="text-[12.5px] italic text-ink2 mt-3">Scores out of ten. The higher score in each row is marked.</p>
+            <p className="text-[12.5px] italic text-ink2 mt-3">
+               Scores out of ten. The higher score in each row is marked.
+               {matrixState.criteria.length === 1 && ' Add a second criterion to weigh them against each other.'}
+            </p>
 
             {scores && (
                <>

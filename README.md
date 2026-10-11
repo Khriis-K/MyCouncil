@@ -1,5 +1,8 @@
 <p align="center">
-    <img src="imgs/logo_transparent_dark_mode.png" alt="MyCouncil Logo" width="33%" />
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="imgs/logo-dark.png" />
+        <img src="imgs/logo-light.png" alt="MyCouncil: five seats on a semicircle beside the wordmark" width="420" />
+    </picture>
 </p>
 
 # MyCouncil

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { higherScore, debateTitle } from './pointsOfContention';
+import { higherScore, debateTitle, weightedAlignment } from './pointsOfContention';
 
 describe('higherScore', () => {
   test('marks the first counselor when their score is higher', () => {
@@ -44,5 +44,29 @@ describe('debateTitle', () => {
       joiner: '&',
       second: 'the Logistician',
     });
+  });
+});
+
+describe('weightedAlignment', () => {
+  const row = (id: string, c1_score: number, c2_score: number) => ({ id, c1_score, c2_score });
+
+  test('scores each counselor out of ten across equally weighted rows', () => {
+    expect(weightedAlignment([row('a', 8, 4), row('b', 6, 10)], {})).toEqual({ c1Percent: 70, c2Percent: 70 });
+  });
+
+  test('a heavier row pulls the alignment toward that row', () => {
+    expect(weightedAlignment([row('a', 8, 4), row('b', 6, 10)], { a: 100, b: 0 })).toEqual({ c1Percent: 80, c2Percent: 40 });
+    expect(weightedAlignment([row('a', 8, 4), row('b', 6, 10)], { a: 25, b: 75 })).toEqual({ c1Percent: 65, c2Percent: 85 });
+  });
+
+  // A lone row has nothing to be weighed against, and its slider is hidden, so a weight left on it is ignored
+  test('a single row is its own scores, whatever weight it was left at', () => {
+    expect(weightedAlignment([row('a', 7, 9)], { a: 90 })).toEqual({ c1Percent: 70, c2Percent: 90 });
+    expect(weightedAlignment([row('a', 7, 9)], { a: 0 })).toEqual({ c1Percent: 70, c2Percent: 90 });
+  });
+
+  test('gives no verdict with no rows, or with every weight at zero', () => {
+    expect(weightedAlignment([], {})).toBeNull();
+    expect(weightedAlignment([row('a', 8, 4), row('b', 6, 10)], { a: 0, b: 0 })).toBeNull();
   });
 });
