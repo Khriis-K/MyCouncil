@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface BottomBarProps {
   isDebateMode: boolean;
@@ -26,6 +26,12 @@ const BottomBar: React.FC<BottomBarProps> = ({
 }) => {
   const canRefine = !isDisabled && !isRefining && additionalContext.trim().length > 0;
 
+  // Called up from the record: put the cursor in the field
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (isHighlighted) inputRef.current?.focus();
+  }, [isHighlighted]);
+
   return (
     <footer
       className={`flex-none flex flex-wrap md:flex-nowrap items-center gap-x-5 gap-y-3 px-4 md:px-9 py-3 md:h-16 bg-paper border-t border-rule transition-opacity ${
@@ -34,6 +40,7 @@ const BottomBar: React.FC<BottomBarProps> = ({
     >
       <div className="relative basis-full md:basis-auto md:flex-1">
         <input
+          ref={inputRef}
           type="text"
           aria-label="Add to the record"
           placeholder="Add to the record. Something new since you began?"

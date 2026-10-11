@@ -8,8 +8,8 @@ import BottomBar from './components/BottomBar';
 import ImpressionSlip from './components/overlays/ImpressionSlip';
 import CounselorDossier from './components/overlays/CounselorDossier';
 import DebateOverlay from './components/overlays/DebateOverlay';
-import DilemmaHistoryOverlay from './components/overlays/DilemmaHistoryOverlay';
-import { Counselor, TensionPair, OverlayType, CouncilResponse, ReflectionFocus, DebateInterjection } from './types';
+import TheRecord from './components/overlays/TheRecord';
+import { Counselor, TensionPair, OverlayType, CouncilResponse, ReflectionFocus, DebateInterjection, Refinement } from './types';
 import { fetchCouncilAnalysis } from './services/CouncilService';
 import { buildCounselorsFromResponse } from './utils/counselorMapper';
 import { councilSeats } from './utils/councilSeats';
@@ -64,7 +64,7 @@ const App: React.FC = () => {
   const [contextSummary, setContextSummary] = useState<string>(''); // AI-generated summary of previous refinements
   const [isRefining, setIsRefining] = useState(false);
   const [originalSummary, setOriginalSummary] = useState<string>(''); // Store initial summary, never changes
-  const [refinementHistory, setRefinementHistory] = useState<{ text: string; timestamp: number }[]>([]); // Track all refinement contexts
+  const [refinementHistory, setRefinementHistory] = useState<Refinement[]>([]); // Track all refinement contexts
   const [debateLog, setDebateLog] = useState<DebateInterjection[]>([]); // User interjections across all debates, for memory
   const memorySources = buildMemorySources({ chatHistory, refinements: refinementHistory, debateLog });
   const [estimatedTimeMs, setEstimatedTimeMs] = useState<number>(0);
@@ -411,12 +411,12 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Dilemma History Overlay */}
+      {/* The record */}
       {activeOverlay === 'DILEMMA_HISTORY' && (
-        <DilemmaHistoryOverlay
+        <TheRecord
           dilemma={dilemma}
           originalSummary={originalSummary}
-          refinementHistory={refinementHistory.map(r => r.text)}
+          refinements={refinementHistory}
           onClose={closeOverlay}
           onAddMoreContext={handleAddMoreContext}
           onRestartScenario={handleRestartScenario}
