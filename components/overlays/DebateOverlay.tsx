@@ -37,7 +37,10 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
    const c1 = counselors.find(c => c.id === pair.counselor1);
    const c2 = counselors.find(c => c.id === pair.counselor2);
 
-   useEscapeKey(onClose);
+   // Escape closes, unless an interjection or a criterion is half written: an unsent draft would be lost
+   useEscapeKey(() => {
+      if (!userInput.trim() && !newCriterion.trim()) onClose();
+   });
 
    // Initialize weights
    useEffect(() => {
