@@ -19,7 +19,7 @@ export async function openApp({ delays = {} as Record<string, number> } = {}): P
   const cache: CachedCall[] = fs.existsSync(CACHE_FILE) ? JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8')) : [];
   const used = new Set<number>();
   const browser = await chromium.launch({ channel: 'chrome' });
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark' });
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'light' });
   await context.addInitScript(CURSOR_SCRIPT);
   const page = await context.newPage();
 
@@ -44,14 +44,10 @@ export async function openApp({ delays = {} as Record<string, number> } = {}): P
   return { browser, page };
 }
 
-export async function useOledTheme(page: Page) {
-  await page.getByRole('button', { name: /OLED/ }).click();
-}
-
-/** Summons the five-counselor council without recording it. */
+/** Summons the five-counselor council without recording it, and waits for it to take its seats. */
 export async function summonQuietly(page: Page) {
-  await useOledTheme(page);
   await page.fill('textarea', DILEMMA);
-  await page.getByRole('button', { name: '5', exact: true }).click();
-  await page.getByRole('button', { name: /Summon the Council/i }).click();
+  await page.getByRole('button', { name: '5 seats' }).click();
+  await page.getByRole('button', { name: /Summon the council/i }).click();
+  await page.getByRole('button', { name: /^Seat V, / }).waitFor();
 }

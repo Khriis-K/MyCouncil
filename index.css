@@ -264,15 +264,6 @@ body {
   cursor: not-allowed;
 }
 
-/* Scrollbar Styling */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
 /* Range Slider Customization */
 input[type=range] {
   -webkit-appearance: none;
@@ -329,18 +320,3 @@ input[type=range]::-moz-range-track {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
 }
 
-/* Animation for sliding in from the left */
-@keyframes slide-in-left {
-  from {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-.animate-slide-in-left {
-  animation: slide-in-left 0.3s ease-out forwards;
-}

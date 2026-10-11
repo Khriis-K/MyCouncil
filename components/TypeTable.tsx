@@ -67,7 +67,7 @@ const TypeTable: React.FC<TypeTableProps> = ({ initialType, onClose, onConfirm }
         aria-label={`Explain ${title.toLowerCase()}`}
         className={`hover:text-ink ${openSection === section ? 'text-ink' : 'text-ink2'}`}
       >
-        <span className="material-symbols-outlined text-sm">help</span>
+        <span aria-hidden="true" className="caps">?</span>
       </button>
     </div>
   );
@@ -116,7 +116,7 @@ const TypeTable: React.FC<TypeTableProps> = ({ initialType, onClose, onConfirm }
           {selectedType && details && (
             <details className="mt-5 group">
               <summary className="label cursor-pointer list-none flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm transition-transform group-open:rotate-90">chevron_right</span>
+                <span aria-hidden="true" className="inline-block text-sm transition-transform group-open:rotate-90">›</span>
                 About the {selectedType.name}
               </summary>
 

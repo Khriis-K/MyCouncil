@@ -102,8 +102,14 @@ export class Recorder {
   }
 }
 
-/** Glide the visible cursor to an element, then click it. */
+/** Glide the visible cursor to an element, then click it. Scrolls it into view smoothly first if it's off screen. */
 export async function glideClick(page: Page, locator: Locator, { steps = 28, pause = 250 } = {}) {
+  const viewport = page.viewportSize()!;
+  const before = await locator.boundingBox();
+  if (before && (before.y < 0 || before.y + before.height > viewport.height)) {
+    await locator.evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'smooth' }));
+    await page.waitForTimeout(700);
+  }
   const box = await locator.boundingBox();
   if (!box) throw new Error(`Not visible: ${locator}`);
   const x = box.x + box.width / 2;
@@ -111,4 +117,15 @@ export async function glideClick(page: Page, locator: Locator, { steps = 28, pau
   await page.mouse.move(x, y, { steps });
   await page.waitForTimeout(pause);
   await page.mouse.click(x, y);
+}
+
+/** Converts out/<name>.mp4 to a looping GIF at `out`, with a palette built from the clip so it stays crisp. */
+export function toGif(name: string, out: string) {
+  const mp4 = path.join(DIR, 'out', `${name}.mp4`);
+  execFileSync(FFMPEG, [
+    '-y', '-loglevel', 'error', '-i', mp4,
+    '-vf', 'fps=12,scale=900:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle',
+    '-loop', '0', out,
+  ]);
+  console.log(`${path.relative(process.cwd(), out)}: ${Math.round(fs.statSync(out).size / 1024)} KB`);
 }
