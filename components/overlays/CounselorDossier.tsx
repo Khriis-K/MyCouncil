@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 import ReactMarkdown from 'react-markdown';
 import { CouncilResponse, ChatMessage } from '../../types';
@@ -14,6 +14,8 @@ interface CounselorDossierProps {
   chatMessages: ChatMessage[];
   isTyping: boolean;
   onSendMessage: (message: string) => void;
+  draft: string; // The unsent letter, kept by the caller so it survives closing the dossier
+  onDraftChange: (draft: string) => void;
 }
 
 const PLAN_NUMERALS = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii'];
@@ -28,16 +30,17 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
   onClose,
   chatMessages,
   isTyping,
-  onSendMessage
+  onSendMessage,
+  draft,
+  onDraftChange
 }) => {
-  const [inputValue, setInputValue] = useState('');
   const lettersRef = useRef<HTMLDivElement>(null);
   const lettersEndRef = useRef<HTMLDivElement>(null);
   const seen = useRef({ chatMessages, isTyping });
   const name = inSentence(seat.name);
-  // Escape closes, unless a letter is half written: an unsent draft would be lost
+  // Escape closes, unless a letter is half written, so a stray keypress mid-sentence doesn't shut the dossier
   useEscapeKey(() => {
-    if (!inputValue.trim()) onClose();
+    if (!draft.trim()) onClose();
   });
 
   // Keep the latest letter in view. The desktop column opens at its foot; after that a new letter
@@ -53,9 +56,9 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
   }, [chatMessages, isTyping]);
 
   const handleSend = () => {
-    if (inputValue.trim()) {
-      onSendMessage(inputValue);
-      setInputValue('');
+    if (draft.trim()) {
+      onSendMessage(draft);
+      onDraftChange('');
     }
   };
 
@@ -158,8 +161,8 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
         <div className="border-t border-ink pt-2.5 flex items-baseline gap-3">
           <input
             type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            value={draft}
+            onChange={(e) => onDraftChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={`Write to ${name}`}
             aria-label={`Write to ${name}`}
@@ -168,7 +171,7 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
           <button
             type="button"
             onClick={handleSend}
-            disabled={!inputValue.trim() || isTyping}
+            disabled={!draft.trim() || isTyping}
             className="btn-link"
           >
             Send

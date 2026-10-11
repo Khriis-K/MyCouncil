@@ -15,20 +15,35 @@ interface DebateOverlayProps {
    dilemma: string; // Needed for context
    memorySources: MemorySource[]; // Earlier session turns the counselors can recall
    onInterjection: (interjection: DebateInterjection) => void; // Called after a user's own words reach the council
+   // Unsent interjection and criterion, kept by the caller so they survive closing the debate
+   interjectionDraft: string;
+   onInterjectionDraftChange: (draft: string) => void;
+   criterionDraft: string;
+   onCriterionDraftChange: (draft: string) => void;
 }
 
-const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamicData, onClose, dilemma, memorySources, onInterjection }) => {
+const DebateOverlay: React.FC<DebateOverlayProps> = ({
+   pair,
+   counselors,
+   dynamicData,
+   onClose,
+   dilemma,
+   memorySources,
+   onInterjection,
+   interjectionDraft,
+   onInterjectionDraftChange,
+   criterionDraft,
+   onCriterionDraftChange
+}) => {
    const [dialogue, setDialogue] = useState<{speaker: string, text: string}[]>(dynamicData?.dialogue || []);
    
    // Matrix State
    const [matrixState, setMatrixState] = useState(dynamicData?.matrix || { criteria: [] });
    const [userWeights, setUserWeights] = useState<Record<string, number>>({});
 
-   const [userInput, setUserInput] = useState('');
    const [isSending, setIsSending] = useState(false);
    const linesEndRef = useRef<HTMLDivElement>(null);
 
-   const [newCriterion, setNewCriterion] = useState('');
    const [isAddingCriterion, setIsAddingCriterion] = useState(false);
    
    // Controls staggered revealing of messages
@@ -37,9 +52,9 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
    const c1 = counselors.find(c => c.id === pair.counselor1);
    const c2 = counselors.find(c => c.id === pair.counselor2);
 
-   // Escape closes, unless an interjection or a criterion is half written: an unsent draft would be lost
+   // Escape closes, unless an interjection or a criterion is half written, so a stray keypress mid-sentence doesn't shut the debate
    useEscapeKey(() => {
-      if (!userInput.trim() && !newCriterion.trim()) onClose();
+      if (!interjectionDraft.trim() && !criterionDraft.trim()) onClose();
    });
 
    // Initialize weights
@@ -117,11 +132,11 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
    const scores = calculateScores();
 
    const handleAddCriterion = async () => {
-      if (!newCriterion.trim() || isAddingCriterion || !dynamicData) return;
+      if (!criterionDraft.trim() || isAddingCriterion || !dynamicData) return;
 
       // Not recorded as a memory: the instruction is synthetic, not the user's words.
-      const request: DebateRequest = { kind: 'criterion', label: newCriterion };
-      setNewCriterion('');
+      const request: DebateRequest = { kind: 'criterion', label: criterionDraft };
+      onCriterionDraftChange('');
       setIsAddingCriterion(true);
 
       try {
@@ -162,11 +177,11 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
    };
 
    const handleSend = async () => {
-      if (!userInput.trim() || isSending || !dynamicData) return;
+      if (!interjectionDraft.trim() || isSending || !dynamicData) return;
 
-      const request: DebateRequest = { kind: 'interjection', text: userInput };
+      const request: DebateRequest = { kind: 'interjection', text: interjectionDraft };
       const sentAt = Date.now();
-      setUserInput('');
+      onInterjectionDraftChange('');
       setIsSending(true);
 
       // Optimistically add user message
@@ -282,8 +297,8 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
             <div className="border-t border-ink pt-3 pb-5 flex items-baseline gap-3">
                <input
                   type="text"
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
+                  value={interjectionDraft}
+                  onChange={(e) => onInterjectionDraftChange(e.target.value)}
                   onKeyDown={handleKeyDown}
                   disabled={isSending}
                   placeholder="Interject. Put your own view to both of them."
@@ -293,7 +308,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                <button
                   type="button"
                   onClick={handleSend}
-                  disabled={isSending || !userInput.trim()}
+                  disabled={isSending || !interjectionDraft.trim()}
                   className="btn-link"
                >
                   {isSending ? 'Sending…' : 'Send'}
@@ -358,8 +373,8 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
             <div className="border-b border-rule py-2.5 flex items-baseline gap-3">
                <input
                   type="text"
-                  value={newCriterion}
-                  onChange={(e) => setNewCriterion(e.target.value)}
+                  value={criterionDraft}
+                  onChange={(e) => onCriterionDraftChange(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddCriterion()}
                   placeholder="Add your own criterion"
                   aria-label="Add your own criterion"
@@ -368,7 +383,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({ pair, counselors, dynamic
                <button
                   type="button"
                   onClick={handleAddCriterion}
-                  disabled={!newCriterion.trim() || isAddingCriterion}
+                  disabled={!criterionDraft.trim() || isAddingCriterion}
                   className="btn-link"
                >
                   {isAddingCriterion ? 'Scoring…' : 'Score'}

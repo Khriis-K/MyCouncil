@@ -66,6 +66,9 @@ const App: React.FC = () => {
   const [originalSummary, setOriginalSummary] = useState<string>(''); // Store initial summary, never changes
   const [refinementHistory, setRefinementHistory] = useState<Refinement[]>([]); // Track all refinement contexts
   const [debateLog, setDebateLog] = useState<DebateInterjection[]>([]); // User interjections across all debates, for memory
+  // Unsent words in the dossier and debate panels, kept here so closing a panel doesn't lose them
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const setDraft = (key: string) => (value: string) => setDrafts(prev => ({ ...prev, [key]: value }));
   const memorySources = buildMemorySources({ chatHistory, refinements: refinementHistory, debateLog });
   const [estimatedTimeMs, setEstimatedTimeMs] = useState<number>(0);
   
@@ -85,6 +88,7 @@ const App: React.FC = () => {
   const previousSeat = seatOf(previousCounselor);
   const dossierSeat = activeOverlay === 'COUNSELOR_DOSSIER' ? selectedSeat : undefined;
   const debatePair = activeOverlay === 'DEBATE_DIALOGUE' ? selectedTensionPair : null;
+  const debateKey = debatePair ? `${debatePair.counselor1}-${debatePair.counselor2}` : '';
 
   // --- Handlers ---
 
@@ -257,6 +261,7 @@ const App: React.FC = () => {
     setContextSummary('');
     setRefinementHistory([]);
     setDebateLog([]);
+    setDrafts({});
     setAdditionalContext('');
     setActiveOverlay('NONE');
     setSelectedCounselor(null);
@@ -341,6 +346,8 @@ const App: React.FC = () => {
             chatMessages={chatHistory[dossierSeat.counselor.id] || []}
             isTyping={isTyping[dossierSeat.counselor.id] || false}
             onSendMessage={(msg) => sendMessage(dossierSeat.counselor.id, msg, dilemma, selectedMBTI, memorySources)}
+            draft={drafts[`letter:${dossierSeat.counselor.id}`] ?? ''}
+            onDraftChange={setDraft(`letter:${dossierSeat.counselor.id}`)}
           />
         ) : debatePair && councilData ? (
           <DebateOverlay
@@ -354,6 +361,10 @@ const App: React.FC = () => {
             dilemma={dilemma}
             memorySources={memorySources}
             onInterjection={i => setDebateLog(prev => [...prev, i])}
+            interjectionDraft={drafts[`interjection:${debateKey}`] ?? ''}
+            onInterjectionDraftChange={setDraft(`interjection:${debateKey}`)}
+            criterionDraft={drafts[`criterion:${debateKey}`] ?? ''}
+            onCriterionDraftChange={setDraft(`criterion:${debateKey}`)}
           />
         ) : (
           <Chamber
