@@ -1,9 +1,11 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright-core';
 
 // Usage: npx tsx scripts/render-logo.ts
 // Renders the Chamber logo (five seats on a semicircle over a ruled well, beside the wordmark) to transparent PNGs,
 // one per theme, for the README. PNG rather than SVG: GitHub won't load the web fonts an SVG names.
+// Also writes the favicon, imgs/favi.ico: the seats alone, filled solid on an ink tile so they hold up at 16px.
 // Needs Google Chrome and a network connection for Google Fonts.
 
 const THEMES = {
@@ -40,4 +42,45 @@ for (const [name, theme] of Object.entries(THEMES)) {
   await page.locator('#logo').screenshot({ path: out, omitBackground: true });
   console.log(`Wrote ${path.relative(process.cwd(), out)}`);
 }
+
+// The favicon: the seats on an ink tile, in the dark theme's lighter group colours, so it fills the square and reads
+// on light and dark browser tabs alike. A tighter arc than the README mark, so the seats stay apart at 16px.
+const FAVICON_SIZES = [16, 32, 48];
+const FAVICON_SEATS: [number, number][] = [[18.2, 75.4], [34.1, 53.4], [60, 45], [85.9, 53.4], [101.8, 75.4]];
+const favicon = (size: number) => `<!doctype html>
+<style>body { margin: 0; background: transparent; }</style>
+<svg id="mark" width="${size}" height="${size}" viewBox="0 0 120 120">
+  <rect width="120" height="120" rx="22" fill="${THEMES.light.ink}"/>
+  ${FAVICON_SEATS.map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="11.5" fill="${THEMES.dark.groups[i]}"/>`).join('')}
+</svg>`;
+
+const icons: Buffer[] = [];
+const iconPage = await browser.newPage({ deviceScaleFactor: 1 });
+for (const size of FAVICON_SIZES) {
+  await iconPage.setContent(favicon(size));
+  icons.push(await iconPage.locator('#mark').screenshot({ omitBackground: true }));
+}
+const ico = path.resolve(import.meta.dirname, '../imgs/favi.ico');
+fs.writeFileSync(ico, packIco(FAVICON_SIZES, icons));
+console.log(`Wrote ${path.relative(process.cwd(), ico)}`);
+
 await browser.close();
+
+// An .ico holding each size as an embedded PNG: a 6-byte header, a 16-byte entry per image, then the images.
+function packIco(sizes: number[], pngs: Buffer[]) {
+  const header = Buffer.alloc(6 + 16 * pngs.length);
+  header.writeUInt16LE(1, 2); // type: icon
+  header.writeUInt16LE(pngs.length, 4);
+  let offset = header.length;
+  pngs.forEach((png, i) => {
+    const entry = 6 + 16 * i;
+    header.writeUInt8(sizes[i] % 256, entry); // width (0 means 256)
+    header.writeUInt8(sizes[i] % 256, entry + 1); // height
+    header.writeUInt16LE(1, entry + 4); // colour planes
+    header.writeUInt16LE(32, entry + 6); // bits per pixel
+    header.writeUInt32LE(png.length, entry + 8);
+    header.writeUInt32LE(offset, entry + 12);
+    offset += png.length;
+  });
+  return Buffer.concat([header, ...pngs]);
+}
