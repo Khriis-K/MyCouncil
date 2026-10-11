@@ -1,4 +1,5 @@
 import path from 'node:path';
+import type { Page } from 'playwright-core';
 import { DILEMMA, openApp, summonQuietly } from './session';
 import { Recorder, glideClick, toGif } from './recorder';
 
@@ -13,7 +14,7 @@ async function openWithCouncil(delays?: Record<string, number>) {
   return session;
 }
 
-const seat = (page: Awaited<ReturnType<typeof openApp>>['page'], name: string) =>
+const seat = (page: Page, name: string) =>
   page.getByRole('button', { name: new RegExp(`^Seat [IVX]+, The ${name}$`) }).locator('circle');
 
 const clips: Record<string, () => Promise<void>> = {
@@ -55,7 +56,17 @@ const clips: Record<string, () => Promise<void>> = {
     rec.speed(1.6);
     await page.waitForTimeout(3600);
     rec.speed(1);
-    await page.waitForTimeout(6000);
+    await page.waitForTimeout(5000);
+    // Weigh the first point of contention up; the weighted alignment follows
+    const weight = await page.locator('input[type=range]').first().boundingBox();
+    if (!weight) throw new Error('No weight slider');
+    const y = weight.y + weight.height / 2;
+    await page.mouse.move(weight.x + weight.width / 2, y, { steps: 28 });
+    await page.waitForTimeout(250);
+    await page.mouse.down();
+    await page.mouse.move(weight.x + weight.width * 0.92, y, { steps: 30 });
+    await page.mouse.up();
+    await page.waitForTimeout(2500);
     await rec.stop({ holdEnd: 2 });
     await browser.close();
   },
