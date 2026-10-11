@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Refinement } from '../../types';
 import { formatRecordTime } from '../../utils/recordTime';
 
@@ -30,6 +30,17 @@ const TheRecord: React.FC<TheRecordProps> = ({
     setIsClosing(true);
     setTimeout(next, SLIDE_MS);
   };
+
+  // Escape backs out one step: the restart confirmation first, then the record itself
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (showRestartConfirm) setShowRestartConfirm(false);
+      else closeThen(onClose);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showRestartConfirm, onClose]);
 
   return (
     <>
