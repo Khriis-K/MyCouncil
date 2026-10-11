@@ -14,3 +14,27 @@ export function debateTitle(name1: string, name2: string, type: TensionPair['typ
     second: name2.replace(/^The /, 'the '),
   };
 }
+
+export const DEFAULT_WEIGHT = 50;
+
+type ScoredRow = { id: string; c1_score: number; c2_score: number };
+
+// Each counselor's alignment with the user's priorities: their scores averaged by the weight on each row, out of ten.
+// Weights only matter relative to each other, so a lone row is scored as it stands, whatever weight it was left at.
+// No rows, or every weight at zero, gives no verdict rather than a "balanced" 0% v. 0%.
+export function weightedAlignment(rows: ScoredRow[], weights: Record<string, number>) {
+  let c1Total = 0;
+  let c2Total = 0;
+  let maxPossible = 0;
+  for (const row of rows) {
+    const weight = rows.length > 1 ? weights[row.id] ?? DEFAULT_WEIGHT : DEFAULT_WEIGHT;
+    c1Total += row.c1_score * weight;
+    c2Total += row.c2_score * weight;
+    maxPossible += 10 * weight;
+  }
+  if (maxPossible === 0) return null;
+  return {
+    c1Percent: Math.round((c1Total / maxPossible) * 100),
+    c2Percent: Math.round((c2Total / maxPossible) * 100),
+  };
+}
