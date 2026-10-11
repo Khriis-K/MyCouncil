@@ -38,10 +38,7 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
   const lettersEndRef = useRef<HTMLDivElement>(null);
   const seen = useRef({ chatMessages, isTyping });
   const name = inSentence(seat.name);
-  // Escape closes, unless a letter is half written, so a stray keypress mid-sentence doesn't shut the dossier
-  useEscapeKey(() => {
-    if (!draft.trim()) onClose();
-  });
+  useEscapeKey(onClose); // Safe even mid-letter: the draft is kept by the caller
 
   // Keep the latest letter in view. The desktop column opens at its foot; after that a new letter
   // or the typing line is scrolled into view, which on a phone scrolls the page instead. Not on open,
