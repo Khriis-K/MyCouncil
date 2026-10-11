@@ -39,21 +39,24 @@ const TheRecord: React.FC<TheRecordProps> = ({
       <aside
         role="dialog"
         aria-label="The record"
-        className={`fixed right-0 bottom-0 top-0 md:top-[58px] z-50 w-full md:w-[520px] bg-paper border-l border-ink overflow-y-auto px-5 py-6 md:px-10 md:py-[30px] ${
+        className={`fixed right-0 bottom-0 top-0 md:top-[58px] z-50 w-full md:w-[520px] flex flex-col bg-paper border-l border-ink ${
           isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'
         }`}
       >
-        <div className="flex justify-between items-baseline">
-          <span className="label">The record</span>
-          <button type="button" onClick={() => closeThen(onClose)} className="caps text-ink2 hover:text-ink">
-            Close
-          </button>
-        </div>
-        <h2 className="display !text-[34px] mt-1.5 mb-4">
-          The matter, <em>as amended</em>
-        </h2>
+        <header className="shrink-0 px-5 pt-6 md:px-10 md:pt-[30px]">
+          <div className="flex justify-between items-baseline">
+            <span className="label">The record</span>
+            <button type="button" onClick={() => closeThen(onClose)} className="caps text-ink2 hover:text-ink">
+              Close
+            </button>
+          </div>
+          <h2 className="display !text-[34px] mt-1.5 mb-4">
+            The matter, <em>as amended</em>
+          </h2>
+        </header>
 
-        <ol>
+        {/* Only the entries scroll, so the actions stay in reach however long the record grows */}
+        <ol className="flex-1 min-h-0 overflow-y-auto px-5 md:px-10">
           <li className="grid grid-cols-[96px_1fr] gap-3.5 py-3 border-t border-rule">
             <span className="label">Original</span>
             <div>
@@ -74,14 +77,14 @@ const TheRecord: React.FC<TheRecordProps> = ({
           ))}
         </ol>
 
-        <div className="flex flex-wrap items-center gap-x-[22px] gap-y-3 mt-5">
+        <footer className="shrink-0 flex flex-wrap items-center gap-x-[22px] gap-y-3 px-5 py-5 md:px-10 border-t border-rule">
           <button type="button" onClick={() => closeThen(onAddMoreContext)} className="btn-seal">
             Add to the record
           </button>
           <button type="button" onClick={() => setShowRestartConfirm(true)} className="btn-link">
             Start a new matter
           </button>
-        </div>
+        </footer>
       </aside>
 
       {/* Restart confirmation */}
