@@ -85,6 +85,12 @@ export interface MemorySource {
 }
 
 // A user utterance in a council debate, kept so later chats, refinements and debates can recall it.
+// Context the user added after the council sat: an amendment to the record
+export interface Refinement {
+  text: string;
+  timestamp: number;
+}
+
 export interface DebateInterjection {
   pairId: string; // "<counselor1>-<counselor2>" from the TensionPair
   userText: string;

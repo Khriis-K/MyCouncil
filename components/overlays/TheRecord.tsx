@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import { Refinement } from '../../types';
 import { formatRecordTime } from '../../utils/recordTime';
 
 interface TheRecordProps {
   dilemma: string;
   originalSummary: string;
-  refinements: { text: string; timestamp: number }[];
+  refinements: Refinement[];
   onClose: () => void;
   onAddMoreContext: () => void;
   onRestartScenario: () => void;
