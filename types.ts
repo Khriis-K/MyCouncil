@@ -1,9 +1,9 @@
 export interface Counselor {
   id: string;
   name: string;
-  role: string;
+  role: string; // The counselor's MBTI code from the matrix (e.g. 'INTJ'), or 'BALANCED'
   icon: string;
-  color: string; // Tailwind color class prefix (e.g., 'blue', 'green')
+  color: string; // The matrix's colour name; the UI colours counselors by MBTI group instead (utils/groupColor)
   description: string;
   highlight: string; // Short summary for debate mode
 }
@@ -24,7 +24,7 @@ export interface MBTIType {
   color: string;
 }
 
-export type OverlayType = 'NONE' | 'MBTI_SELECTION' | 'MBTI_VALIDATION' | 'COUNSELOR_INSIGHT_BAR' | 'COUNSELOR_PANEL' | 'DEBATE_DIALOGUE' | 'ARGUMENT_MAP' | 'DILEMMA_HISTORY';
+export type OverlayType = 'NONE' | 'MBTI_SELECTION' | 'MBTI_VALIDATION' | 'COUNSELOR_IMPRESSION' | 'COUNSELOR_DOSSIER' | 'DEBATE_DIALOGUE' | 'ARGUMENT_MAP' | 'DILEMMA_HISTORY';
 
 export type ReflectionFocus = 'Decision-Making' | 'Emotional Processing' | 'Creative Problem Solving';
 
@@ -32,8 +32,6 @@ export interface ReflectionFocusOption {
   value: ReflectionFocus;
   label: string;
   description: string;
-  color: string;
-  badgeColor: string;
 }
 
 export interface TensionPair {
@@ -87,6 +85,12 @@ export interface MemorySource {
 }
 
 // A user utterance in a council debate, kept so later chats, refinements and debates can recall it.
+// Context the user added after the council sat: an amendment to the record
+export interface Refinement {
+  text: string;
+  timestamp: number;
+}
+
 export interface DebateInterjection {
   pairId: string; // "<counselor1>-<counselor2>" from the TensionPair
   userText: string;

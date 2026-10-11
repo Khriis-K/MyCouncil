@@ -1,11 +1,11 @@
-import type { ChatMessage, DebateInterjection, MemorySource } from '../types';
+import type { ChatMessage, DebateInterjection, MemorySource, Refinement } from '../types';
 
 const MAX_SOURCES = 500;
 const MAX_TEXT_CHARS = 2000;
 
 export function buildMemorySources(params: {
   chatHistory: Record<string, ChatMessage[]>;
-  refinements: { text: string; timestamp: number }[];
+  refinements: Refinement[];
   debateLog?: DebateInterjection[];
 }): MemorySource[] {
   const chat: MemorySource[] = Object.entries(params.chatHistory).flatMap(([counselorId, messages]) =>

@@ -1,17 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import Sidebar from './components/Sidebar';
-import ReflectionSphere from './components/ReflectionSphere';
+import Masthead, { Page, ThemeMode } from './components/Masthead';
+import SetupPage from './components/SetupPage';
+import TypeTable from './components/TypeTable';
+import Chamber from './components/Chamber';
 import BottomBar from './components/BottomBar';
-import MBTIOverlay from './components/overlays/MBTIOverlay';
-import InsightBar from './components/overlays/InsightBar';
+import ImpressionSlip from './components/overlays/ImpressionSlip';
 import CounselorDossier from './components/overlays/CounselorDossier';
 import DebateOverlay from './components/overlays/DebateOverlay';
-import DilemmaHistoryOverlay from './components/overlays/DilemmaHistoryOverlay';
-import { Counselor, TensionPair, OverlayType, CouncilResponse, ReflectionFocus, DebateInterjection } from './types';
-import { COUNSELORS, TENSION_PAIRS } from './constants';
+import TheRecord from './components/overlays/TheRecord';
+import { Counselor, TensionPair, OverlayType, CouncilResponse, ReflectionFocus, DebateInterjection, Refinement } from './types';
 import { fetchCouncilAnalysis } from './services/CouncilService';
-import { buildCounselorsFromResponse, buildTensionPairs } from './utils/counselorMapper';
+import { buildCounselorsFromResponse } from './utils/counselorMapper';
+import { councilSeats } from './utils/councilSeats';
+import { councilRoll } from './utils/councilRoll';
 import { useChat } from './hooks/useChat';
 import { buildMemorySources } from './utils/memorySources';
 
@@ -29,30 +31,15 @@ const App: React.FC = () => {
   const [selectedMBTI, setSelectedMBTI] = useState<string | null>('BALANCED');
   const [councilSize, setCouncilSize] = useState<number>(4);
   const [reflectionFocus, setReflectionFocus] = useState<ReflectionFocus>('Decision-Making');
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
-  const [viewState, setViewState] = useState<'INITIAL' | 'SPHERE'>('INITIAL');
+  const [page, setPage] = useState<Page>('matter');
+  const [viewState, setViewState] = useState<'INITIAL' | 'SEATED'>('INITIAL');
   const [isDebateMode, setIsDebateMode] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false); // Loading state
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   
   const { chatHistory, isTyping, sendMessage } = useChat();
 
-  // Track screen size for responsive behavior
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      // Auto-close sidebar on mobile
-      if (mobile && sidebarOpen) {
-        setSidebarOpen(false);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [sidebarOpen]);
-  
   // Theme state - syncs with localStorage and OS preference
-  const [theme, setTheme] = useState<'light' | 'dark' | 'amoled'>(() => {
+  const [theme, setTheme] = useState<ThemeMode>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('mycouncil-theme');
       if (stored === 'light' || stored === 'dark' || stored === 'amoled') return stored;
@@ -77,22 +64,31 @@ const App: React.FC = () => {
   const [contextSummary, setContextSummary] = useState<string>(''); // AI-generated summary of previous refinements
   const [isRefining, setIsRefining] = useState(false);
   const [originalSummary, setOriginalSummary] = useState<string>(''); // Store initial summary, never changes
-  const [isInitialRender, setIsInitialRender] = useState(false); // For initial counselor animation
-  const [loadingMessage, setLoadingMessage] = useState<string>(''); // For center bubble during refinement
-  const [refinementHistory, setRefinementHistory] = useState<{ text: string; timestamp: number }[]>([]); // Track all refinement contexts
+  const [refinementHistory, setRefinementHistory] = useState<Refinement[]>([]); // Track all refinement contexts
   const [debateLog, setDebateLog] = useState<DebateInterjection[]>([]); // User interjections across all debates, for memory
+  // Unsent words in the dossier and debate panels, kept here so closing a panel doesn't lose them
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const setDraft = (key: string) => (value: string) => setDrafts(prev => ({ ...prev, [key]: value }));
   const memorySources = buildMemorySources({ chatHistory, refinements: refinementHistory, debateLog });
   const [estimatedTimeMs, setEstimatedTimeMs] = useState<number>(0);
   
   // Highlight states
   const [isBottomBarHighlighted, setIsBottomBarHighlighted] = useState(false);
-  const [isSidebarHighlighted, setIsSidebarHighlighted] = useState(false);
+  const [isSetupHighlighted, setIsSetupHighlighted] = useState(false);
 
   // Overlay Management
   const [activeOverlay, setActiveOverlay] = useState<OverlayType>('NONE');
   const [selectedCounselor, setSelectedCounselor] = useState<Counselor | null>(null);
   const [previousCounselor, setPreviousCounselor] = useState<Counselor | null>(null);
   const [selectedTensionPair, setSelectedTensionPair] = useState<TensionPair | null>(null);
+
+  const seats = councilSeats(selectedMBTI, councilSize, councilData);
+  const seatOf = (counselor: Counselor | null) => seats.find(s => s.counselor.id === counselor?.id);
+  const selectedSeat = seatOf(selectedCounselor);
+  const previousSeat = seatOf(previousCounselor);
+  const dossierSeat = activeOverlay === 'COUNSELOR_DOSSIER' ? selectedSeat : undefined;
+  const debatePair = activeOverlay === 'DEBATE_DIALOGUE' ? selectedTensionPair : null;
+  const debateKey = debatePair ? `${debatePair.counselor1}-${debatePair.counselor2}` : '';
 
   // --- Handlers ---
 
@@ -115,6 +111,7 @@ const App: React.FC = () => {
 
     console.log("Setting isGenerating to true");
     setIsGenerating(true);
+    setPage('chamber');
     const timeEstimate = estimateLoadTime(dilemma.length, councilSize);
     setEstimatedTimeMs(timeEstimate);
     // removed setLoadingMessage to avoid subtitle on initial summon
@@ -126,22 +123,13 @@ const App: React.FC = () => {
 
       setCouncilData(data);
       setOriginalSummary(data.summary); // Store the original summary
-      setViewState('SPHERE');
-      setIsInitialRender(true); // Trigger initial animation
-      
-      // Reset animation flag after staggered animations complete
-      // Reset animation flag after staggered animations complete
-      setTimeout(() => {
-        setIsInitialRender(false);
-      }, 9700); // Allow enough time for center fade (800ms) + max stagger (4 * 200ms) + expansion (600ms)
-
-      // On mobile/tablet you might close sidebar here, keeping open for desktop
-      if (window.innerWidth < 1024) setSidebarOpen(false);
+      setViewState('SEATED');
 
     } catch (error) {
       console.error("Error generating council:", error);
       const message = error instanceof Error ? error.message : "Failed to summon the council. Please try again.";
       alert(message);
+      setPage('matter');
     } finally {
       console.log("Finally block - resetting isGenerating");
       setIsGenerating(false);
@@ -151,28 +139,38 @@ const App: React.FC = () => {
   const handleCounselorClick = (counselor: Counselor) => {
     if (selectedCounselor?.id === counselor.id) return; // Don't re-trigger same counselor
     
-    // Open the Insight Bar (Preview) first
+    // Switching seats hands off: the open slip plays out as the new one is laid down
+    if (activeOverlay === 'COUNSELOR_IMPRESSION' && selectedCounselor) {
+      setPreviousCounselor(selectedCounselor);
+      setTimeout(() => setPreviousCounselor(null), 300);
+    }
+
+    // Lay down the impression slip first
     setSelectedCounselor(counselor);
-    setActiveOverlay('COUNSELOR_INSIGHT_BAR');
+    setActiveOverlay('COUNSELOR_IMPRESSION');
   };
 
-  // Handle clicks outside InsightBar to close it
+  // Play the slip out, then clear it
+  const dismissImpression = () => {
+    setPreviousCounselor(selectedCounselor);
+    setSelectedCounselor(null); // Clear immediately
+    setTimeout(() => {
+      setPreviousCounselor(null);
+      setActiveOverlay('NONE');
+    }, 300);
+  };
+
+  // Handle clicks outside the slip to close it
   useEffect(() => {
-    if (activeOverlay !== 'COUNSELOR_INSIGHT_BAR') return;
+    if (activeOverlay !== 'COUNSELOR_IMPRESSION') return;
 
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // Check if click is on InsightBar or counselor spheres
-      if (target.closest('[data-insight-bar]') || target.closest('[data-counselor-sphere]')) {
+      // Check if click is on the slip or a counselor's seat
+      if (target.closest('[data-impression-slip]') || target.closest('[data-counselor-seat]')) {
         return;
       }
-      // Close the insight bar
-      setPreviousCounselor(selectedCounselor);
-      setSelectedCounselor(null); // Clear immediately
-      setTimeout(() => {
-        setPreviousCounselor(null);
-        setActiveOverlay('NONE');
-      }, 300);
+      dismissImpression();
     };
 
     // Use capture phase to ensure this runs before button onClick handlers
@@ -212,18 +210,7 @@ const App: React.FC = () => {
         setContextSummary(data.context_summary);
       }
       
-      // Clear loading message
-      setLoadingMessage('');
-      
-      // Update council data (triggers fade transition)
       setCouncilData(data);
-      
-      // Trigger slide-in animation
-      setIsInitialRender(true);
-      // Reset animation flag after staggered animations complete
-      setTimeout(() => {
-        setIsInitialRender(false);
-      }, 9700);
       
       // Clear additional context input
       setAdditionalContext('');
@@ -235,14 +222,13 @@ const App: React.FC = () => {
       console.error("Error refining perspective:", error);
       const message = error instanceof Error ? error.message : "Failed to refine perspective. Please try again.";
       alert(message);
-      setLoadingMessage(''); // Clear loading message on error
     } finally {
       setIsRefining(false);
     }
   };
 
-  const handleViewFullPanel = () => {
-    setActiveOverlay('COUNSELOR_PANEL');
+  const handleReadOpinion = () => {
+    setActiveOverlay('COUNSELOR_DOSSIER');
   };
 
   const handleTensionClick = (pair: TensionPair) => {
@@ -256,6 +242,7 @@ const App: React.FC = () => {
 
   const handleAddMoreContext = () => {
     setActiveOverlay('NONE');
+    setPage('chamber');
     // Highlight bottom bar after panel closes (400ms animation)
     setTimeout(() => {
       setIsBottomBarHighlighted(true);
@@ -274,6 +261,7 @@ const App: React.FC = () => {
     setContextSummary('');
     setRefinementHistory([]);
     setDebateLog([]);
+    setDrafts({});
     setAdditionalContext('');
     setActiveOverlay('NONE');
     setSelectedCounselor(null);
@@ -282,12 +270,12 @@ const App: React.FC = () => {
     setIsDebateMode(false);
     setReflectionFocus('Decision-Making');
     
-    // Open sidebar and highlight textarea
-    setSidebarOpen(true);
+    // Back to setup, with the dilemma field highlighted
+    setPage('matter');
     setTimeout(() => {
-      setIsSidebarHighlighted(true);
+      setIsSetupHighlighted(true);
       setTimeout(() => {
-        setIsSidebarHighlighted(false);
+        setIsSetupHighlighted(false);
       }, 2000); // Highlight for 2 seconds
     }, 400); // After panel slides out
   };
@@ -300,107 +288,103 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden font-sans" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
+    <div className="flex flex-col h-screen w-screen overflow-hidden font-body bg-paper text-ink">
 
-      {/* 1. Sidebar Configuration */}
-      <Sidebar
-        isOpen={sidebarOpen}
-        toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        dilemma={dilemma}
-        setDilemma={setDilemma}
-        selectedMBTI={selectedMBTI}
-        councilSize={councilSize}
-        setCouncilSize={setCouncilSize}
-        reflectionFocus={reflectionFocus}
-        setReflectionFocus={setReflectionFocus}
-        onOpenMBTI={handleOpenMBTI}
-        onSelectMBTI={(val) => {
-          setSelectedMBTI(val);
-          if (val === 'BALANCED') setActiveOverlay('NONE');
+      <Masthead
+        page={page}
+        onNavigate={(next) => {
+          closeOverlay(); // Panels belong to the page they were opened on
+          setPage(next);
         }}
-        onSummon={handleSummonCouncil}
-        onRestart={handleRestartScenario}
-        isGenerating={isGenerating}
-        isMBTIOverlayOpen={activeOverlay === 'MBTI_SELECTION'}
-              isHighlighted={isSidebarHighlighted}
-              hasCouncil={viewState === 'SPHERE'}
-              theme={theme}
-              setThemeMode={setTheme}
-              estimatedLoadDuration={estimatedTimeMs}      />
+        onOpenRecord={handleCenterClick}
+        hasCouncil={viewState === 'SEATED'}
+        theme={theme}
+        setThemeMode={setTheme}
+      />
 
-      {/* 2. Main Content Area */}
-      <main 
-        className={`relative transition-all duration-300 h-full flex flex-col ${sidebarOpen && !isMobile ? 'lg:ml-[var(--sidebar-width)]' : 'ml-0'}`}
-        style={{ width: sidebarOpen && !isMobile ? 'calc(100% - var(--sidebar-width))' : '100%' }}
-      >
-
-        {/* Background Grid/Effects */}
-        <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
-          <div 
-            className="w-full h-full bg-[size:40px_40px]"
-            style={{
-              backgroundImage: `linear-gradient(to right, var(--grid-color) 1px, transparent 1px), linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px)`
-            }}
-          ></div>
-          <div className="absolute inset-0" style={{ background: 'var(--grid-fade)' }}></div>
-        </div>
-
-        {/* View Content */}
-        <div className="flex-grow flex items-center justify-center relative z-10">
-          {viewState === 'INITIAL' ? (
-            <div className="text-center space-y-4 opacity-60 animate-pulse-slow">
-              <div 
-                className="w-24 h-24 rounded-full mx-auto flex items-center justify-center"
-                style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-primary)' }}
-              >
-                <span className="material-symbols-outlined text-4xl" style={{ color: 'var(--text-muted)' }}>psychology</span>
-              </div>
-              <p className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>Summon the Council to begin reflection.</p>
-            </div>
+      {page === 'matter' ? (
+        <main className="relative flex-grow min-h-0">
+          {activeOverlay === 'MBTI_SELECTION' ? (
+            <TypeTable
+              initialType={selectedMBTI}
+              onClose={closeOverlay}
+              onConfirm={handleConfirmMBTI}
+            />
           ) : (
-            <ReflectionSphere
+            <SetupPage
               dilemma={dilemma}
-              dilemmaSummary={originalSummary || councilData?.summary || ''}
-              contextSummary={loadingMessage || contextSummary}
-              counselors={buildCounselorsFromResponse(selectedMBTI, councilSize, councilData)}
-              councilData={councilData}
-              isDebateMode={isDebateMode}
-              tensionPairs={buildTensionPairs(councilData)}
-              onCounselorClick={handleCounselorClick}
-              onTensionClick={handleTensionClick}
-              onCenterClick={handleCenterClick}
-              isInitialRender={isInitialRender}
-              isRefining={isRefining}
+              setDilemma={setDilemma}
               reflectionFocus={reflectionFocus}
+              setReflectionFocus={setReflectionFocus}
+              selectedMBTI={selectedMBTI}
+              onSelectBalanced={() => setSelectedMBTI('BALANCED')}
+              onOpenMBTI={handleOpenMBTI}
+              councilSize={councilSize}
+              setCouncilSize={setCouncilSize}
+              onSummon={handleSummonCouncil}
+              onRestart={handleRestartScenario}
+              estimatedSeconds={Math.round(estimateLoadTime(dilemma.length, councilSize) / 1000)}
+              isGenerating={isGenerating}
+              hasCouncil={viewState === 'SEATED'}
+              isHighlighted={isSetupHighlighted}
             />
           )}
-        </div>
+        </main>
+      ) : (
+      <main className="relative flex-grow min-h-0 flex flex-col">
 
-        {/* MBTI Selection Overlay - Inside Main to respect Sidebar */}
-        {activeOverlay === 'MBTI_SELECTION' && (
-          <MBTIOverlay
+        {viewState === 'INITIAL' && !isGenerating ? (
+          <div className="flex-grow flex flex-col items-center justify-center text-center space-y-2 px-6">
+            <p className="label">The chamber is empty</p>
+            <p className="font-display italic text-2xl text-ink2">Summon the Council to begin reflection.</p>
+          </div>
+        ) : dossierSeat && councilData ? (
+          <CounselorDossier
+            seat={dossierSeat}
+            dynamicData={councilData.counselors.find(c => c.id === dossierSeat.counselor.id)}
             onClose={closeOverlay}
-            onConfirm={handleConfirmMBTI}
+            chatMessages={chatHistory[dossierSeat.counselor.id] || []}
+            isTyping={isTyping[dossierSeat.counselor.id] || false}
+            onSendMessage={(msg) => sendMessage(dossierSeat.counselor.id, msg, dilemma, selectedMBTI, memorySources)}
+            draft={drafts[`letter:${dossierSeat.counselor.id}`] ?? ''}
+            onDraftChange={setDraft(`letter:${dossierSeat.counselor.id}`)}
           />
-        )}
-
-        {/* Debate/Tension Details - Inside Main to respect Sidebar */}
-        {activeOverlay === 'DEBATE_DIALOGUE' && selectedTensionPair && councilData && (
+        ) : debatePair && councilData ? (
           <DebateOverlay
-            pair={selectedTensionPair}
+            pair={debatePair}
             counselors={buildCounselorsFromResponse(selectedMBTI, councilSize, councilData)}
             dynamicData={councilData.tensions.find(t =>
-              (t.counselor_ids[0] === selectedTensionPair.counselor1 && t.counselor_ids[1] === selectedTensionPair.counselor2) ||
-              (t.counselor_ids[0] === selectedTensionPair.counselor2 && t.counselor_ids[1] === selectedTensionPair.counselor1)
+              (t.counselor_ids[0] === debatePair.counselor1 && t.counselor_ids[1] === debatePair.counselor2) ||
+              (t.counselor_ids[0] === debatePair.counselor2 && t.counselor_ids[1] === debatePair.counselor1)
             )}
             onClose={closeOverlay}
             dilemma={dilemma}
             memorySources={memorySources}
             onInterjection={i => setDebateLog(prev => [...prev, i])}
+            interjectionDraft={drafts[`interjection:${debateKey}`] ?? ''}
+            onInterjectionDraftChange={setDraft(`interjection:${debateKey}`)}
+            criterionDraft={drafts[`criterion:${debateKey}`] ?? ''}
+            onCriterionDraftChange={setDraft(`criterion:${debateKey}`)}
+          />
+        ) : (
+          <Chamber
+            status={viewState === 'INITIAL' ? 'summoning' : isRefining ? 'refining' : 'sitting'}
+            roll={councilRoll(selectedMBTI, councilSize)}
+            seats={seats}
+            tensions={councilData?.tensions ?? []}
+            estimatedMs={estimatedTimeMs}
+            showTensions={isDebateMode}
+            selectedId={selectedCounselor?.id ?? null}
+            summary={originalSummary || councilData?.summary || ''}
+            amendment={contextSummary}
+            onSeatClick={handleCounselorClick}
+            onTensionClick={handleTensionClick}
+            onOpenRecord={handleCenterClick}
           />
         )}
 
-        {/* Bottom Bar */}
+        {/* Bottom Bar (the dossier and the debate have their own compose lines) */}
+        {!dossierSeat && !debatePair && (
         <BottomBar
           isDebateMode={isDebateMode}
           toggleDebateMode={() => setIsDebateMode(!isDebateMode)}
@@ -411,51 +395,39 @@ const App: React.FC = () => {
           isRefining={isRefining}
           isHighlighted={isBottomBarHighlighted}
         />
+        )}
 
       </main>
+      )}
 
       {/* 3. Global Overlays Layer (Full Screen) */}
 
-      {/* Counselor Insight Bar (Step 1) - Show exiting bar if transitioning */}
-      {previousCounselor && councilData && (
-        <InsightBar
-          key={`exiting-${previousCounselor.id}`}
-          counselor={previousCounselor}
-          dynamicData={councilData.counselors.find(c => c.id === previousCounselor.id)}
-          onViewFull={handleViewFullPanel}
+      {/* Counselor impression slip (step 1). The outgoing slip plays out as the next is laid down. */}
+      {previousSeat && (
+        <ImpressionSlip
+          key={`exiting-${previousSeat.counselor.id}`}
+          seat={previousSeat}
+          onViewFull={handleReadOpinion}
           onClose={closeOverlay}
           isExiting={true}
         />
       )}
-      
-      {activeOverlay === 'COUNSELOR_INSIGHT_BAR' && selectedCounselor && councilData && !previousCounselor && (
-        <InsightBar
-          key={`active-${selectedCounselor.id}`}
-          counselor={selectedCounselor}
-          dynamicData={councilData.counselors.find(c => c.id === selectedCounselor.id)}
-          onViewFull={handleViewFullPanel}
-          onClose={closeOverlay}
+
+      {activeOverlay === 'COUNSELOR_IMPRESSION' && selectedSeat && (
+        <ImpressionSlip
+          key={`active-${selectedSeat.counselor.id}`}
+          seat={selectedSeat}
+          onViewFull={handleReadOpinion}
+          onClose={dismissImpression}
         />
       )}
 
-      {/* Counselor Side Panel (Step 2) */}
-      {activeOverlay === 'COUNSELOR_PANEL' && selectedCounselor && councilData && (
-        <CounselorDossier
-          counselor={selectedCounselor}
-          dynamicData={councilData.counselors.find(c => c.id === selectedCounselor.id)}
-          onClose={closeOverlay}
-          chatMessages={chatHistory[selectedCounselor.id] || []}
-          isTyping={isTyping[selectedCounselor.id] || false}
-          onSendMessage={(msg) => sendMessage(selectedCounselor.id, msg, dilemma, selectedMBTI, memorySources)}
-        />
-      )}
-
-      {/* Dilemma History Overlay */}
+      {/* The record */}
       {activeOverlay === 'DILEMMA_HISTORY' && (
-        <DilemmaHistoryOverlay
+        <TheRecord
           dilemma={dilemma}
           originalSummary={originalSummary}
-          refinementHistory={refinementHistory.map(r => r.text)}
+          refinements={refinementHistory}
           onClose={closeOverlay}
           onAddMoreContext={handleAddMoreContext}
           onRestartScenario={handleRestartScenario}

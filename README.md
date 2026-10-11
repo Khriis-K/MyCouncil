@@ -1,23 +1,26 @@
 <p align="center">
-    <img src="imgs/logo_transparent_dark_mode.png" alt="MyCouncil Logo" width="33%" />
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="imgs/logo-dark.png" />
+        <img src="imgs/logo-light.png" alt="MyCouncil: five seats on a semicircle beside the wordmark" width="420" />
+    </picture>
 </p>
 
 # MyCouncil
 
-**MyCouncil** is an interactive AI-powered reflection tool designed to help users navigate complex dilemmas. By "summoning a council" of diverse AI personas, users receive multi-faceted advice tailored to their situation and personality type.
+**MyCouncil** is an interactive AI-powered reflection tool designed to help users navigate complex dilemmas. By "summoning a council" of diverse AI personas, seated in a semicircular chamber, users receive multi-faceted advice tailored to their situation and personality type.
 
 <p align="center">
-    <img src="imgs/demo.gif" alt="MyCouncil demo: describing a dilemma, summoning the council, and opening a counselor's analysis" width="100%" />
+    <img src="imgs/demo.gif" alt="MyCouncil demo: writing a dilemma, summoning the council into its seats, and reading a counselor's opinion" width="100%" />
 </p>
 
 ## 🌟 Key Capabilities
 
 -   **Customizable Council Summoning**: Define your dilemma and assemble a council of 3-7 AI personas. Customize their "cognitive style" by selecting your MBTI type, or choose a balanced panel.
 -   **Reflection Lenses**: Direct the council's analytical focus. Choose from **Decision-Making** (practical trade-offs), **Emotional Processing** (internal values), or **Creative Problem Solving** (novel approaches).
--   **Interactive Council Clash**: Watch counselors debate your dilemma in real-time. Identify "Tension Pairs" where perspectives conflict, and **inject your own thoughts** into the debate to see how they react and adjust their stances.
--   **1-on-1 Counselor Chat**: Go beyond the initial advice. Open a direct chat line with any counselor to ask follow-up questions or dig deeper into their specific perspective.
--   **Iterative Refinement**: As you reflect, new context often emerges. Add new details to your dilemma, and watch the council re-evaluate their positions and update their advice in real-time.
--   **Visual Insight Mapping**: Explore a dynamic 3D "Reflection Sphere" where counselors orbit your central dilemma. Visual tension lines highlight conflicting viewpoints, helping you understand the landscape of your decision.
+-   **Debates**: Show the disagreements to see where counselors clash or find common ground, then open one as a debate transcript. **Interject with your own view** to see how both sides respond, and weigh the points of contention against your priorities.
+-   **1-on-1 Correspondence**: Go beyond the first impression. Read a counselor's full opinion and write to them directly with follow-up questions; recalled memories appear as numbered footnotes.
+-   **Iterative Refinement**: As you reflect, new context often emerges. Add it to the record, and the council reconvenes and updates its advice. The record keeps the original matter and every amendment.
+-   **The Chamber**: Counselors take numbered seats around your dilemma, in the priority order for your type. Oxblood arcs mark conflict and brass arcs mark synthesis, in light, dark and OLED themes.
 
 ## 🧠 Long-Term Memory & Retrieval (ML Work)
 
@@ -105,13 +108,13 @@ Follow these instructions to get a copy of the project up and running on your lo
 
 ## 📖 Usage
 
-1.  **Enter a Dilemma**: On the sidebar, type in the problem or decision you are facing.
-2.  **Select MBTI (Optional)**: Click the MBTI icon to select your personality type for more tailored advice.
-3.  **Summon the Council**: Click the "Summon Council" button.
-4.  **Explore**:
-    -   **Sphere View**: Interact with the visual representation of your council.
-    -   **Counselors**: Click on a counselor's icon to read their specific advice.
-    -   **Debates**: Toggle "Debate Mode" or click on the tension lines between counselors to see them discuss your dilemma.
+1.  **Write the matter**: On "The matter" page, describe the problem or decision you are facing.
+2.  **Choose your temperament (optional)**: Keep the balanced panel, or choose your MBTI type for more tailored advice. "Who will sit" shows the council you'll get.
+3.  **Summon the council**: Pick how many seats, then click "Summon the council".
+4.  **Explore the chamber**:
+    -   **Seats**: Click a counselor's seat for their first impression, then "Read full opinion" to open their dossier and write to them.
+    -   **Debates**: Turn on "Show disagreements" and click an arc between two counselors to read their debate.
+    -   **The record**: Add new context from the bar under the floor, and open "The record" to see the matter as amended.
 
 ## 🤝 Contributing
 

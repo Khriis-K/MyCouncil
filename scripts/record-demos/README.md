@@ -1,12 +1,12 @@
 # Demo recordings
 
-Scripts that record the feature clips on the portfolio page (`site/index.html`, served on GitHub Pages) and rebuild that page.
+Scripts that record the feature clips on the portfolio page (`site/index.html`, served on GitHub Pages), the README's `imgs/demo.gif`, and rebuild that page.
 
 ## Rebuild the page
 
 ```bash
 npm start                # in another terminal: the app on :3001
-npm run demos:record     # all clips, or e.g. npm run demos:record -- debate chat
+npm run demos:record     # all clips, or e.g. npm run demos:record -- debate chat (readme also writes imgs/demo.gif)
 npm run demos:build      # embeds the clips into site/index.html
 ```
 

@@ -1,43 +1,4 @@
-import { Counselor, MBTIType, TensionPair, ReflectionFocusOption } from './types';
-
-export const COUNSELORS: Counselor[] = [
-  {
-    id: 'strategist',
-    name: 'The Strategist',
-    role: 'Analytical & Logical',
-    icon: 'psychology',
-    color: 'blue',
-    description: 'Focuses on logic, data, and long-term consequences. Removes emotion to find the optimal path.',
-    highlight: 'Questioning long-term career benefits vs risks.'
-  },
-  {
-    id: 'nurturer',
-    name: 'The Nurturer',
-    role: 'Empathetic & Caring',
-    icon: 'volunteer_activism',
-    color: 'green',
-    description: 'Prioritizes emotional well-being, relationships, and harmony. Ensures decisions align with personal values.',
-    highlight: 'Exploring emotional needs and support systems.'
-  },
-  {
-    id: 'skeptic',
-    name: 'The Skeptic',
-    role: 'Critical & Risk-Averse',
-    icon: 'search',
-    color: 'yellow',
-    description: 'Identifies flaws, risks, and worst-case scenarios. Challenges assumptions to prevent costly mistakes.',
-    highlight: 'Highlighting potential loss of support network.'
-  },
-  {
-    id: 'visionary',
-    name: 'The Visionary',
-    role: 'Future-Oriented',
-    icon: 'rocket_launch',
-    color: 'purple',
-    description: 'Sees possibilities, innovation, and "big picture" potential. Encourages taking leaps of faith for growth.',
-    highlight: 'Pushing for growth despite uncertainty.'
-  }
-];
+import { MBTIType, ReflectionFocusOption } from './types';
 
 export const MBTI_TYPES: MBTIType[] = [
   { code: 'INTJ', name: 'Architect', group: 'analyst', color: 'analyst' },
@@ -58,31 +19,20 @@ export const MBTI_TYPES: MBTIType[] = [
   { code: 'ESFP', name: 'Entertainer', group: 'explorer', color: 'explorer' },
 ];
 
-export const TENSION_PAIRS: TensionPair[] = [
-  { counselor1: 'strategist', counselor2: 'skeptic', type: 'conflict' },
-  { counselor1: 'visionary', counselor2: 'nurturer', type: 'synthesis' }
-];
-
 export const REFLECTION_FOCUS_OPTIONS: ReflectionFocusOption[] = [
   {
     value: 'Decision-Making',
     label: 'Decision-Making',
     description: 'Emphasizes practical choices, tradeoffs, and actionable outcomes',
-    color: 'text-orange-400',
-    badgeColor: 'bg-orange-500/20 border-orange-500/40 text-orange-300'
   },
   {
     value: 'Emotional Processing',
     label: 'Emotional Processing',
     description: 'Focuses on feelings, values, and internal emotional conflicts',
-    color: 'text-pink-400',
-    badgeColor: 'bg-pink-500/20 border-pink-500/40 text-pink-300'
   },
   {
     value: 'Creative Problem Solving',
     label: 'Creative Problem Solving',
     description: 'Prioritizes novel perspectives, alternatives, and unconventional approaches',
-    color: 'text-cyan-400',
-    badgeColor: 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300'
   }
 ];

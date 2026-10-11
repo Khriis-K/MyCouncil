@@ -1,49 +1,61 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 import ReactMarkdown from 'react-markdown';
-import { Counselor, CouncilResponse, ChatMessage } from '../../types';
+import { CouncilResponse, ChatMessage } from '../../types';
+import { CouncilSeat } from '../../utils/councilSeats';
+import { recallFootnotes } from '../../utils/footnotes';
+import { remarkFootnoteMarker } from '../../utils/footnoteMarker';
+import { seatHeading } from '../../utils/seatHeading';
 
 interface CounselorDossierProps {
-  counselor: Counselor;
+  seat: CouncilSeat;
   dynamicData?: CouncilResponse['counselors'][0];
   onClose: () => void;
   chatMessages: ChatMessage[];
   isTyping: boolean;
   onSendMessage: (message: string) => void;
+  draft: string; // The unsent letter, kept by the caller so it survives closing the dossier
+  onDraftChange: (draft: string) => void;
 }
 
-type Tab = 'INSIGHT' | 'PROTOCOL' | 'COMMS';
+const PLAN_NUMERALS = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii'];
 
-const CounselorDossier: React.FC<CounselorDossierProps> = ({ 
-  counselor, 
-  dynamicData, 
+// "The Commander" reads as "the Commander" mid-sentence
+const inSentence = (name: string) => name.replace(/^The /, 'the ');
+
+// A counselor's full opinion, set like a printed one, with the correspondence beside it (below it on a phone).
+const CounselorDossier: React.FC<CounselorDossierProps> = ({
+  seat,
+  dynamicData,
   onClose,
   chatMessages,
   isTyping,
-  onSendMessage
+  onSendMessage,
+  draft,
+  onDraftChange
 }) => {
-  const [activeTab, setActiveTab] = useState<Tab>('INSIGHT');
-  const [isClosing, setIsClosing] = useState(false);
-  const [inputValue, setInputValue] = useState('');
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const lettersRef = useRef<HTMLDivElement>(null);
+  const lettersEndRef = useRef<HTMLDivElement>(null);
+  const seen = useRef({ chatMessages, isTyping });
+  const name = inSentence(seat.name);
+  useEscapeKey(onClose); // Safe even mid-letter: the draft is kept by the caller
 
-  const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-    }, 400);
-  };
-
-  // Auto-scroll to bottom of chat
+  // Keep the latest letter in view. The desktop column opens at its foot; after that a new letter
+  // or the typing line is scrolled into view, which on a phone scrolls the page instead. Not on open,
+  // or a phone would jump past the opinion straight to the correspondence.
   useEffect(() => {
-    if (activeTab === 'COMMS' && chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    const letters = lettersRef.current;
+    if (letters) letters.scrollTop = letters.scrollHeight;
+    if (seen.current.chatMessages !== chatMessages || seen.current.isTyping !== isTyping) {
+      lettersEndRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
-  }, [chatMessages, activeTab, isTyping]);
+    seen.current = { chatMessages, isTyping };
+  }, [chatMessages, isTyping]);
 
   const handleSend = () => {
-    if (inputValue.trim()) {
-      onSendMessage(inputValue);
-      setInputValue('');
+    if (draft.trim()) {
+      onSendMessage(draft);
+      onDraftChange('');
     }
   };
 
@@ -54,328 +66,116 @@ const CounselorDossier: React.FC<CounselorDossierProps> = ({
     }
   };
 
-  // Color mapping for dynamic styling based on counselor color
-  const getColorClasses = (color: string) => {
-    const map: Record<string, { 
-      border: string, 
-      text: string, 
-      bg: string, 
-      shadow: string,
-      tabActive: string,
-      button: string 
-    }> = {
-      blue: {
-        border: 'border-blue-500',
-        text: 'text-blue-400',
-        bg: 'bg-blue-900/50',
-        shadow: 'shadow-blue-500/20',
-        tabActive: 'border-blue-500 text-blue-400 bg-blue-500/10',
-        button: 'bg-blue-600 hover:bg-blue-500'
-      },
-      green: {
-        border: 'border-green-500',
-        text: 'text-green-400',
-        bg: 'bg-green-900/50',
-        shadow: 'shadow-green-500/20',
-        tabActive: 'border-green-500 text-green-400 bg-green-500/10',
-        button: 'bg-green-600 hover:bg-green-500'
-      },
-      yellow: {
-        border: 'border-yellow-500',
-        text: 'text-yellow-400',
-        bg: 'bg-yellow-900/50',
-        shadow: 'shadow-yellow-500/20',
-        tabActive: 'border-yellow-500 text-yellow-400 bg-yellow-500/10',
-        button: 'bg-yellow-600 hover:bg-yellow-500'
-      },
-      purple: {
-        border: 'border-purple-500',
-        text: 'text-purple-400',
-        bg: 'bg-purple-900/50',
-        shadow: 'shadow-purple-500/20',
-        tabActive: 'border-purple-500 text-purple-400 bg-purple-500/10',
-        button: 'bg-purple-600 hover:bg-purple-500'
-      },
-      red: {
-        border: 'border-red-500',
-        text: 'text-red-400',
-        bg: 'bg-red-900/50',
-        shadow: 'shadow-red-500/20',
-        tabActive: 'border-red-500 text-red-400 bg-red-500/10',
-        button: 'bg-red-600 hover:bg-red-500'
-      },
-    };
-    return map[color] || map['purple'];
-  };
-
-  const colors = getColorClasses(counselor.color);
-
   return (
-    <>
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 backdrop-blur-sm z-40"
-        style={{ backgroundColor: 'var(--overlay-backdrop)' }}
-        onClick={handleClose}
-      />
+    <div className="flex-grow min-h-0 overflow-y-auto md:overflow-hidden flex flex-col md:grid md:grid-cols-[1fr_400px] animate-fade-in">
+      <article className="px-4 md:pl-24 md:pr-14 pt-7 pb-10 md:overflow-y-auto">
+        <button type="button" onClick={onClose} className="caps text-ink2 hover:text-ink">
+          ← Back to the chamber
+        </button>
+        <h2 className="display mt-3.5 mb-1">
+          Opinion of <em>{name}</em>
+        </h2>
+        <p className="text-[13.5px] italic text-ink2 mb-[22px]">{seatHeading(seat)}.</p>
 
-      {/* Panel */}
-      <div 
-        className={`fixed inset-y-0 right-0 z-50 w-full max-w-[450px] h-full shadow-2xl flex flex-col ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}
-        style={{
-          backgroundColor: 'var(--bg-secondary)',
-          borderLeft: '1px solid var(--border-primary)'
-        }}
-      >
-        
-        {/* Header */}
-        <div 
-          className="h-20 backdrop-blur flex items-center px-6 gap-4"
-          style={{
-            backgroundColor: 'var(--bg-glass)',
-            borderBottom: '1px solid var(--border-primary)'
-          }}
-        >
-          <div className={`w-12 h-12 rounded ${colors.bg} border ${colors.border} flex items-center justify-center text-2xl shadow-[0_0_10px_rgba(0,0,0,0.3)]`}>
-            <span className="material-symbols-outlined">{counselor.icon}</span>
-          </div>
-          <div className="flex-1">
-            <h2 className="font-bold text-lg leading-none" style={{ color: 'var(--text-primary)' }}>{counselor.name}</h2>
-            <div className="flex items-center gap-2 mt-1">
-              <span className={`text-xs font-mono ${colors.text} uppercase tracking-wider`}>{counselor.role}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            </div>
-          </div>
-          <button onClick={handleClose} className="transition-colors" style={{ color: 'var(--text-muted)' }}>
-            <span className="material-symbols-outlined">close</span>
+        {dynamicData ? (
+          <>
+            <p className="font-display italic text-[22px] leading-[1.3] max-w-[40ch] mb-[18px]">{dynamicData.impression}</p>
+
+            <p className="text-[16px] leading-[1.6] max-w-[62ch] first-letter:font-display first-letter:text-[56px] first-letter:float-left first-letter:leading-[0.85] first-letter:pt-1.5 first-letter:pr-2">
+              {dynamicData.assessment}
+            </p>
+
+            <ol className="mt-[22px] grid md:grid-cols-3 border-t border-rule">
+              {dynamicData.action_plan.map((step, idx) => (
+                <li
+                  key={idx}
+                  className="pt-3.5 pb-1 md:pr-4 text-[14px] leading-[1.45] max-md:[&+li]:border-t md:[&:not(:nth-child(3n+1))]:border-l md:[&:not(:nth-child(3n+1))]:pl-4 border-rule"
+                >
+                  <b className="block font-display text-[24px] font-semibold text-seal">
+                    {PLAN_NUMERALS[idx] ?? idx + 1}.
+                  </b>
+                  {step}
+                </li>
+              ))}
+            </ol>
+
+            <p className="label mt-[22px]">For your reflection</p>
+            <p className="font-display italic text-[26px] leading-[1.25] max-w-[30ch] mt-1">{dynamicData.reflection_q}</p>
+          </>
+        ) : (
+          <p className="italic text-ink2">No analysis data available.</p>
+        )}
+      </article>
+
+      <aside className="border-t md:border-t-0 md:border-l border-rule flex flex-col px-4 md:px-7 pt-7 pb-[22px] md:min-h-0">
+        <h3 className="label">Correspondence with {name}</h3>
+
+        <div ref={lettersRef} className="flex-1 flex flex-col gap-[18px] mt-4 md:overflow-y-auto md:min-h-0 pb-4">
+          {chatMessages.length === 0 && !isTyping && (
+            <p className="italic text-[14px] text-ink2">No letters yet. Write to {name} below.</p>
+          )}
+
+          {chatMessages.map((msg) => {
+            const fromYou = msg.sender === 'user';
+            const notes = fromYou ? [] : recallFootnotes(msg.recalled);
+            return (
+              <div key={msg.id} className="animate-fade-in">
+                <div className="label !text-[11px] mb-[3px]">{fromYou ? 'You' : seat.name}</div>
+                <div className={`text-[14.5px] leading-[1.5] ${fromYou ? 'italic' : ''}`}>
+                  <ReactMarkdown
+                    remarkPlugins={notes.length > 0 ? [[remarkFootnoteMarker, notes.map(n => n.number).join(',')]] : []}
+                    components={{
+                      p: ({children}) => <p className="mb-1.5 last:mb-0">{children}</p>,
+                      strong: ({children}) => <strong className="font-semibold">{children}</strong>,
+                      em: ({children}) => <em className="italic">{children}</em>,
+                      ul: ({children}) => <ul className="list-disc list-inside mb-1.5 last:mb-0">{children}</ul>,
+                      ol: ({children}) => <ol className="list-decimal list-inside mb-1.5 last:mb-0">{children}</ol>,
+                      li: ({children}) => <li className="ml-1">{children}</li>,
+                      sup: ({children}) => <sup className="not-italic text-seal font-semibold ml-0.5">{children}</sup>
+                    }}
+                  >
+                    {msg.text}
+                  </ReactMarkdown>
+                </div>
+                {notes.length > 0 && (
+                  <ol className="text-[12px] text-ink2 border-t border-rule pt-1.5 mt-2 space-y-1">
+                    {notes.map(n => (
+                      <li key={n.number}>
+                        <sup className="text-seal font-semibold mr-0.5">{n.number}</sup>
+                        {n.source}: “{n.text}”
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+            );
+          })}
+
+          {isTyping && <p className="italic text-[13.5px] text-ink2">{seat.name} is writing…</p>}
+          <div ref={lettersEndRef} />
+        </div>
+
+        <div className="border-t border-ink pt-2.5 flex items-baseline gap-3">
+          <input
+            type="text"
+            value={draft}
+            onChange={(e) => onDraftChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={`Write to ${name}`}
+            aria-label={`Write to ${name}`}
+            className="flex-1 min-w-0 bg-transparent py-1 italic focus:outline-none placeholder:text-ink2 text-ink"
+          />
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={!draft.trim() || isTyping}
+            className="btn-link"
+          >
+            Send
           </button>
         </div>
-
-        {/* Tabs */}
-        <div 
-          className="flex"
-          style={{
-            backgroundColor: 'var(--bg-tertiary)',
-            borderBottom: '1px solid var(--border-primary)'
-          }}
-        >
-          {(['INSIGHT', 'PROTOCOL', 'COMMS'] as Tab[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-3 text-xs font-mono font-bold transition-colors ${
-                activeTab === tab 
-                  ? `${colors.tabActive} border-b-2` 
-                  : ''
-              }`}
-              style={activeTab !== tab ? { color: 'var(--text-muted)' } : undefined}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide" style={{ backgroundColor: 'var(--bg-primary)' }}>
-          
-          {activeTab === 'INSIGHT' && (
-            <div className="animate-fade-in">
-              {dynamicData ? (
-                <>
-                  <div 
-                    className="mb-6 p-4 rounded-lg"
-                    style={{
-                      backgroundColor: 'var(--bg-secondary)',
-                      border: '1px solid var(--border-primary)'
-                    }}
-                  >
-                    <h3 className="text-xs font-mono mb-2 uppercase" style={{ color: 'var(--text-muted)' }}>Impression</h3>
-                    <p className="font-medium italic" style={{ color: 'var(--text-primary)' }}>"{dynamicData.impression}"</p>
-                  </div>
-
-                  <div className="prose prose-sm max-w-none leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    <p>{dynamicData.assessment}</p>
-                  </div>
-
-                  <div className="mt-8 pt-6" style={{ borderTop: '1px solid var(--border-primary)' }}>
-                    <h3 className="text-xs font-mono mb-4 uppercase" style={{ color: 'var(--text-muted)' }}>Reflection Query</h3>
-                    <div className={`border-l-2 ${colors.border} pl-4 py-1`}>
-                      <p className={`${colors.text} italic`}>"{dynamicData.reflection_q}"</p>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center justify-center h-full" style={{ color: 'var(--text-muted)' }}>
-                  No analysis data available.
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'PROTOCOL' && (
-            <div className="animate-fade-in">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xs font-mono uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Optimal Pathway</h3>
-                <span className={`text-[10px] ${colors.text} font-mono opacity-80`}>CONFIDENCE: 94%</span>
-              </div>
-
-              <div className="relative pl-2">
-                {/* The Circuit Line */}
-                <div className={`absolute left-[11px] top-2 bottom-0 w-0.5 bg-gradient-to-b from-${counselor.color}-500 via-${counselor.color}-500/20 to-transparent opacity-50`}></div>
-
-                {dynamicData?.action_plan.map((step, idx) => (
-                  <div key={idx} className="relative flex gap-5 mb-8 group last:mb-0">
-                    {/* Node */}
-                    <div 
-                      className={`relative z-10 flex-shrink-0 w-5 h-5 rounded-full border-2 ${colors.border} shadow-[0_0_10px_currentColor] flex items-center justify-center mt-1 group-hover:scale-110 transition-transform`}
-                      style={{ backgroundColor: 'var(--bg-primary)' }}
-                    >
-                      <div className={`w-1.5 h-1.5 rounded-full ${colors.bg.replace('bg-', 'bg-').replace('/50', '-400')}`}></div>
-                    </div>
-                    
-                    {/* Card */}
-                    <div className="relative pl-2 group-hover:pl-3 transition-all duration-300">
-                      <span 
-                        className="absolute left-0 top-0 text-4xl font-thin text-transparent bg-clip-text bg-gradient-to-b opacity-20 group-hover:opacity-40 transition-opacity font-mono select-none -translate-x-2 -translate-y-2"
-                        style={{ backgroundImage: 'linear-gradient(to bottom, var(--text-muted), transparent)' }}
-                      >
-                        0{idx + 1}
-                      </span>
-                      <div 
-                        className="p-4 rounded-lg transition-colors"
-                        style={{ 
-                          borderLeft: '1px solid var(--border-subtle)',
-                          backgroundColor: 'var(--bg-glass)'
-                        }}
-                      >
-                        <h4 className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                          Sequence 0{idx + 1}
-                        </h4>
-                        <p className="text-sm font-light leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                          {step}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'COMMS' && (
-            <div className="animate-fade-in h-full flex flex-col">
-              <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-                {chatMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full opacity-50 gap-2">
-                    <span className="material-symbols-outlined text-4xl">forum</span>
-                    <p className="text-sm">Start a conversation with {counselor.name}...</p>
-                  </div>
-                ) : (
-                  chatMessages.map((msg) => (
-                    <div 
-                      key={msg.id} 
-                      className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                                                                  <div
-                                                                    className={`rounded-lg p-3 max-w-[85%] text-sm shadow-sm ${
-                                                                      msg.sender === 'user'
-                                                                        ? `bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-secondary)] rounded-br-none animate-slide-in-right`
-                                                                        : `${colors.bg} border ${colors.border} text-[var(--text-secondary)] rounded-bl-none animate-slide-in-left`
-                                                                    }`}
-                                                                  >
-                                                                    <ReactMarkdown
-                                                                      components={{
-                                                                        p: ({children}) => <p className="mb-1 last:mb-0">{children}</p>,
-                                                                        strong: ({children}) => <strong className="font-bold text-[var(--text-primary)]">{children}</strong>,
-                                                                        em: ({children}) => <em className="italic opacity-90">{children}</em>,
-                                                                        ul: ({children}) => <ul className="list-disc list-inside mb-1">{children}</ul>,
-                                                                        ol: ({children}) => <ol className="list-decimal list-inside mb-1">{children}</ol>,
-                                                                        li: ({children}) => <li className="ml-1">{children}</li>
-                                                                      }}
-                                                                    >
-                                                                      {msg.text}
-                                                                    </ReactMarkdown>
-                                                                    {msg.recalled && msg.recalled.length > 0 && (
-                                                                      <details className="mt-2 text-xs text-[var(--text-secondary)] opacity-80">
-                                                                        <summary className="cursor-pointer select-none">Recalled from earlier ({msg.recalled.length})</summary>
-                                                                        <ul className="mt-1 space-y-1">
-                                                                          {msg.recalled.map((r, i) => (
-                                                                            <li key={i}>
-                                                                              <span className="font-semibold">
-                                                                                {r.channel === 'chat' ? `Chat with ${r.counselorId}` : r.channel === 'debate' ? 'Debate' : 'Added context'}:
-                                                                              </span>{' '}
-                                                                              "{r.text}"
-                                                                            </li>
-                                                                          ))}
-                                                                        </ul>
-                                                                      </details>
-                                                                    )}
-                                                                  </div>                    </div>
-                  ))
-                )}
-                
-                {isTyping && (
-                   <div className="flex justify-start">
-                     <div className={`${colors.bg} border ${colors.border} rounded-lg rounded-bl-none p-3 flex items-center gap-1`}>
-                       <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce"></span>
-                       <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                       <span className="w-1.5 h-1.5 bg-current rounded-full animate-bounce [animation-delay:0.4s]"></span>
-                     </div>
-                   </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-              
-              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-primary)' }}>
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={`Message ${counselor.name}...`}
-                    className="w-full rounded-lg py-3 px-4 text-sm focus:outline-none transition-colors pr-10"
-                    style={{
-                      backgroundColor: 'var(--bg-secondary)',
-                      border: '1px solid var(--border-primary)',
-                      color: 'var(--text-primary)'
-                    }}
-                  />
-                  <button 
-                    onClick={handleSend}
-                    disabled={!inputValue.trim() || isTyping}
-                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded transition-opacity ${inputValue.trim() ? 'opacity-100' : 'opacity-50'} ${colors.text}`}
-                  >
-                    <span className="material-symbols-outlined text-lg">send</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        {/* Footer Action (Only show on INSIGHT and PROTOCOL tabs) */}
-        {activeTab !== 'COMMS' && (
-          <div 
-            className="p-4"
-            style={{
-              backgroundColor: 'var(--bg-secondary)',
-              borderTop: '1px solid var(--border-primary)'
-            }}
-          >
-            <button 
-              onClick={() => setActiveTab('COMMS')}
-              className={`w-full py-3 ${colors.button} text-white font-bold rounded flex items-center justify-center gap-2 transition-colors shadow-lg`}
-            >
-              <span className="material-symbols-outlined text-lg">forum</span>
-              INITIATE DIALOGUE
-            </button>
-          </div>
-        )}
-
-      </div>
-    </>
+      </aside>
+    </div>
   );
 };
 
