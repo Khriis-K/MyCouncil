@@ -61,10 +61,10 @@ export class Recorder {
     this.marks.push({ t: Date.now() / 1000, speed });
   }
 
-  async stop({ holdEnd = 1.8, maxSeconds }: { holdEnd?: number; maxSeconds?: number } = {}) {
+  async stop({ holdEnd = 1.8 }: { holdEnd?: number } = {}) {
     await this.page.waitForTimeout(300);
     await this.cdp!.send('Page.stopScreencast');
-    this.encode(holdEnd, maxSeconds);
+    this.encode(holdEnd);
   }
 
   private speedAt(t: number) {
@@ -73,7 +73,7 @@ export class Recorder {
     return speed;
   }
 
-  private encode(holdEnd: number, maxSeconds?: number) {
+  private encode(holdEnd: number) {
     const posix = (f: string) => path.resolve(f).split(path.sep).join('/');
     const lines: string[] = [];
     let total = 0;
@@ -93,22 +93,37 @@ export class Recorder {
     const out = path.join(outDir, `${this.name}.mp4`);
     execFileSync(FFMPEG, [
       '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', list,
-      ...(maxSeconds ? ['-t', String(maxSeconds)] : []),
       '-vf', 'fps=30,scale=1200:-2:flags=lanczos,format=yuv420p',
       '-c:v', 'libx264', '-crf', '23', '-preset', 'slow', '-movflags', '+faststart', '-an', out,
     ]);
-    const seconds = Math.min(total, maxSeconds ?? Infinity);
-    console.log(`${this.name}: ${this.frames.length} frames, ${seconds.toFixed(1)}s, ${Math.round(fs.statSync(out).size / 1024)} KB`);
+    console.log(`${this.name}: ${this.frames.length} frames, ${total.toFixed(1)}s, ${Math.round(fs.statSync(out).size / 1024)} KB`);
   }
 }
 
-/** Glide the visible cursor to an element, then click it. */
-export async function glideClick(page: Page, locator: Locator, { steps = 28, pause = 250 } = {}) {
+/** Glide the visible cursor to an element, then click it. Scrolls it into view smoothly first if it's off screen. */
+export async function glideClick(page: Page, locator: Locator) {
+  const viewport = page.viewportSize()!;
+  const before = await locator.boundingBox();
+  if (before && (before.y < 0 || before.y + before.height > viewport.height)) {
+    await locator.evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'smooth' }));
+    await page.waitForTimeout(700);
+  }
   const box = await locator.boundingBox();
   if (!box) throw new Error(`Not visible: ${locator}`);
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
-  await page.mouse.move(x, y, { steps });
-  await page.waitForTimeout(pause);
+  await page.mouse.move(x, y, { steps: 28 });
+  await page.waitForTimeout(250);
   await page.mouse.click(x, y);
+}
+
+/** Converts out/<name>.mp4 to a looping GIF at `out`, with a palette built from the clip so it stays crisp. */
+export function toGif(name: string, out: string) {
+  const mp4 = path.join(DIR, 'out', `${name}.mp4`);
+  execFileSync(FFMPEG, [
+    '-y', '-loglevel', 'error', '-i', mp4,
+    '-vf', 'fps=12,scale=900:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle',
+    '-loop', '0', out,
+  ]);
+  console.log(`${path.relative(process.cwd(), out)}: ${Math.round(fs.statSync(out).size / 1024)} KB`);
 }

@@ -358,7 +358,7 @@ const DebateOverlay: React.FC<DebateOverlayProps> = ({
                                  title="Remove criterion"
                                  aria-label={`Remove ${criterion.label}`}
                               >
-                                 <span className="material-symbols-outlined text-sm">close</span>
+                                 <span aria-hidden="true" className="text-lg leading-none">×</span>
                               </button>
                            </td>
                         </tr>
