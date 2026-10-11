@@ -8,7 +8,7 @@ import BottomBar from './components/BottomBar';
 import ImpressionSlip from './components/overlays/ImpressionSlip';
 import CounselorDossier from './components/overlays/CounselorDossier';
 import DebateOverlay from './components/overlays/DebateOverlay';
-import DilemmaHistoryOverlay from './components/overlays/DilemmaHistoryOverlay';
+import TheRecord from './components/overlays/TheRecord';
 import { Counselor, TensionPair, OverlayType, CouncilResponse, ReflectionFocus, DebateInterjection } from './types';
 import { fetchCouncilAnalysis } from './services/CouncilService';
 import { buildCounselorsFromResponse } from './utils/counselorMapper';
@@ -411,12 +411,12 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Dilemma History Overlay */}
+      {/* The record */}
       {activeOverlay === 'DILEMMA_HISTORY' && (
-        <DilemmaHistoryOverlay
+        <TheRecord
           dilemma={dilemma}
           originalSummary={originalSummary}
-          refinementHistory={refinementHistory.map(r => r.text)}
+          refinements={refinementHistory}
           onClose={closeOverlay}
           onAddMoreContext={handleAddMoreContext}
           onRestartScenario={handleRestartScenario}
